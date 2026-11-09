@@ -1,0 +1,94 @@
+@import "tailwindcss";
+
+/* Token dari docs/04_DESIGN_BRIEF.md §4. Tema terang saja (Design Brief §2). */
+:root {
+  --paper: #fbf7f0;
+  --surface: #ffffff;
+  --line: #e4dacb;
+  --ink: #2a211a;
+  --muted: #6b5d50;
+  --ember: #b4431a; /* aksi utama dan penanda paparan, bukan latar luas */
+  --water: #1f5f7a; /* tautan dan informasi */
+  --ok: #2f6b45;
+  --warn: #8a5a00;
+  --danger: #a32020;
+  --radius: 8px;
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-line: var(--line);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-ember: var(--ember);
+  --color-water: var(--water);
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+  --color-danger: var(--danger);
+  --radius-card: var(--radius);
+  --font-sans: var(--font-public-sans);
+  --font-serif: var(--font-source-serif);
+}
+
+html {
+  color-scheme: light;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-public-sans), system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+/* Fokus selalu terlihat (Design Brief §11). */
+:focus-visible {
+  outline: 3px solid var(--water);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Angka besar dan tabel memakai digit sama lebar. */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Skeleton sederhana untuk keadaan memuat. */
+@keyframes pulse-soft {
+  50% {
+    opacity: 0.5;
+  }
+}
+.skeleton {
+  background: var(--line);
+  border-radius: var(--radius);
+  animation: pulse-soft 1.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Dokumen cetak: tanpa navigasi, tanpa latar (Design Brief §8). */
+@media print {
+  @page {
+    size: A4;
+    margin: 18mm;
+  }
+  body {
+    background: #fff;
+    color: #000;
+  }
+  .no-print {
+    display: none !important;
+  }
+}
