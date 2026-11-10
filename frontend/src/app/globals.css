@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* Token dari docs/04_DESIGN_BRIEF.md §4. Tema terang saja (Design Brief §2). */
+/* Token dari docs/v2/04_DESIGN_BRIEF.md §4. Tema terang saja (Design Brief §2). */
 :root {
   --paper: #fbf7f0;
   --surface: #ffffff;

@@ -10,6 +10,8 @@
 
 # data mentah pipeline (README menjelaskan cara mengunduhnya)
 /data/raw/
+# basis data pengembangan lokal (data uji)
+/data/dev.db*
 
 # python pipeline
 __pycache__/

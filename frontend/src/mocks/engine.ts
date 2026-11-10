@@ -1,6 +1,6 @@
 /*
  * MESIN TIRUAN, hanya agar layar Prioritas terasa nyata sebelum mesin backend siap.
- * Mengikuti v2/v2/02_TRD.md §6 (greedy per unit). Mesin asli: src/lib/engine/ milik backend.
+ * Mengikuti docs/v2/02_TRD.md §6 (greedy per unit). Mesin asli: src/lib/engine/ milik backend.
  * Hapus bersama folder `src/mocks/` sebelum code freeze.
  */
 import type { CatalogItem, PriceRow, PriorityResult, PriorityRow, ReadinessItem, Status } from "@/lib/types";

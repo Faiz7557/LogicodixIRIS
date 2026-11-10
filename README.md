@@ -6,7 +6,7 @@ SiapKemarau membantu desa rawan karhutla mengetahui seberapa terpapar mereka di 
 
 Kategori: **Web** · LOGICODIX 2026
 
-> README ini masih kerangka. Isi wajib submission (tim, fitur, arsitektur, akun demo, dokumentasi AI, atribusi) dilengkapi pada Task 23, lihat [docs/06_IMPLEMENTATION_PLAN.md](docs/06_IMPLEMENTATION_PLAN.md).
+> README ini masih kerangka. Isi wajib submission (tim, fitur, arsitektur, akun demo, dokumentasi AI, atribusi) dilengkapi pada Task 23, lihat [docs/v2/06_IMPLEMENTATION_PLAN.md](docs/v2/06_IMPLEMENTATION_PLAN.md).
 
 ## Menjalankan di lokal
 
@@ -31,7 +31,7 @@ Butuh Node.js 20 atau lebih baru.
 | `frontend/src/app/` | Halaman Next.js (App Router) |
 | `frontend/src/components/` | Komponen antarmuka |
 | `frontend/src/lib/` | Tipe, format, dan pemanggil API |
-| `docs/` | Brief, PRD, TRD, App Flow, Design Brief, skema, rencana implementasi |
+| `docs/` | Dokumen v2 di docs/v2/: Jobdesk, PRD, TRD, App Flow, Design Brief, skema, rencana implementasi, audit, plan agen |
 | `reports/`, `research_notes/` | Riset pemilihan masalah |
 | `papers/` | Registry bukti ilmiah dan regulasi (transkrip `.md`; PDF tidak disertakan) |
 

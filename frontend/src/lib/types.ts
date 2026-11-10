@@ -1,6 +1,6 @@
 /*
  * Kontrak data frontend <-> backend (SiapKemarau v2).
- * Sumber: v2/v2/02_TRD.md §6 dan §8, v2/v2/05_BACKEND_SCHEMA.md §3.
+ * Sumber: docs/v2/02_TRD.md §6 dan §8, docs/v2/05_BACKEND_SCHEMA.md §3.
  * Frontend hanya MENGONSUMSI tipe ini. Ubah hanya setelah disepakati dengan pemilik mesin/API.
  * Bagian bertanda USULAN KONTRAK belum ada di dokumen dan harus dikonfirmasi.
  */

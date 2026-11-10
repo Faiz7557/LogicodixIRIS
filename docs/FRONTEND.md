@@ -1,6 +1,6 @@
 # Panduan UI/UX: SiapKemarau v2
 
-> Pemilik: Orang 2 (peran dikerjakan sebagai **UI/UX**). Sumber spesifikasi: `v2/v2/` (Jobdesk, PRD, TRD, App Flow, Design Brief, Schema, Rencana). Jika ada pertentangan, Jobdesk menang.
+> Pemilik: Orang 2 (peran dikerjakan sebagai **UI/UX**). Sumber spesifikasi: `docs/v2/` (Jobdesk, PRD, TRD, App Flow, Design Brief, Schema, Rencana). Jika ada pertentangan, Jobdesk menang.
 
 ## 1. Batas ranah
 
