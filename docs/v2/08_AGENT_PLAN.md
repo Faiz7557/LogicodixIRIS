@@ -26,7 +26,7 @@
 
 1. Semua agen bekerja di checkout yang sama, tanpa worktree. Setiap task punya daftar berkas milik sendiri. Agen dilarang mengubah berkas di luar daftar itu. Bila perlu, agen berhenti dan melapor.
 2. Agen **tidak** menjalankan `git add`, `git commit`, atau `git push`. Orkestrator yang commit, satu task satu commit atau lebih kecil.
-3. Agen hanya menjalankan tes miliknya (`npx vitest run <path>` atau `py -m pytest <path> -v`). Gerbang penuh dijalankan orkestrator, karena agen lain sedang menulis di pohon yang sama.
+3. Agen hanya menjalankan tes miliknya (`npx vitest run <path>` atau `uv run pytest <path> -v`). Gerbang penuh dijalankan orkestrator, karena agen lain sedang menulis di pohon yang sama.
 4. Sebelum memakai API Next.js, agen membaca panduan terkait di `frontend/node_modules/next/dist/docs/` (lihat `frontend/AGENTS.md`).
 5. `caliber-final` boleh dibaca sebagai rujukan di `C:\Uner\Lomba\Logicodix\caliber-final`, tetapi tidak ada berkas atau blok kode yang disalin.
 6. Laporan akhir agen berisi: berkas yang diubah, perintah tes dan keluarannya, penyimpangan dari task, dan hal yang belum diverifikasi.
@@ -35,12 +35,12 @@
 
 ```bash
 cd frontend && npx vitest run <berkas tes task> && npm run typecheck && npm run lint
-py -m pytest pipeline/tests/<berkas tes task> -v
+uv run pytest pipeline/tests/<berkas tes task> -v
 git status --short                      # hanya berkas milik task
 grep -rniE "hektare terselamatkan|tervalidasi|empirical bayes|berdasarkan permendesa|hotspot" frontend/src pipeline
 ```
 
-Baris `grep` terakhir hanya boleh mengenai komentar larangan dan tes yang menegaskan larangan. Gerbang per gelombang: `cd frontend && npm test && npm run build`, lalu `py -m pytest pipeline/tests`.
+Baris `grep` terakhir hanya boleh mengenai komentar larangan dan tes yang menegaskan larangan. Gerbang per gelombang: `cd frontend && npm test && npm run build`, lalu `uv run pytest pipeline/tests`.
 
 **Eskalasi.** Task Haiku yang gagal gerbang dua kali dialihkan ke Opus medium. Task Opus yang gagal dua kali diambil alih orkestrator. Perubahan kontrak di section 4 hanya boleh dilakukan orkestrator, dan semua task yang memakainya diberi tahu.
 
@@ -182,7 +182,8 @@ LogicodixIRIS/
   data/manual/*.csv                    T03
   data/siapkemarau.db                  T34
   pipeline/{params,fetch_firms,wilayah,firms,paparan,backtest,export,run_all}.py
-  pipeline/tests/  pipeline/requirements.txt  pipeline/run_output.txt
+  pyproject.toml  uv.lock  .python-version
+  pipeline/tests/  pipeline/run_output.txt
   docs/v2/00..08                       T01 (pindah dari v2/v2)
   frontend/
     scripts/{dev-db,seed-accounts,push-remote}.ts
@@ -275,13 +276,13 @@ Agen tidak bisa mengerjakan ini. M1 dan M2 menentukan jalur kritis.
 
 ### Task T03: Skema, parameter, dan data manual — Haiku high
 
-**Files:** Create `db/schema.sql`, `pipeline/params.py`, `pipeline/requirements.txt`, `pipeline/tests/conftest.py`, `pipeline/tests/test_schema.py`, `data/manual/{katalog_item,paket_minimum,referensi_pergub,harga_item,sumber_data,dq_issue}.csv`.
+**Files:** Create `db/schema.sql`, `pipeline/params.py`, `pyproject.toml`, `pipeline/tests/conftest.py`, `pipeline/tests/test_schema.py`, `data/manual/{katalog_item,paket_minimum,referensi_pergub,harga_item,sumber_data,dq_issue}.csv`.
 
 **Interfaces:** Produces DDL Backend Schema §3 dan `PARAMS: dict[str, tuple[str, str]]` (nilai, label) berisi seluruh baris TRD §5 ditambah `ext_years` dari section 4.
 
 - [ ] **Step 1:** Tulis empat tes rencana 06 Task 2 Step 1 di `test_schema.py`. Fixture `conn` di `conftest.py` membuka SQLite memori dan menjalankan `db/schema.sql`. Tambah satu tes: `assert PARAMS["ext_years"] == ("2015,2019,2023,2026", "parameter")`.
-- [ ] **Step 2:** Run `py -m pytest pipeline/tests/test_schema.py -v`. Expected: FAIL, berkas belum ada.
-- [ ] **Step 3:** Salin DDL persis dari `docs/v2/05_BACKEND_SCHEMA.md` §3. Isi CSV persis dari Backend Schema §6 dan PRD §7 dan §8. Nilai yang memuat koma diapit tanda kutip ganda. `requirements.txt`: `geopandas`, `pyogrio`, `pandas`, `pyarrow`, `pytest`.
+- [ ] **Step 2:** Run `uv run pytest pipeline/tests/test_schema.py -v`. Expected: FAIL, berkas belum ada.
+- [ ] **Step 3:** Salin DDL persis dari `docs/v2/05_BACKEND_SCHEMA.md` §3. Isi CSV persis dari Backend Schema §6 dan PRD §7 dan §8. Nilai yang memuat koma diapit tanda kutip ganda. `pyproject.toml`: `geopandas`, `pyogrio`, `pandas`, `pyarrow`, dan `pytest` di dev group.
 - [ ] **Step 4:** Run tes. Expected: PASS.
 - [ ] **Step 5:** Orkestrator membandingkan blok SQL di dokumen dengan `db/schema.sql`. Expected: tidak ada beda selain spasi akhir.
 - [ ] **Step 6:** Commit `feat: add schema, gate thresholds and sourced reference data`. Commit ini wajib ada sebelum data 2026 dibuka.
@@ -335,7 +336,7 @@ it("kartu memuat strip 2012-2026", async () => { expect((await getDesaCard("TING
 **Interfaces:** Persis blok Interfaces rencana 06 Task 3, 4, dan 5.
 
 - [ ] **Step 1:** Tulis tes rencana 06 Task 3 Step 1, Task 4 Step 1, Task 5 Step 1. Semua geometri dan CSV sintetis dibuat di dalam tes. Tidak ada akses jaringan.
-- [ ] **Step 2:** Run `py -m pytest pipeline/tests/test_fetch_firms.py pipeline/tests/test_wilayah.py pipeline/tests/test_firms.py -v`. Expected: FAIL.
+- [ ] **Step 2:** Run `uv run pytest pipeline/tests/test_fetch_firms.py pipeline/tests/test_wilayah.py pipeline/tests/test_firms.py -v`. Expected: FAIL.
 - [ ] **Step 3:** Implementasi sesuai Step 3 ketiga task itu dan TRD §4 dan §5. Kotak area `108,-4.5,116.5,2.5`. `fetch_window` menulis ke `.tmp` lalu rename. Luas memakai EPSG:6933. Penyangga di EPSG:3857 dengan komentar `ponytail:` soal akurasi dekat khatulistiwa.
 - [ ] **Step 4:** Run tes. Expected: PASS. Langkah yang memakai data nyata (06 Task 3 Step 5, Task 4 Step 4, Task 5 Step 4) dikerjakan di T34.
 - [ ] **Step 5:** Tiga commit: `feat: fetch viirs archive through firms area api`, `feat: build village table with peat fraction and area`, `feat: aggregate satellite detections per village year`.
@@ -347,7 +348,7 @@ it("kartu memuat strip 2012-2026", async () => { expect((await getDesaCard("TING
 **Interfaces:** Persis blok Interfaces rencana 06 Task 6 dan 7.
 
 - [ ] **Step 1:** Tulis tes rencana 06 Task 6 Step 1 dan Task 7 Step 1.
-- [ ] **Step 2:** Run `py -m pytest pipeline/tests/test_paparan.py pipeline/tests/test_backtest.py -v`. Expected: FAIL.
+- [ ] **Step 2:** Run `uv run pytest pipeline/tests/test_paparan.py pipeline/tests/test_backtest.py -v`. Expected: FAIL.
 - [ ] **Step 3:** Implementasi sesuai TRD §5. Jangan memakai istilah "Empirical Bayes" di kode atau komentar. `gate` tidak membagi dengan nol saat laju pembanding nol.
 - [ ] **Step 4:** Run tes. Expected: PASS.
 - [ ] **Step 5:** Dua commit: `feat: compute village exposure and kecamatan range`, `feat: add three fold evaluation and stratified gate`.
@@ -466,7 +467,7 @@ def test_gate_result_is_json_in_meta(tmp_path):
     assert json.loads(nilai)["keputusan"] == "lunakkan"
 ```
 
-- [ ] **Step 2:** Run `py -m pytest pipeline/tests/test_export.py -v`. Expected: FAIL.
+- [ ] **Step 2:** Run `uv run pytest pipeline/tests/test_export.py -v`. Expected: FAIL.
 - [ ] **Step 3:** Implementasi. `run_all.py` menghitung `frozen`, `live`, tiga fold, gerbang, sensitivitas, dan menulis angka kontrol Backend Schema §7 ke `pipeline/run_output.txt`. Berhenti dengan pesan jelas bila `data/raw/` kosong.
 - [ ] **Step 4:** Run tes. Expected: PASS.
 - [ ] **Step 5:** Commit `feat: add database export and pipeline runner`.
@@ -570,8 +571,8 @@ it.each([1.5, -1, 1_000_000_001])("menolak pagu %s", async (p) => {
 
 **Files:** Create `data/siapkemarau.db`, `pipeline/run_output.txt`, `docs/v2/HASIL_GERBANG.md`.
 
-- [ ] **Step 1:** Run `py pipeline/fetch_firms.py`. Expected: sekitar 1.080 berkas di `data/raw/firms/`. Catat tanggal akhir SP, NRT, dan celahnya.
-- [ ] **Step 2:** Run `py pipeline/run_all.py`. Expected: DB di bawah 50 MB, angka kontrol tercetak.
+- [ ] **Step 1:** Run `uv run python pipeline/fetch_firms.py`. Expected: sekitar 1.080 berkas di `data/raw/firms/`. Catat tanggal akhir SP, NRT, dan celahnya.
+- [ ] **Step 2:** Run `uv run python pipeline/run_all.py`. Expected: DB di bawah 50 MB, angka kontrol tercetak.
 - [ ] **Step 3:** Orkestrator memeriksa `run_output.txt`: jumlah desa per provinsi masuk akal, deteksi sesudah filter lebih kecil dari sebelum, tidak ada fold yang memakai tahun uji, riwayat Kalibandung tercetak.
 - [ ] **Step 4:** Tulis `HASIL_GERBANG.md`: nilai uji A dan B, keputusan, tanggal akhir data 2026. Keputusan dibaca dari `gate_hasil`, tidak dipilih. Jika riwayat Kalibandung tidak cocok dengan kasusnya, desa jangkar diambil dari data dan alasannya ditulis.
 - [ ] **Step 5:** Di `frontend/`: `npx tsx scripts/seed-accounts.ts --desa <desa_jangkar>`.
@@ -659,7 +660,7 @@ Persis rencana 06 Task 21, dengan path `frontend/src/server/parseInventaris.ts`,
 
 **Files:** Create `docs/v2/QA.md`.
 
-- [ ] **Step 1:** Run `cd frontend && npm test && npm run build` dan `py -m pytest pipeline/tests`. Catat hasilnya.
+- [ ] **Step 1:** Run `cd frontend && npm test && npm run build` dan `uv run pytest pipeline/tests`. Catat hasilnya.
 - [ ] **Step 2:** Run `git log -p | grep -iE "api[_-]?key|token|password"`. Expected: hanya nama variabel.
 - [ ] **Step 3:** Run `grep` kata terlarang di section 1 pada `frontend/src` dan `pipeline`. Expected: tidak ada klaim produk. Run `grep -rn "PERLU_DIISI" data/manual`. Expected: tidak ada hasil.
 - [ ] **Step 4:** Jalankan daftar periksa Design Brief §12 butir demi butir pada 360 px. Tulis lulus atau gagal beserta buktinya di `QA.md`. Butir gagal dilaporkan ke orkestrator, tidak diperbaiki sendiri.
