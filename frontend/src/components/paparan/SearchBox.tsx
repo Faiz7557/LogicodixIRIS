@@ -1,12 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { SkeletonBlock } from "@/components/ui/PageState";
-import type { DesaHit } from "@/lib/types";
+import { KartuHasilDesa, type HasilCari } from "./KartuHasilDesa";
 import { cariDesaContoh } from "@/mocks/pencarian";
 
-type Hasil = { untuk: string; hits: DesaHit[] } | { untuk: string; galat: true };
+type Hasil = { untuk: string; hits: HasilCari[] } | { untuk: string; galat: true };
 
 /**
  * Pencarian desa (App Flow v2 §3.1): mulai setelah 2 karakter, jeda 250 ms, maksimal 20 hasil.
@@ -110,15 +109,10 @@ export function SearchBox() {
         ) : (
           <>
             <p className="text-sm text-muted">{terkini.hits.length} desa ditemukan.</p>
-            <ul className="mt-2 divide-y divide-line rounded-card border border-line bg-paper">
+            <ul className="mt-2 space-y-3">
               {terkini.hits.map((d) => (
                 <li key={d.kode}>
-                  <Link href={`/desa/${d.kode}`} className="block min-h-14 px-4 py-3">
-                    <span className="block font-bold">{d.nama}</span>
-                    <span className="block text-sm text-muted">
-                      {d.kecNama}, {d.kabNama}, {d.provNama}
-                    </span>
-                  </Link>
+                  <KartuHasilDesa d={d} />
                 </li>
               ))}
             </ul>

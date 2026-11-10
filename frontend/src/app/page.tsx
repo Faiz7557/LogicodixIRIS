@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { Kontur } from "@/components/beranda/Kontur";
-import { KartuContoh } from "@/components/beranda/KartuContoh";
 import { Sorotan } from "@/components/beranda/Sorotan";
 import { SearchBox } from "@/components/paparan/SearchBox";
 import { TEKS_BELUM_DIUJI } from "@/components/ui/PernyataanAsumsi";
@@ -53,12 +52,8 @@ export default async function BerandaPage() {
             mengurutkan belanja kesiapan di bawah pagu kecil.
           </p>
 
-          <div id="cari" className="mx-auto mt-8 max-w-[560px] scroll-mt-4 text-left">
+          <div id="cari" className="mx-auto mt-8 max-w-[640px] scroll-mt-4 text-left">
             <SearchBox />
-          </div>
-
-          <div className="mt-6">
-            <KartuContoh />
           </div>
         </div>
       </section>
