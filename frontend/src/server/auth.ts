@@ -57,8 +57,10 @@ async function akunDariToken(token: string | undefined): Promise<Akun | null> {
   const r = await db().execute({
     sql: `SELECT a.id, a.username, a.peran, a.desa_kode, a.nama_tampil, a.is_demo
           FROM sesi s JOIN akun a ON a.id = s.akun_id
-          WHERE s.token_hash = ? AND s.expires_at > ?`,
-    args: [sha256(token), new Date().toISOString()],
+          WHERE s.token_hash = ? AND s.expires_at > strftime('%Y-%m-%dT%H:%M:%fZ', 'now')`,
+    // Waktu "sekarang" dari DB (format ISO UTC yang sama dengan expires_at), bukan new Date():
+    // Next 16 menolak nilai waktu saat prerender halaman yang membaca sesi.
+    args: [sha256(token)],
   });
   return r.rows[0] ? toAkun(r.rows[0]) : null;
 }
