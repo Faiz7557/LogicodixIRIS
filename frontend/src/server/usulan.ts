@@ -1,4 +1,4 @@
-import type { Row } from "@libsql/client";
+import type { InArgs, Row } from "@libsql/client";
 import { formatRupiah, formatSkor, formatTanggal } from "@/lib/format";
 import { totalBiaya } from "@/lib/prioritas";
 import type { CatalogItem, DesaCard, HargaRow, Kanal, PrioritasPayload, PriorityRow, ReadinessResult, Usulan } from "@/lib/types";
@@ -125,4 +125,28 @@ export async function getUsulan(kode: string, id: number): Promise<Usulan> {
 export async function listUsulan(kode: string): Promise<Usulan[]> {
   const rows = await q("SELECT * FROM usulan WHERE desa_kode = ? ORDER BY created_at DESC, id DESC", [kode]);
   return rows.map(toUsulan);
+}
+
+export interface HalamanUsulan {
+  hasil: Usulan[];
+  meta: { limit: number; nextCursor: number | null };
+}
+
+/** Cursor berbasis id: halaman berikutnya berisi id yang lebih kecil. */
+export async function listUsulanPage(kode: string, limit = 20, cursor?: number): Promise<HalamanUsulan> {
+  const args: InArgs = [kode];
+  let sql = "SELECT * FROM usulan WHERE desa_kode = ?";
+  if (cursor !== undefined) {
+    sql += " AND id < ?";
+    args.push(cursor);
+  }
+  sql += " ORDER BY id DESC LIMIT ?";
+  args.push(limit + 1);
+
+  const rows = await q(sql, args);
+  const hasil = rows.slice(0, limit).map(toUsulan);
+  return {
+    hasil,
+    meta: { limit, nextCursor: rows.length > limit ? hasil[hasil.length - 1].id : null },
+  };
 }

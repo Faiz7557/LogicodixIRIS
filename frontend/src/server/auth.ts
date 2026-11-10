@@ -65,6 +65,11 @@ async function akunDariToken(token: string | undefined): Promise<Akun | null> {
   return r.rows[0] ? toAkun(r.rows[0]) : null;
 }
 
+/** IP klien untuk rate limit. Di belakang proxy, header ini diisi platform. */
+export function ipDari(req: Request): string {
+  return req.headers.get("x-forwarded-for")?.split(",")[0].trim() || req.headers.get("x-real-ip") || "lokal";
+}
+
 /** Nilai cookie dari header `Cookie` mentah (route handler dan tes). */
 export function tokenDari(req: Request): string | undefined {
   for (const bagian of (req.headers.get("cookie") ?? "").split(";")) {

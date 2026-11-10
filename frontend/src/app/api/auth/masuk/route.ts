@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { assertOrigin, cookieSesi, createSession, hitRateLimit, toAkun, verifyPassword } from "@/server/auth";
+import { assertOrigin, cookieSesi, createSession, hitRateLimit, ipDari, toAkun, verifyPassword } from "@/server/auth";
 import { db } from "@/server/db";
 import { HttpError, handle } from "@/server/http";
 
@@ -14,7 +14,7 @@ const HASH_SEMU = "scrypt$00000000000000000000000000000000$" + "0".repeat(128);
 export const POST = handle(async (req) => {
   assertOrigin(req);
   const { username, password } = schema.parse(await req.json().catch(() => null));
-  const ip = req.headers.get("x-forwarded-for")?.split(",")[0].trim() || req.headers.get("x-real-ip") || "lokal";
+  const ip = ipDari(req);
   if (!(await hitRateLimit(`masuk:${username.toLowerCase()}|${ip}`, 10, 15))) {
     throw new HttpError(429, "terlalu_banyak", "Coba lagi dalam 15 menit.", { "Retry-After": "900" });
   }
