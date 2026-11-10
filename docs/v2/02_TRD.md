@@ -224,11 +224,11 @@ export function renderTemplate(facts: Record<string, string>, kanal: Kanal): str
 export async function generateNarrative(facts: Record<string, string>, kanal: Kanal): Promise<{ teks: string; sumber: "ai" | "template"; model: string | null }>;
 ```
 
-**Tempel pesan (FR-19, P1).** `parseInventoryText` mengubah teks menjadi isian formulir.
+**Tempel pesan (FR-19, P1).** `parseInventoryText` mengubah teks menjadi isian formulir. Parser saat ini deterministik: nama katalog dan angka pada baris yang sama dibaca sebagai total dan berfungsi. AI belum dipakai pada jalur ini.
 
 | Hal | Ketentuan |
 |---|---|
-| Masukan | Maksimal 2.000 karakter. Nomor telepon dihapus dengan regex sebelum dikirim |
+| Masukan | Maksimal 2.000 karakter. Nomor telepon dihapus dengan regex sebelum diproses |
 | Keluaran | JSON divalidasi zod terhadap kode katalog, angka tidak negatif, berfungsi tidak melebihi total |
 | Penyimpanan | Tidak pernah otomatis. Hasil hanya mengisi formulir |
 | Keamanan | Teks diperlakukan sebagai data. Keluaran di luar skema ditolak |
@@ -257,6 +257,10 @@ Semua respons JSON. Galat: `{ "error": { "kode": string, "pesan": string } }`.
 | PUT | `/api/desa/[kode]/keputusan` | `desa` | Keputusan satu baris |
 | GET, POST | `/api/desa/[kode]/usulan` | `desa` | Daftar, terbitkan |
 | GET | `/api/desa/[kode]/usulan/[id]` | `desa` | Satu usulan |
+
+**Status sukses.** GET `200`; PUT `204`; `POST /api/auth/masuk` `200` dengan cookie sesi; `POST /api/desa/[kode]/inventaris/parse` `200` dengan `{ hasil }`; `POST /api/desa/[kode]/usulan` `201` dengan `{ id }` dan header `Location`.
+
+**Status galat.** `400` body/zod tidak sah; `401` tanpa sesi; `403` desa, peran, atau `Origin` salah; `404` resource tidak ada; `409` konflik state (mis. belum ada baris disetujui); `422` data valid secara sintaks tetapi tidak sah secara domain; `429` rate limit dengan `Retry-After`; `503` data pipeline belum ada.
 
 ## 9. Keamanan
 

@@ -42,6 +42,32 @@ python pipeline/run_all.py
 deactivate
 ```
 
+## API
+
+Semua respons JSON. Galat memakai `{ "error": { "kode": "...", "pesan": "..." } }`.
+
+| Metode | Path | Akses | Sukses |
+|---|---|---|---|
+| GET | `/api/desa?q=` | Publik | 200 `{ hasil }`, maks. 20 |
+| GET | `/api/desa/[kode]` | Publik | 200 `DesaCard` |
+| GET | `/api/backtest` | Publik | 200 metrik dan gerbang |
+| GET | `/api/data` | Publik | 200 sumber, batasan, parameter |
+| POST | `/api/auth/masuk` | Publik, dibatasi | 200 `{ akun }` + cookie sesi |
+| POST | `/api/auth/keluar` | Akun | 204 |
+| GET | `/api/auth/saya` | Akun | 200 `{ akun }` |
+| GET, PUT | `/api/desa/[kode]/inventaris` | `mpa`, `desa` | 200 `{ rows, terakhir }`, 200 `{ disimpanPada }` |
+| POST | `/api/desa/[kode]/inventaris/parse` | `mpa`, `desa` | 200 `{ hasil }` |
+| GET, PUT | `/api/desa/[kode]/paket` | GET keduanya, PUT `desa` | 200 `{ hasil }`, 204 |
+| GET, PUT | `/api/desa/[kode]/harga` | GET keduanya, PUT `desa` | 200 `{ hasil }`, 204 |
+| GET | `/api/desa/[kode]/kesiapan` | `mpa`, `desa` | 200 `ReadinessResult` |
+| GET | `/api/desa/[kode]/prioritas` | `desa` | 200 `PriorityResult` |
+| PUT | `/api/desa/[kode]/rencana` | `desa` | 204 |
+| PUT | `/api/desa/[kode]/keputusan` | `desa` | 204 |
+| GET, POST | `/api/desa/[kode]/usulan` | `desa` | 200 `{ hasil }`, 201 `{ id }` + `Location` |
+| GET | `/api/desa/[kode]/usulan/[id]` | `desa` | 200 `Usulan` |
+
+Status galat utama: `400` body tidak sah, `401` tanpa sesi, `403` desa/peran/Origin salah, `404` tidak ada, `409` konflik state, `422` data tidak sah secara domain, `429` rate limit, `503` data pipeline belum ada.
+
 ## Struktur repositori
 
 | Folder | Isi |
