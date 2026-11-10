@@ -8,7 +8,7 @@ const links = [
 // Header publik. Status masuk/keluar ditambahkan setelah auth backend siap (Task 14).
 export function SiteHeader() {
   return (
-    <header className="no-print border-b border-line bg-paper">
+    <header className="no-print border-b border-line bg-surface">
       <div className="mx-auto flex max-w-[1040px] items-center justify-between gap-2 px-4">
         <Link
           href="/"
@@ -27,7 +27,7 @@ export function SiteHeader() {
               <li key={l.href}>
                 <Link
                   href={l.href}
-                  className="flex min-h-11 items-center whitespace-nowrap px-1 text-sm text-water underline-offset-4 hover:underline sm:px-3"
+                  className="flex min-h-11 items-center whitespace-nowrap px-1 text-sm text-muted hover:text-ink sm:px-3"
                 >
                   {l.label}
                 </Link>
@@ -36,7 +36,7 @@ export function SiteHeader() {
             <li>
               <Link
                 href="/masuk"
-                className="ml-0.5 flex min-h-11 items-center whitespace-nowrap rounded-card border border-line bg-surface px-2.5 text-sm font-semibold text-ink sm:ml-1 sm:px-3"
+                className="ml-0.5 flex min-h-11 items-center whitespace-nowrap rounded-card border border-line-2 bg-surface px-2.5 text-sm font-semibold text-ink hover:border-ink hover:bg-surface-2 sm:ml-1 sm:px-3"
               >
                 Masuk
               </Link>

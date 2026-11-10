@@ -1,0 +1,10 @@
+import { HttpError, handle } from "@/server/http";
+import { searchDesa } from "@/server/queries";
+
+// GET /api/desa?q= (TRD §8): maks. 20 hasil. Di bawah 2 karakter tidak mencari.
+export const GET = handle(async (req) => {
+  const q = (new URL(req.url).searchParams.get("q") ?? "").trim();
+  if (q.length > 80) throw new HttpError(400, "input_tidak_sah", "Kata pencarian terlalu panjang. Maksimal 80 karakter.");
+  if (q.length < 2) return Response.json({ hasil: [] });
+  return Response.json({ hasil: await searchDesa(q) });
+});

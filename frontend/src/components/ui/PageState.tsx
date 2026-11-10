@@ -33,14 +33,11 @@ export function EmptyState({
   action?: { href: string; label: string };
 }) {
   return (
-    <div className="rounded-card border border-dashed border-line bg-surface px-4 py-6">
-      <p className="font-semibold">{title}</p>
+    <div className="rounded-card border border-dashed border-line-2 bg-surface-2 px-4 py-6">
+      <p className="font-semibold text-ink">{title}</p>
       {children ? <div className="mt-1 text-muted">{children}</div> : null}
       {action ? (
-        <Link
-          href={action.href}
-          className="mt-4 inline-flex min-h-11 items-center rounded-card bg-ember px-4 font-semibold text-white"
-        >
+        <Link href={action.href} className="btn btn-utama mt-4">
           {action.label}
         </Link>
       ) : null}
@@ -54,7 +51,7 @@ export function ErrorState({
   message?: string;
 }) {
   return (
-    <div role="alert" className="rounded-card border border-danger/40 bg-surface px-4 py-5">
+    <div role="alert" className="rounded-card border border-danger/30 bg-danger-soft px-4 py-5">
       <p className="font-semibold text-danger">{message}</p>
       <RetryButton />
     </div>

@@ -1,16 +1,14 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
-import { MOCK_KODE } from "@/mocks/demo";
-
-const BATAS_COBA = 10; // TRD §9: maksimal 10 percobaan per 15 menit
-const AKUN_CONTOH: Record<string, "mpa" | "desa"> = { "demo-mpa": "mpa", "demo-sekdes": "desa" };
+import { useRef, useState } from "react";
+import { ApiError, api } from "@/lib/api-client";
+import type { Akun } from "@/lib/types";
 
 /**
  * Formulir Masuk (App Flow v2 §3.5). Pesan galat tidak menyebut mana yang salah.
  * Kata sandi boleh ditempel dan diisi pengelola kata sandi (WCAG 2.2 Accessible Authentication).
- * SEMENTARA: pemeriksaan akun tiruan; mengisi cookie `mock-peran` agar tampilan mpa dan desa bisa dicoba.
+ * Batas percobaan (10 per 15 menit) dijaga server; pesannya ditampilkan apa adanya.
  */
 export function MasukForm() {
   const router = useRouter();
@@ -19,41 +17,24 @@ export function MasukForm() {
   const [lihat, setLihat] = useState(false);
   const [galat, setGalat] = useState("");
   const [memproses, setMemproses] = useState(false);
-  const [coba, setCoba] = useState(0);
-  const [sudahMasuk, setSudahMasuk] = useState(false);
   const refUser = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    /* eslint-disable-next-line react-hooks/set-state-in-effect */
-    setSudahMasuk(document.cookie.includes("mock-peran="));
-  }, []);
 
   async function kirim(e: React.FormEvent) {
     e.preventDefault();
-    if (coba >= BATAS_COBA) {
-      setGalat("Coba lagi dalam 15 menit.");
-      return;
-    }
     setMemproses(true);
     setGalat("");
-    await new Promise((r) => setTimeout(r, 600)); // meniru jeda jaringan
-    const peran = AKUN_CONTOH[username.trim()];
-    if (!peran || sandi.length === 0) {
-      const n = coba + 1;
-      setCoba(n);
-      setGalat(n >= BATAS_COBA ? "Coba lagi dalam 15 menit." : "Username atau password salah.");
+    try {
+      const { akun } = await api<{ akun: Akun }>("/api/auth/masuk", {
+        method: "POST",
+        json: { username: username.trim(), password: sandi },
+      });
+      router.push(`/desa/${akun.desaKode}/kesiapan`);
+    } catch (err) {
+      // 401 "Username atau password salah.", 429 "Coba lagi dalam 15 menit." (App Flow §3.5)
+      setGalat(err instanceof ApiError ? err.message : "Terjadi galat. Coba lagi.");
       setMemproses(false);
       refUser.current?.focus();
-      return;
     }
-    document.cookie = `mock-peran=${peran}; path=/; max-age=604800; samesite=lax`;
-    router.push(`/desa/${MOCK_KODE}/kesiapan`);
-  }
-
-  function keluar() {
-    document.cookie = "mock-peran=; path=/; max-age=0";
-    setSudahMasuk(false);
-    router.refresh();
   }
 
   const kelasInput = `mt-1 min-h-12 w-full rounded-card border bg-surface px-3 text-base ${galat ? "border-danger" : "border-line"}`;
@@ -135,14 +116,7 @@ export function MasukForm() {
             <code>demo-sekdes</code>: sekdes, semua layar desa.
           </li>
         </ul>
-        <p className="mt-2 text-muted">Pratinjau: kata sandi apa saja diterima untuk dua akun ini.</p>
       </aside>
-
-      {sudahMasuk ? (
-        <button type="button" onClick={keluar} className="mt-4 min-h-11 rounded-card border border-line bg-surface px-4 font-semibold">
-          Keluar dari akun contoh
-        </button>
-      ) : null}
     </div>
   );
 }

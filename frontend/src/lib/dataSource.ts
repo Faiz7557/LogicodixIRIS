@@ -15,10 +15,10 @@
  *   gagal-simpan  halaman normal, tetapi tombol Simpan di Catat Alat gagal
  * Kode lain: tidak ditemukan (404).
  */
-import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import { getSesiAkun } from "@/server/auth";
 import {
   MOCK_KODE,
-  mockAkun,
   mockCatalog,
   mockDesaCard,
   mockPaket,
@@ -37,20 +37,14 @@ async function gerbang(kode: string): Promise<boolean> {
   return KODE_UJI.has(kode);
 }
 
-/**
- * Sesi contoh dari cookie `mock-peran` yang diisi halaman Masuk (mpa atau desa).
- * Tanpa cookie: belum masuk (null). Ganti dengan sesi nyata (v2 Task 12).
- */
+/** Akun dari sesi nyata (cookie `sk_sesi`). Tanpa sesi: null. */
 export async function getSesi(): Promise<Akun | null> {
-  const nilai = (await cookies()).get("mock-peran")?.value;
-  if (nilai === "mpa") return mockAkun.mpa;
-  if (nilai === "desa") return mockAkun.desa;
-  return null;
+  return getSesiAkun();
 }
 
-/** Layar berakun: tanpa cookie memakai akun sekdes supaya URL layar bisa dibuka langsung saat pengembangan. */
+/** Layar berakun: tanpa sesi menuju `/masuk`. */
 export async function getAkun(): Promise<Akun> {
-  return (await getSesi()) ?? mockAkun.desa;
+  return (await getSesiAkun()) ?? redirect("/masuk");
 }
 
 export async function getCatalog(): Promise<CatalogItem[]> {
