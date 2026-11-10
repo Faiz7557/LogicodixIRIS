@@ -710,3 +710,17 @@ Persis rencana 06 Task 21, dengan path `frontend/src/server/parseInventaris.ts`,
 | Adopsi desain caliber-final | T14, T24, T41a, T41b |
 | Temuan audit K1 sampai K4, S1 sampai S8 | T01, T03, T10, T11, T20, T22, T41a, T42 |
 | FR-08, FR-17, FR-18 | Di luar cakupan (P2) |
+
+## 10. Catatan dari eksekusi
+
+Temuan gerbang yang wajib dibawa task berikutnya.
+
+| Dari | Untuk | Catatan |
+|---|---|---|
+| T11 | Semua task server | `buildTestDb` ada di `src/test/buildTestDb.ts` (tanpa vitest). Tes tetap mengimpor `buildTestDb` dan `useTestDb` dari `@/test/testDb`. Akun uji: id 1 `uji-desa-d` (desa, `D`), id 2 `uji-desa-a` (desa, `DESA_A`), id 3 `uji-mpa-a` (mpa, `DESA_A`), id 4 `uji-desa-b` (desa, `DESA_B`) |
+| T11 | T21, T31 | `getDesaCard` melempar 503 `data_belum_ada` bila desa ada tetapi baris paparan `live` tidak ada |
+| T13 | T23 | Metrik bernilai `NaN` bila fold tanpa positif, sedangkan `backtest_metric.nilai` `NOT NULL`. `build_db` harus menolak `NaN` dengan pesan yang menyebut fold, unit, dan strategi |
+| T13 | T34 | Uji A per kuartil terhitung lulus bila laju `tampak_aman` dan pembanding sama-sama nol. Periksa `backtest_grup` nyata dan tulis di `HASIL_GERBANG.md` bila ada kuartil seperti itu |
+| T12 | T34 | Belum diverifikasi pada berkas nyata: nama kolom HDX (`HDX_COLS` di `wilayah.py`), awalan `ID` pada kode wilayah, arti `DATE` di FIRMS area API (diasumsikan tanggal awal jendela), format `data_availability`, isi kolom `satellite`. Cek pada panggilan dan berkas pertama sebelum mengambil seluruh arsip |
+| T10 | T32 | Item yang hanya punya harga perbaikan tetapi tidak punya unit rusak tidak muncul di `tanpaHarga` maupun `tidakTerdanai`. Tangani bila harga desa memungkinkan kasus itu |
+| T11 | T51 | `@libsql/client` membuat berkas DB kosong bila `data/siapkemarau.db` belum ada. Jangan sampai berkas kosong itu ter-commit |
