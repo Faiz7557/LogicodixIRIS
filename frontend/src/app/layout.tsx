@@ -1,7 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Source_Serif_4 } from "next/font/google";
 import { Suspense } from "react";
-import { SiteHeader, SiteHeaderCadangan } from "@/components/layout/SiteHeader";
+import { SiteHeaderCadangan } from "@/components/layout/SiteHeader";
+import { SiteHeaderSesi } from "@/components/layout/SiteHeaderSesi";
 import "./globals.css";
 
 const geist = Geist({
@@ -42,7 +43,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           Lewati ke konten
         </a>
         <Suspense fallback={<SiteHeaderCadangan />}>
-          <SiteHeader />
+          <SiteHeaderSesi />
         </Suspense>
         <main id="konten" className="flex-1">
           {children}

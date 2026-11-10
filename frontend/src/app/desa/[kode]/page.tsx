@@ -6,6 +6,7 @@ import { MiniShape } from "@/components/paparan/MiniShape";
 import { RentangKecamatan } from "@/components/paparan/RentangKecamatan";
 import { TahunEkstrem } from "@/components/paparan/TahunEkstrem";
 import { YearStrip } from "@/components/paparan/YearStrip";
+import { KerangkaAkun } from "@/components/layout/KerangkaAkun";
 import { LoadingState } from "@/components/ui/PageState";
 import { Panel } from "@/components/ui/Panel";
 import { getDesaCard, getGerbang, getSesi } from "@/lib/dataSource";
@@ -39,11 +40,13 @@ async function Isi({ params }: { params: Promise<{ kode: string }> }) {
 
   const { desa, paparan, kecamatan } = card;
   const tampakAman = labelTampakAman({ tampakAman: paparan.tampakAman, keputusan: gerbang });
-  const tujuan = sesi && sesi.desaKode === kode ? `/desa/${kode}/kesiapan` : "/masuk";
+  // Akun desa ini sendiri: tampil di kerangka dasbor. Desa lain atau tanpa sesi: halaman publik.
+  const berakun = sesi?.desaKode === kode;
+  const tujuan = berakun ? `/desa/${kode}/kesiapan` : "/masuk";
   const awal = card.strip[0]?.tahun ?? 2012;
   const akhir = card.strip.at(-1)?.tahun ?? 2026;
 
-  return (
+  const isi = (
     <div className="mx-auto max-w-[960px] px-4 py-6 md:px-8 md:py-8">
       {/* Judul berupa pertanyaan, jawabannya kalimat utama (pola layar SiapKemarau). */}
       <header>
@@ -183,4 +186,6 @@ async function Isi({ params }: { params: Promise<{ kode: string }> }) {
       </p>
     </div>
   );
+
+  return berakun ? <KerangkaAkun kode={Promise.resolve(kode)}>{isi}</KerangkaAkun> : isi;
 }

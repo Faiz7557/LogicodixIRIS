@@ -6,7 +6,6 @@ import { GambarItem } from "@/components/kesiapan/GambarItem";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { formatSkor } from "@/lib/format";
 import type { Peran, Status } from "@/lib/types";
-import { CariDesaSidebar } from "./CariDesaSidebar";
 import { TombolKeluar } from "./TombolKeluar";
 
 type Item = { href: (kode: string) => string; label: string; peran: Peran[]; icon: React.ReactNode; aktifSampai?: "persis" };
@@ -77,7 +76,6 @@ export function NavAkun({ r }: { r: RingkasanNav }) {
           aria-label="Menu desa"
           className="sticky top-0 flex max-h-dvh min-h-[calc(100dvh-3rem)] flex-col gap-5 overflow-y-auto border-r border-line bg-surface/60 px-3 py-5"
         >
-          <CariDesaSidebar />
           <div className="space-y-4">
             {kelompok.map((g) => {
               const tampil = g.items.filter((i) => i.peran.includes(r.peran));

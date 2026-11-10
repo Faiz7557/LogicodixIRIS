@@ -11,15 +11,25 @@ const links = [
 
 // Halaman berakun: /desa/[kode]/kesiapan, inventaris, prioritas, usulan (dan turunannya).
 const AKUN = /^\/desa\/[^/]+\/(kesiapan|inventaris|prioritas|usulan)(\/|$)/;
+// Kartu Paparan /desa/[kode]: berakun bila sudah masuk dan itu desa akun sendiri.
+const PAPARAN = /^\/desa\/([^/]+)\/?$/;
+
+export type SesiHeader = { desaKode: string } | null;
 
 /**
  * Header situs.
  * Publik: logo di kiri dalam kolom 1040 px, tautan Time Machine, Data, dan Masuk di kanan.
  * Berakun: selebar layar dengan logo di paling kiri, sejajar sidebar. Di laptop tidak ada tombol,
  * karena Time Machine, Data, dan Keluar ada di sidebar. Di HP (tanpa sidebar) tautan tetap ada.
+ * Kartu Paparan, Time Machine, dan Data saat sudah masuk ikut mode berakun.
+ * Halaman publik lain saat sudah masuk: tombol Masuk diganti "Dasbor desa".
  */
-export function SiteHeader() {
-  const akun = AKUN.test(usePathname());
+export function SiteHeader({ sesi = null }: { sesi?: SesiHeader }) {
+  const path = usePathname();
+  const paparan = PAPARAN.exec(path)?.[1];
+  // Time Machine saat sudah masuk juga tampil di kerangka dasbor.
+  const akun =
+    AKUN.test(path) || (!!sesi && (path === "/time-machine" || path === "/data" || sesi.desaKode === paparan));
 
   return (
     <header className="no-print border-b border-line bg-surface">
@@ -40,6 +50,13 @@ export function SiteHeader() {
             <li>
               {akun ? (
                 <TombolKeluar className="ml-0.5 flex min-h-11 items-center whitespace-nowrap rounded-card border border-line-2 bg-surface px-2.5 text-sm font-semibold text-ink hover:border-ink hover:bg-surface-2 disabled:opacity-60 sm:ml-1 sm:px-3" />
+              ) : sesi ? (
+                <Link
+                  href={`/desa/${sesi.desaKode}/kesiapan`}
+                  className="ml-0.5 flex min-h-11 items-center whitespace-nowrap rounded-card border border-line-2 bg-surface px-2.5 text-sm font-semibold text-ink hover:border-ink hover:bg-surface-2 sm:ml-1 sm:px-3"
+                >
+                  Dasbor desa
+                </Link>
               ) : (
                 <Link
                   href="/masuk"
