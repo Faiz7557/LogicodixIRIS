@@ -1,0 +1,228 @@
+"use client";
+
+import Link from "next/link";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Stepper } from "@/components/ui/Stepper";
+import { ApiError } from "@/lib/api-client";
+import { formatAngka, formatWaktu, keteranganMeter } from "@/lib/format";
+import {
+  awalForm,
+  bacaAngka,
+  barisTerisi,
+  berubah,
+  susunPayload,
+  validasiBaris,
+  type FormState,
+  type GalatBaris,
+} from "@/lib/inventaris";
+import { simpanInventaris } from "@/lib/inventarisApi";
+import type { CatalogItem, InventoryRow } from "@/lib/types";
+
+type Fase = "diam" | "menyimpan" | "tersimpan" | "galat";
+
+/**
+ * Formulir Catat Alat (App Flow v2 §3.6). Satu kolom per item, bilah simpan menempel di bawah.
+ * Prinsip UX: boleh disimpan sebagian, galat muncul dekat isian setelah disentuh atau saat simpan,
+ * status simpan selalu terlihat, dan isian tidak pernah hilang saat penyimpanan gagal.
+ */
+export function FormInventaris({
+  kode,
+  catalog,
+  target,
+  tersimpan,
+  terakhir,
+  namaPengisi,
+}: {
+  kode: string;
+  catalog: CatalogItem[];
+  /** Paket minimum per item, untuk keterangan "Paket minimum: 10 buah". */
+  target: Record<string, number>;
+  tersimpan: InventoryRow[];
+  terakhir: { oleh: string; waktu: string } | null;
+  namaPengisi: string;
+}) {
+  const awal = useMemo(() => awalForm(catalog, tersimpan), [catalog, tersimpan]);
+  const [form, setForm] = useState<FormState>(awal);
+  const [dasar, setDasar] = useState<FormState>(awal); // keadaan terakhir yang tersimpan
+  const [disentuh, setDisentuh] = useState<Record<string, boolean>>({});
+  const [sudahCobaSimpan, setSudahCobaSimpan] = useState(false);
+  const [fase, setFase] = useState<Fase>("diam");
+  const [pesanGalat, setPesanGalat] = useState("");
+  const [info, setInfo] = useState(terakhir);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  const kotor = berubah(dasar, form);
+
+  // Peringatan bila meninggalkan halaman dengan isian belum tersimpan.
+  useEffect(() => {
+    if (!kotor) return;
+    const f = (e: BeforeUnloadEvent) => e.preventDefault();
+    window.addEventListener("beforeunload", f);
+    return () => window.removeEventListener("beforeunload", f);
+  }, [kotor]);
+
+  function ubah(kodeItem: string, kolom: "total" | "berfungsi" | "catatan", nilai: string) {
+    setForm((f) => ({ ...f, [kodeItem]: { ...f[kodeItem], [kolom]: nilai } }));
+    if (fase === "tersimpan" || fase === "galat") setFase("diam");
+  }
+
+  const galatTampil = (item: CatalogItem): GalatBaris => {
+    if (!sudahCobaSimpan && !disentuh[item.kode]) return {};
+    return validasiBaris(item, form[item.kode]);
+  };
+
+  const semuaGalat = catalog.filter((i) => barisTerisi(i, form[i.kode]) && Object.keys(validasiBaris(i, form[i.kode])).length > 0);
+
+  async function simpan(e: React.FormEvent) {
+    e.preventDefault();
+    setSudahCobaSimpan(true);
+    const { baris, jumlahGalat } = susunPayload(catalog, form);
+    if (jumlahGalat > 0) {
+      // arahkan fokus ke isian bergalat pertama
+      requestAnimationFrame(() => formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus());
+      return;
+    }
+    setFase("menyimpan");
+    setPesanGalat("");
+    try {
+      const hasil = await simpanInventaris(kode, baris);
+      setDasar(form);
+      setInfo({ oleh: namaPengisi, waktu: hasil.disimpanPada });
+      setFase("tersimpan");
+    } catch (err) {
+      setPesanGalat(err instanceof ApiError ? err.message : "Penyimpanan gagal. Isian masih ada di layar. Coba lagi.");
+      setFase("galat");
+    }
+  }
+
+  // Teks status bilah simpan: selalu satu kalimat, selalu terlihat.
+  let status: { teks: string; ragam: "normal" | "galat" | "ok" };
+  if (fase === "menyimpan") status = { teks: "Menyimpan…", ragam: "normal" };
+  else if (fase === "galat") status = { teks: pesanGalat, ragam: "galat" };
+  else if (sudahCobaSimpan && semuaGalat.length > 0)
+    status = { teks: `Periksa ${semuaGalat.length} item yang bertanda.`, ragam: "galat" };
+  else if (kotor) status = { teks: "Ada perubahan yang belum disimpan.", ragam: "normal" };
+  else if (fase === "tersimpan" && info)
+    status = { teks: `Tersimpan oleh ${info.oleh}, ${formatWaktu(info.waktu)}.`, ragam: "ok" };
+  else if (info) status = { teks: `Terakhir diisi oleh ${info.oleh}, ${formatWaktu(info.waktu)}.`, ragam: "normal" };
+  else status = { teks: "Belum ada alat yang tersimpan.", ragam: "normal" };
+
+  const warnaStatus = status.ragam === "galat" ? "text-danger font-semibold" : status.ragam === "ok" ? "text-ok font-semibold" : "text-muted";
+  const selesai = fase === "tersimpan" && !kotor;
+
+  return (
+    <form ref={formRef} onSubmit={simpan} noValidate className="pb-32 md:pb-0">
+      <div className="space-y-4">
+        {catalog.map((item) => (
+          <KartuItem
+            key={item.kode}
+            item={item}
+            nilai={form[item.kode]}
+            targetItem={target[item.kode]}
+            galat={galatTampil(item)}
+            onUbah={(kolom, v) => ubah(item.kode, kolom, v)}
+            onSentuh={() => setDisentuh((d) => ({ ...d, [item.kode]: true }))}
+          />
+        ))}
+      </div>
+
+      <div
+        className="no-print fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-30 border-t border-line bg-surface md:sticky md:bottom-0"
+      >
+        <div className="mx-auto flex max-w-[720px] items-center gap-3 px-4 py-2">
+          <p aria-live="polite" className={`flex-1 text-sm leading-snug ${warnaStatus}`}>
+            {status.teks}
+          </p>
+          {selesai ? (
+            <Link
+              href={`/desa/${kode}/kesiapan`}
+              className="flex min-h-11 shrink-0 items-center rounded-card bg-ember px-4 font-semibold text-white"
+            >
+              Lihat kesiapan
+            </Link>
+          ) : (
+            <button
+              type="submit"
+              disabled={fase === "menyimpan"}
+              className="min-h-11 shrink-0 rounded-card bg-ember px-5 font-semibold text-white disabled:opacity-60"
+            >
+              {fase === "menyimpan" ? "Menyimpan…" : fase === "galat" ? "Coba lagi" : "Simpan"}
+            </button>
+          )}
+        </div>
+      </div>
+    </form>
+  );
+}
+
+function KartuItem({
+  item,
+  nilai,
+  targetItem,
+  galat,
+  onUbah,
+  onSentuh,
+}: {
+  item: CatalogItem;
+  nilai: { total: string; berfungsi: string; catatan: string };
+  targetItem?: number;
+  galat: GalatBaris;
+  onUbah: (kolom: "total" | "berfungsi" | "catatan", v: string) => void;
+  onSentuh: () => void;
+}) {
+  const b = bacaAngka(nilai.berfungsi);
+  const ringkas =
+    b.jenis === "ok" && targetItem !== undefined ? `${formatAngka(b.nilai)} / ${formatAngka(targetItem)} ${item.satuan}` : null;
+  const id = `alat-${item.kode}`;
+
+  return (
+    <fieldset className="rounded-card border border-line bg-surface px-4 py-4">
+      <legend className="float-left w-full">
+        <span className="text-lg font-bold">{item.nama}</span>
+        <span className="ml-2 text-sm text-muted">({item.satuan})</span>
+      </legend>
+      <div className="clear-both" />
+      {targetItem !== undefined ? (
+        <p className="mb-3 text-sm text-muted">Paket minimum: {formatAngka(targetItem)} {item.satuan} (asumsi tim)</p>
+      ) : null}
+
+      {item.punyaRusak ? (
+        <div className="grid grid-cols-1 gap-x-6 min-[420px]:grid-cols-2">
+          <Stepper id={`${id}-total`} label="Jumlah total" value={nilai.total} onChange={(v) => onUbah("total", v)} onBlur={onSentuh} error={galat.total} />
+          <Stepper id={`${id}-berfungsi`} label="Yang berfungsi" value={nilai.berfungsi} onChange={(v) => onUbah("berfungsi", v)} onBlur={onSentuh} error={galat.berfungsi} />
+        </div>
+      ) : (
+        <Stepper id={`${id}-berfungsi`} label={`Dana yang tersedia (${item.satuan})`} value={nilai.berfungsi} onChange={(v) => onUbah("berfungsi", v)} onBlur={onSentuh} error={galat.berfungsi} />
+      )}
+
+      {ringkas ? (
+        <p className="tabular mt-1 text-sm font-semibold">
+          {ringkas}
+          {item.kode === "selang_keluar" && b.jenis === "ok" ? (
+            <span className="ml-2 font-normal text-muted">{keteranganMeter(b.nilai)}</span>
+          ) : null}
+        </p>
+      ) : null}
+
+      <div className="mt-3">
+        <label htmlFor={`${id}-catatan`} className="text-sm font-semibold">
+          Catatan <span className="font-normal text-muted">(boleh kosong)</span>
+        </label>
+        <input
+          id={`${id}-catatan`}
+          type="text"
+          maxLength={200}
+          value={nilai.catatan}
+          onChange={(e) => onUbah("catatan", e.target.value)}
+          onBlur={onSentuh}
+          aria-invalid={galat.catatan ? true : undefined}
+          aria-describedby={`${id}-catatan-bantu`}
+          className={`mt-1 min-h-11 w-full rounded-card border bg-surface px-3 ${galat.catatan ? "border-danger" : "border-line"}`}
+        />
+        <p id={`${id}-catatan-bantu`} aria-live="polite" className={`mt-1 text-sm ${galat.catatan ? "text-danger" : "text-muted"}`}>
+          {galat.catatan ?? "Jangan tulis nama, NIK, atau nomor HP."}
+        </p>
+      </div>
+    </fieldset>
+  );
+}

@@ -1,20 +1,42 @@
-import { Placeholder } from "@/components/ui/Placeholder";
-import { MOCK_KODE } from "@/mocks/demo";
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { Suspense } from "react";
+import { PrioritasView } from "@/components/prioritas/PrioritasView";
+import { EmptyState, LoadingState } from "@/components/ui/PageState";
+import { getAkun, getCatalog, getDesaCard } from "@/lib/dataSource";
+import { bisaSusunPrioritas } from "@/lib/kesiapan";
 
-export default function PrioritasPage() {
+export const metadata: Metadata = { title: "Prioritas" };
+
+export default function PrioritasPage({ params }: PageProps<"/desa/[kode]/prioritas">) {
   return (
-    <Placeholder
-      judul="Prioritas"
-      fase="Fase 3"
-      isi={[
-        "Input pagu Rupiah: penggeser dan kotak angka",
-        "Ringkasan: terpakai, sisa, skor sekarang menuju skor sesudah",
-        "Daftar terpilih: urutan, aksi, item, jumlah, biaya, alasan, tombol Setuju/Tolak/Tunda",
-        "Daftar tidak terdanai, item tanpa harga, kesenjangan non-biaya",
-        "Sumber target dan harga; ubah target wajib alasan",
-        "Tombol Terbitkan usulan, aktif bila minimal satu baris disetujui",
-      ]}
-      lanjut={{ href: `/desa/${MOCK_KODE}/usulan`, label: "Ke usulan" }}
-    />
+    <Suspense
+      fallback={
+        <div className="mx-auto max-w-[720px] px-4 py-6">
+          <LoadingState label="Memuat prioritas" lines={6} />
+        </div>
+      }
+    >
+      <Isi params={params} />
+    </Suspense>
   );
+}
+
+async function Isi({ params }: { params: Promise<{ kode: string }> }) {
+  const { kode } = await params;
+  const [card, catalog, akun] = await Promise.all([getDesaCard(kode), getCatalog(), getAkun()]);
+  if (!card) notFound();
+
+  // Akun mpa tidak boleh mengakses (403 di API). Di layar: penjelasan dan jalan keluar, bukan halaman kosong.
+  if (!bisaSusunPrioritas(akun.peran)) {
+    return (
+      <div className="mx-auto max-w-[720px] px-4 py-6">
+        <h1 className="mb-4 text-2xl font-bold">Prioritas</h1>
+        <EmptyState title="Halaman ini untuk akun desa." action={{ href: `/desa/${kode}/kesiapan`, label: "Kembali ke Kesiapan" }}>
+          Akun ketua MPA mencatat alat dan melihat kesiapan. Sekdes atau kades yang menyusun prioritas dan usulan.
+        </EmptyState>
+      </div>
+    );
+  }
+  return <PrioritasView kode={kode} namaDesa={card.desa.nama} catalog={catalog} />;
 }

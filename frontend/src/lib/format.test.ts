@@ -6,6 +6,7 @@ import {
   formatSkor,
   formatTanggal,
   formatWaktu,
+  keteranganMeter,
   namaBersih,
 } from "./format";
 
@@ -42,6 +43,11 @@ describe("format", () => {
     expect(formatWaktu("2026-11-12T03:15:00Z")).toBe("12 November 2026, 10.15 WIB");
     // 20.00 UTC sudah berganti hari di WIB
     expect(formatTanggal("2026-11-12T20:00:00Z")).toBe("13 November 2026");
+  });
+
+  it("keterangan meter berlabel turunan", () => {
+    expect(keteranganMeter(3)).toBe("≈60 m pada asumsi 20 m per buah");
+    expect(keteranganMeter(10, 30)).toBe("≈300 m pada asumsi 30 m per buah");
   });
 
   it("membersihkan nama HDX bergaris miring", () => {

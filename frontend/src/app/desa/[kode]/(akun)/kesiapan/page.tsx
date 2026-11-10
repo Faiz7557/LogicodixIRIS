@@ -1,20 +1,36 @@
-import { Placeholder } from "@/components/ui/Placeholder";
-import { MOCK_KODE } from "@/mocks/demo";
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { Suspense } from "react";
+import { KesiapanView } from "@/components/kesiapan/KesiapanView";
+import { LoadingState } from "@/components/ui/PageState";
+import { getAkun, getCatalog, getDesaCard, getKesiapan, getReferensiPergub } from "@/lib/dataSource";
 
-export default function KesiapanPage() {
+export const metadata: Metadata = { title: "Kesiapan Desa" };
+
+// `params` adalah data runtime (cacheComponents), jadi dibaca di dalam Suspense.
+export default function KesiapanPage({ params }: PageProps<"/desa/[kode]/kesiapan">) {
   return (
-    <Placeholder
-      judul="Kesiapan Desa"
-      fase="Fase 2"
-      isi={[
-        "Gauge skor 0-100 dan status dalam kata",
-        "Mata rantai terlemah dalam satu kalimat",
-        "Ringkasan paparan satu baris, tautan ke Kartu Paparan",
-        "Hitung mundur ke bulan puncak deteksi (P1)",
-        "Daftar item dari kesenjangan terbesar: batang cakupan, berfungsi/target, tanda rusak",
-        "Tombol Susun prioritas (tidak tampil untuk akun mpa)",
-      ]}
-      lanjut={{ href: `/desa/${MOCK_KODE}/prioritas`, label: "Susun prioritas" }}
-    />
+    <Suspense
+      fallback={
+        <div className="mx-auto max-w-[720px] px-4 py-6">
+          <LoadingState label="Memuat kesiapan desa" lines={5} />
+        </div>
+      }
+    >
+      <Isi params={params} />
+    </Suspense>
   );
+}
+
+async function Isi({ params }: { params: Promise<{ kode: string }> }) {
+  const { kode } = await params;
+  const [card, hasil, catalog, pergub, akun] = await Promise.all([
+    getDesaCard(kode),
+    getKesiapan(kode),
+    getCatalog(),
+    getReferensiPergub(kode),
+    getAkun(),
+  ]);
+  if (!card) notFound();
+  return <KesiapanView kode={kode} card={card} hasil={hasil} catalog={catalog} pergub={pergub} peran={akun.peran} />;
 }

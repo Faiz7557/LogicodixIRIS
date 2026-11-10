@@ -10,7 +10,10 @@ Kategori: **Web** · LOGICODIX 2026
 
 ## Menjalankan di lokal
 
+Aplikasi web ada di folder `frontend/`.
+
 ```bash
+cd frontend
 npm ci
 cp .env.example .env
 npm run dev        # http://localhost:3000
@@ -24,9 +27,10 @@ Butuh Node.js 20 atau lebih baru.
 
 | Folder | Isi |
 |---|---|
-| `src/app/` | Halaman Next.js (App Router) dan route handler API |
-| `src/components/` | Komponen antarmuka |
-| `src/lib/` | Tipe, format, akses data, mesin kesiapan dan prioritas |
+| `frontend/` | Aplikasi web Next.js: halaman, komponen, tipe, dan konfigurasi (`package.json`, `.env.example`) |
+| `frontend/src/app/` | Halaman Next.js (App Router) |
+| `frontend/src/components/` | Komponen antarmuka |
+| `frontend/src/lib/` | Tipe, format, dan pemanggil API |
 | `docs/` | Brief, PRD, TRD, App Flow, Design Brief, skema, rencana implementasi |
 | `reports/`, `research_notes/` | Riset pemilihan masalah |
 | `papers/` | Registry bukti ilmiah dan regulasi (transkrip `.md`; PDF tidak disertakan) |

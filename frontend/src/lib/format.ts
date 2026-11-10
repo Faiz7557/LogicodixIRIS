@@ -60,6 +60,14 @@ export function namaBulan(bulan: number): string {
   return BULAN[bulan - 1] ?? "–";
 }
 
+/**
+ * Keterangan meter selalu turunan berlabel, tidak pernah target (Design Brief v2, PRD §7).
+ * 3 buah -> "≈60 m pada asumsi 20 m per buah". `panjang` dibaca dari meta `panjang_per_buah_m`.
+ */
+export function keteranganMeter(buah: number, panjangPerBuahM = 20): string {
+  return `≈${formatAngka(buah * panjangPerBuahM)} m pada asumsi ${formatAngka(panjangPerBuahM)} m per buah`;
+}
+
 /** Nama HDX bisa memuat alternatif bergaris miring: "Sungai Raya/ Sei Raya" -> "Sungai Raya". */
 export function namaBersih(nama: string): string {
   return nama.split("/")[0].trim();

@@ -1,32 +1,53 @@
 import { Suspense } from "react";
-import { BottomNav } from "@/components/layout/BottomNav";
 import { DemoBanner } from "@/components/layout/DemoBanner";
-import { mockAkun } from "@/mocks/demo";
+import { NavAkun } from "@/components/layout/NavAkun";
+import { getAkun, getDesaCard, getKesiapan } from "@/lib/dataSource";
+import type { Peran } from "@/lib/types";
 
 /*
- * Layout halaman berakun: banner demo + navigasi desa.
- * `params` adalah data runtime, jadi dibaca di dalam Suspense (cacheComponents aktif).
+ * Layout halaman berakun: sidebar bergrup pertanyaan (laptop) atau menu bawah (HP), banner demo, lalu isi.
+ * Pola tata letak diadaptasi dari referensi Sparekit. `params` adalah data runtime,
+ * jadi dibaca di dalam Suspense (cacheComponents aktif).
  */
+const PERAN_LABEL: Record<Peran, string> = { desa: "Sekretaris desa", mpa: "Ketua MPA" };
+
 export default function AkunLayout({ children, params }: LayoutProps<"/desa/[kode]">) {
   return (
-    <>
-      <Suspense fallback={<div className="h-11 border-b border-line" />}>
-        <AkunChrome params={params} />
+    <div className="md:grid md:grid-cols-[16.5rem_minmax(0,1fr)]">
+      <Suspense fallback={<div className="hidden border-r border-line md:block" />}>
+        <Navigasi params={params} />
       </Suspense>
-      {/* ruang untuk navigasi bawah di HP */}
-      <div className="pb-24 md:pb-0">{children}</div>
-    </>
+      <div className="min-w-0">
+        <Suspense fallback={<div className="h-11 border-b border-line" />}>
+          <Banner />
+        </Suspense>
+        {/* ruang untuk navigasi bawah di HP */}
+        <div className="pb-24 md:pb-0">{children}</div>
+      </div>
+    </div>
   );
 }
 
-async function AkunChrome({ params }: { params: Promise<{ kode: string }> }) {
+async function Banner() {
+  // TODO: ganti dengan akun dari sesi (v2 Task 12) saat backend siap.
+  const akun = await getAkun();
+  return akun.isDemo ? <DemoBanner /> : null;
+}
+
+async function Navigasi({ params }: { params: Promise<{ kode: string }> }) {
   const { kode } = await params;
-  // TODO(Task 14): ganti dengan akun dari sesi. Sementara memakai akun demo sekdes.
-  const akun = mockAkun.desa;
+  const [akun, card, hasil] = await Promise.all([getAkun(), getDesaCard(kode), getKesiapan(kode)]);
   return (
-    <>
-      {akun.isDemo ? <DemoBanner /> : null}
-      <BottomNav kode={kode} peran={akun.peran} />
-    </>
+    <NavAkun
+      r={{
+        kode,
+        peran: akun.peran,
+        namaTampil: akun.namaTampil,
+        peranLabel: PERAN_LABEL[akun.peran],
+        desaNama: card?.desa.nama ?? "desa",
+        skor: hasil.lengkap || hasil.skor > 0 ? hasil.skor : null,
+        status: hasil.status,
+      }}
+    />
   );
 }

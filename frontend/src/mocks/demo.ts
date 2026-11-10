@@ -2,8 +2,22 @@
  * DATA CONTOH SINTETIS, hanya untuk membangun tampilan sebelum API backend siap.
  * Bukan data satelit, bukan survei lapangan, dan tidak boleh tampil di demo atau video.
  * Hapus folder `src/mocks/` sebelum code freeze (lihat docs/FRONTEND.md).
+ *
+ * Angka dihitung dengan rumus TRD v2 §6 agar konsisten:
+ *   skor = 100 * Σ(bobot * coverage) / Σ(bobot), bobot 15/20/20/20.
+ *   dana_operasi 1/1, pompa 1/1, selang 3/10, sumur 2/5  ->  (15+20+6+8)/75 = 65,3  ->  sebagian.
+ *   pagu Rp15 juta: 2 selang x Rp6.669.000 = Rp13.338.000; selang 5/10 -> (15+20+10+8)/75 = 70,7.
  */
-import type { Akun, DesaCard, ReadinessResult } from "@/lib/types";
+import type {
+  Akun,
+  CatalogItem,
+  DesaCard,
+  HargaRow,
+  PaketRow,
+  PrioritasPayload,
+  ReadinessResult,
+  ReferensiPergub,
+} from "@/lib/types";
 
 export const MOCK_KODE = "contoh";
 
@@ -12,8 +26,49 @@ export const mockAkun: Record<"mpa" | "desa", Akun> = {
   desa: { id: 2, username: "demo-sekdes", peran: "desa", desaKode: MOCK_KODE, namaTampil: "Sekdes (uji)", isDemo: true },
 };
 
+// ---------- Katalog (Schema §6: katalog_item.csv) ----------
+export const mockCatalog: CatalogItem[] = [
+  { kode: "dana_operasi", nama: "Dana operasi", satuan: "minggu", bobot: 15, kritis: true, bisaDibeli: true, punyaRusak: false, hanyaGambut: false },
+  { kode: "pompa_jinjing", nama: "Pompa jinjing", satuan: "unit", bobot: 20, kritis: true, bisaDibeli: true, punyaRusak: true, hanyaGambut: false },
+  { kode: "selang_keluar", nama: "Selang keluar", satuan: "buah", bobot: 20, kritis: true, bisaDibeli: true, punyaRusak: true, hanyaGambut: false },
+  { kode: "sumur_bor", nama: "Sumur bor", satuan: "titik", bobot: 20, kritis: true, bisaDibeli: true, punyaRusak: true, hanyaGambut: true },
+];
+
+// ---------- Paket minimum (PRD §7) ----------
+export const mockPaket: PaketRow[] = [
+  { itemKode: "dana_operasi", target: 1, sumber: "Asumsi tim", label: "asumsi_tim" },
+  { itemKode: "pompa_jinjing", target: 1, sumber: "Asumsi tim", label: "asumsi_tim" },
+  { itemKode: "selang_keluar", target: 10, sumber: "Asumsi tim", label: "asumsi_tim" },
+  { itemKode: "sumur_bor", target: 5, sumber: "Asumsi tim", label: "asumsi_tim" },
+];
+
+// ---------- Harga acuan (PRD §8). sumur_bor sengaja tanpa harga. ----------
+export const mockHarga: HargaRow[] = [
+  { itemKode: "pompa_jinjing", aksi: "beli", hargaRp: 28_028_610, sumber: "Perbup Sanggau 32/2025 hlm. 175", tanggal: "2026-11-09" },
+  { itemKode: "pompa_jinjing", aksi: "perbaiki", hargaRp: 510_000, sumber: "Perwal Kediri 3/2025 hlm. 269, item 4594", tanggal: "2026-11-09" },
+  { itemKode: "selang_keluar", aksi: "beli", hargaRp: 6_669_000, sumber: "Perbup Sanggau 32/2025 hlm. 174", tanggal: "2026-11-09" },
+  { itemKode: "dana_operasi", aksi: "beli", hargaRp: 5_000_000, sumber: "Nurhidayah dkk. 2023 hlm. 9", tanggal: "2026-11-09" },
+];
+
+/** Hanya tampil untuk desa Kalteng (prov_kode 62). Kalbar: tampilkan kalimat ketiadaan angka. */
+export const mockPergubKalteng: ReferensiPergub[] = [
+  { namaAlat: "Pompa jinjing", jumlahPerRegu: 3, satuan: "unit", pasal: "Pasal 19", itemKode: "pompa_jinjing" },
+  { namaAlat: "Selang", jumlahPerRegu: 50, satuan: "buah", pasal: "Pasal 19", itemKode: "selang_keluar" },
+  { namaAlat: "Pompa punggung", jumlahPerRegu: 10, satuan: "unit", pasal: "Pasal 18", itemKode: null },
+];
+
+// ---------- Kartu paparan ----------
 const tahun = Array.from({ length: 15 }, (_, i) => 2012 + i);
 const terpapar = new Set([2015, 2019, 2026]);
+
+/** Strip 2012-2026 dengan tahun terpapar yang ditentukan. */
+export const stripDari = (terpaparSet: number[]) =>
+  tahun.map((t) => ({
+    tahun: t,
+    nDet: terpaparSet.includes(t) ? 6 : 0,
+    detDays: terpaparSet.includes(t) ? 3 : 0,
+    terpapar: terpaparSet.includes(t),
+  }));
 
 export const mockDesaCard: DesaCard = {
   desa: {
@@ -23,6 +78,7 @@ export const mockDesaCard: DesaCard = {
     kecNama: "Contoh Kecamatan",
     kabNama: "Contoh Kabupaten",
     provNama: "Kalimantan Barat",
+    provKode: "61",
     lat: -0.1,
     lon: 109.4,
     luasHa: 4200,
@@ -50,16 +106,47 @@ export const mockDesaCard: DesaCard = {
     tier: "tinggi",
     skor: 0.71,
   },
-  kecamatan: { nDesa: 18, k: 30, n: 72, pMean: 0.43, p05: 0.33, p95: 0.53 },
+  kecamatan: { nDesa: 18, k: 30, n: 72, pMean: 0.42, rateMin: 0.25, rateMax: 0.61 },
+  gerbang: "pertahankan",
 };
 
+// ---------- Kesiapan ----------
 export const mockReadiness: ReadinessResult = {
-  skor: 41.7,
+  skor: 65.3,
   status: "sebagian",
   rantaiTerlemah: "selang_keluar",
   lengkap: true,
   items: [
-    { itemKode: "selang_keluar", target: 6, berfungsi: 2, rusak: 0, coverage: 2 / 6, kritis: true, belumDiisi: false },
-    { itemKode: "pompa_jinjing", target: 2, berfungsi: 1, rusak: 1, coverage: 0.5, kritis: true, belumDiisi: false },
+    { itemKode: "dana_operasi", target: 1, berfungsi: 1, rusak: 0, coverage: 1, kritis: true, belumDiisi: false },
+    { itemKode: "pompa_jinjing", target: 1, berfungsi: 1, rusak: 1, coverage: 1, kritis: true, belumDiisi: false },
+    { itemKode: "selang_keluar", target: 10, berfungsi: 3, rusak: 0, coverage: 0.3, kritis: true, belumDiisi: false },
+    { itemKode: "sumur_bor", target: 5, berfungsi: 2, rusak: 1, coverage: 0.4, kritis: true, belumDiisi: false },
   ],
+};
+
+// ---------- Prioritas, pagu default Rp15.000.000 ----------
+export const mockPrioritas: PrioritasPayload = {
+  paguRp: 15_000_000,
+  terpakaiRp: 13_338_000,
+  skorSesudah: 70.7,
+  terpilih: [
+    {
+      itemKode: "selang_keluar",
+      aksi: "beli",
+      qty: 2,
+      biayaRp: 13_338_000,
+      alasan: "Selang keluar 3 dari 10 buah. Menaikkan cakupan ke 50%.",
+    },
+  ],
+  tidakTerdanai: [
+    {
+      itemKode: "selang_keluar",
+      aksi: "beli",
+      qty: 5,
+      biayaRp: 33_345_000,
+      alasan: "Selang keluar 5 dari 10 buah. Menaikkan cakupan ke 100%.",
+    },
+  ],
+  tanpaHarga: ["sumur_bor"],
+  keputusan: [],
 };
