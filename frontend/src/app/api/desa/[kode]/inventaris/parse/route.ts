@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { parseInventoryText } from "@/lib/parseInventaris";
 import { assertOrigin, hitRateLimit, requireDesaAccess } from "@/server/auth";
 import { HttpError, handle } from "@/server/http";
+import { parseInventoryTextDenganAi } from "@/server/parseInventaris";
 import { getCatalog } from "@/server/queries";
 
 // POST /api/desa/[kode]/inventaris/parse (TRD §8, FR-19): teks menjadi isian formulir.
@@ -24,7 +24,7 @@ export const POST = handle(async (req, ctx: RouteContext<"/api/desa/[kode]/inven
   const catalog = await getCatalog();
 
   try {
-    return Response.json({ hasil: await parseInventoryText(teks, catalog) });
+    return Response.json(await parseInventoryTextDenganAi(teks, catalog));
   } catch (e) {
     if (e instanceof Error) throw new HttpError(422, "input_tidak_sah", e.message);
     throw e;

@@ -32,8 +32,8 @@ function angkaDi(teks: string): number[] {
 }
 
 /**
- * Parser deterministik untuk pesan pendek. AI belum dipakai: teks hanya dipetakan ke nama
- * katalog, lalu angka pada baris yang sama dibaca sebagai total dan berfungsi.
+ * Parser deterministik untuk pesan pendek: teks dipetakan ke nama katalog, lalu angka pada
+ * baris yang sama dibaca sebagai total dan berfungsi. Dipakai sebagai fallback saat AI tidak tersedia.
  */
 export async function parseInventoryText(teks: string, catalog: CatalogItem[]): Promise<InventoryInput[]> {
   if (teks.length > MAKS_TEKS) throw new Error(`Teks maksimal ${MAKS_TEKS.toLocaleString("id-ID")} karakter.`);
