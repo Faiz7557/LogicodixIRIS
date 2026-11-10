@@ -55,17 +55,26 @@ Definisikan sebagai CSS variable di `src/app/globals.css`, lalu petakan ke Tailw
 
 ```css
 :root {
-  --paper: #FBF7F0;
-  --surface: #FFFFFF;
-  --line: #E4DACB;
-  --ink: #2A211A;
-  --muted: #6B5D50;
-  --ember: #B4431A;
-  --water: #1F5F7A;
-  --ok: #2F6B45;
-  --warn: #8A5A00;
-  --danger: #A32020;
-  --radius: 8px;
+  --paper: #f5f4f1;
+  --surface: #ffffff;
+  --surface-2: #faf9f7;
+  --line: rgb(30 26 20 / 0.1);
+  --line-2: rgb(30 26 20 / 0.22);
+  --ink: #16171a;
+  --muted: #47474a;
+  --faint: #6f6f73;
+  --ember: #b4431a;
+  --ember-soft: #fde8da;
+  --water: #2650a8;
+  --water-soft: #e9effc;
+  --ok: #177340;
+  --ok-soft: #e4f4ea;
+  --warn: #855a00;
+  --warn-soft: #fdf3da;
+  --danger: #a52c1b;
+  --danger-soft: #fcebe7;
+  --radius: 10px;
+  --r-panel: 20px;
 }
 ```
 
@@ -75,10 +84,10 @@ Periksa kontras AA pada setiap kombinasi yang dipakai. `--ember` tidak dipakai s
 
 | Peran | Font | Ukuran di HP |
 |---|---|---|
-| Antarmuka | Public Sans, `next/font/google` | 16 px dasar |
-| Judul layar | Public Sans 700 | 24 px |
-| Kalimat kesimpulan | Public Sans 600 | 20 px |
-| Angka besar | Public Sans 700, `tabular-nums` | 48 px |
+| Antarmuka | Geist, `next/font/google` | 16 px dasar |
+| Judul layar | Geist 700 | 24 px |
+| Kalimat kesimpulan | Geist 600 | 20 px |
+| Angka besar | Geist 700, `tabular-nums` | 48 px |
 | Dokumen cetak | Source Serif 4 | 11 pt |
 
 Teks minimum 14 px. Baris maksimum sekitar 65 karakter.
@@ -175,3 +184,25 @@ Setiap layar data punya keadaan memuat, kosong dengan arahan, dan galat dengan t
 - [ ] Dokumen cetak rapi pada A4 dan memuat pernyataan asumsi.
 - [ ] Teks AI memiliki badge.
 - [ ] Tidak ada "hektare terselamatkan".
+
+## 13. Adopsi bahasa visual Sparekit
+
+Bahasa visual proyek Sparekit (CALIBER 2026) diadopsi sebagai keputusan desain yang ditulis ulang. Tidak ada berkas yang disalin dari proyek lain. Keputusan yang dikunci:
+
+| No | Keputusan | Akibat |
+|---|---|---|
+| D6 | Nama token Tailwind tidak berubah (`paper`, `surface`, `line`, `ink`, `muted`, `ember`, `water`, `ok`, `warn`, `danger`). Nilainya disetel, lalu ditambah pasangan `-soft` | Seluruh layar ikut berubah tanpa menyentuh komponen |
+| D7 | Font antarmuka Geist lewat `next/font/google`. Dokumen cetak tetap Source Serif 4 | Menggantikan Public Sans di §5 |
+| D8 | Tombol utama memakai tinta (`bg-ink`, teks putih). `--ember` hanya untuk penanda paparan dan sorotan | Brief §4: ember bukan latar luas |
+
+Unsur Sparekit yang ditolak (dari `docs/v2/07_AUDIT.md` §6.1):
+
+- Aksen `#d9480f`. Kontras 4,30 di atas putih, gagal AA untuk teks. `--ember #b4431a` tetap.
+- Teks 11,5 sampai 13,5 px. Brief menetapkan minimum 14 px dan dasar 16 px.
+- 3D three.js, latar mesh, dan kartu berpendar. Brief §9 melarang animasi latar.
+- Radix, lucide, motion, recharts, dan clsx. Tanpa pustaka komponen; ikon SVG sebaris dan transisi CSS.
+- Asisten AI, tur, alih bahasa, dan PWA. Di luar cakupan PRD §10.
+
+Navigasi samping di laptop disahkan untuk halaman berakun.
+
+Tidak ada berkas yang disalin dari proyek lain.

@@ -2,32 +2,52 @@
 
 /* Token dari docs/v2/04_DESIGN_BRIEF.md §4. Tema terang saja (Design Brief §2). */
 :root {
-  --paper: #fbf7f0;
+  --paper: #f5f4f1;
   --surface: #ffffff;
-  --line: #e4dacb;
-  --ink: #2a211a;
-  --muted: #6b5d50;
-  --ember: #b4431a; /* aksi utama dan penanda paparan, bukan latar luas */
-  --water: #1f5f7a; /* tautan dan informasi */
-  --ok: #2f6b45;
-  --warn: #8a5a00;
-  --danger: #a32020;
-  --radius: 8px;
+  --surface-2: #faf9f7;
+  --line: rgb(30 26 20 / 0.1);
+  --line-2: rgb(30 26 20 / 0.22);
+  --ink: #16171a;
+  --muted: #47474a;
+  --faint: #6f6f73;
+  --ember: #b4431a;
+  --ember-soft: #fde8da;
+  --water: #2650a8;
+  --water-soft: #e9effc;
+  --ok: #177340;
+  --ok-soft: #e4f4ea;
+  --warn: #855a00;
+  --warn-soft: #fdf3da;
+  --danger: #a52c1b;
+  --danger-soft: #fcebe7;
+  --radius: 10px;
+  --r-panel: 20px;
 }
 
 @theme inline {
   --color-paper: var(--paper);
   --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
   --color-line: var(--line);
+  --color-line-2: var(--line-2);
   --color-ink: var(--ink);
   --color-muted: var(--muted);
+  --color-faint: var(--faint);
   --color-ember: var(--ember);
+  --color-ember-soft: var(--ember-soft);
   --color-water: var(--water);
+  --color-water-soft: var(--water-soft);
   --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
   --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
   --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
   --radius-card: var(--radius);
-  --font-sans: var(--font-public-sans);
+  --radius-panel: var(--r-panel);
+  --shadow-card: 0 1px 2px rgb(30 26 20 / 0.04);
+  --shadow-float: 0 12px 32px -12px rgb(30 26 20 / 0.28);
+  --font-sans: var(--font-ui);
   --font-serif: var(--font-source-serif);
 }
 
@@ -41,14 +61,16 @@ html {
 body {
   background: var(--paper);
   color: var(--ink);
-  font-family: var(--font-public-sans), system-ui, sans-serif;
+  font-family: var(--font-ui), system-ui, sans-serif;
   font-size: 16px;
   line-height: 1.5;
+  font-feature-settings: "tnum" 1;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* Fokus selalu terlihat (Design Brief §11). */
 :focus-visible {
-  outline: 3px solid var(--water);
+  outline: 3px solid var(--ink);
   outline-offset: 2px;
   border-radius: 4px;
 }
@@ -56,6 +78,49 @@ body {
 /* Angka besar dan tabel memakai digit sama lebar. */
 .tabular {
   font-variant-numeric: tabular-nums;
+}
+
+/* Tombol: tinta untuk setiap kontrol utama, ember hanya untuk penanda (Sparekit, D8). */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.25;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color 150ms ease-out,
+    border-color 150ms ease-out,
+    color 150ms ease-out;
+}
+.btn-utama {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #ffffff;
+}
+.btn-utama:hover {
+  background: color-mix(in srgb, var(--ink) 88%, #ffffff);
+}
+.btn-kedua {
+  background: var(--surface);
+  border-color: var(--line-2);
+  color: var(--ink);
+}
+.btn-kedua:hover {
+  background: var(--surface-2);
+  border-color: var(--ink);
+}
+.btn:disabled,
+.btn[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* Skeleton sederhana untuk keadaan memuat. */

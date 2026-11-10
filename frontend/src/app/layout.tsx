@@ -1,10 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import { Public_Sans, Source_Serif_4 } from "next/font/google";
+import { Geist, Source_Serif_4 } from "next/font/google";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import "./globals.css";
 
-const publicSans = Public_Sans({
-  variable: "--font-public-sans",
+const geist = Geist({
+  variable: "--font-ui",
+  weight: ["400", "500", "600", "700"],
   subsets: ["latin"],
 });
 
@@ -26,12 +27,12 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#fbf7f0",
+  themeColor: "#f5f4f1",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="id" className={`${publicSans.variable} ${sourceSerif.variable}`}>
+    <html lang="id" className={`${geist.variable} ${sourceSerif.variable}`}>
       <body className="flex min-h-dvh flex-col antialiased">
         <a
           href="#konten"
