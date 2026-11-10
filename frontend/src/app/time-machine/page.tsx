@@ -3,27 +3,32 @@ import { Suspense } from "react";
 import { KerangkaAkun } from "@/components/layout/KerangkaAkun";
 import { TimeMachineView } from "@/components/timemachine/TimeMachineView";
 import { getSesiAkun } from "@/server/auth";
+import { getBacktest } from "@/server/queries";
 
 export const metadata: Metadata = { title: "Time Machine" };
 
 /*
  * Publik: halaman biasa. Sudah masuk: tampil di kerangka dasbor desa, sama seperti Bukti satelit.
- * Sesi dibaca di dalam Suspense; cadangannya tampilan publik supaya pengunjung tanpa akun tidak menunggu.
+ * Sesi dan hasil backtest dibaca di dalam Suspense; cadangannya keadaan kosong supaya pengunjung tidak menunggu.
  */
 export default function TimeMachinePage() {
   return (
-    <Suspense fallback={<TimeMachineView />}>
+    <Suspense fallback={<Memuat />}>
       <Isi />
     </Suspense>
   );
 }
 
+function Memuat() {
+  return <p className="mx-auto max-w-[1040px] px-4 py-6 text-muted">Memuat hasil uji…</p>;
+}
+
 async function Isi() {
-  const akun = await getSesiAkun();
-  if (!akun) return <TimeMachineView />;
+  const [akun, data] = await Promise.all([getSesiAkun(), getBacktest()]);
+  if (!akun) return <TimeMachineView data={data} />;
   return (
     <KerangkaAkun kode={Promise.resolve(akun.desaKode)}>
-      <TimeMachineView />
+      <TimeMachineView data={data} />
     </KerangkaAkun>
   );
 }

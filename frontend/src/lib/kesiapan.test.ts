@@ -7,7 +7,7 @@ import {
   ringkasanPaparan,
   urutkanKesenjangan,
 } from "./kesiapan";
-import { mockCatalog, mockPergubKalteng, mockReadiness } from "@/mocks/demo";
+import { mockCatalog, mockPergubKalteng, mockReadiness } from "@/test/fixtures";
 import type { ReadinessResult } from "./types";
 
 const items = urutkanKesenjangan(mockReadiness.items, mockCatalog);

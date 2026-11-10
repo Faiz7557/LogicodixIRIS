@@ -23,7 +23,8 @@ export interface DataPage {
   meta: { kunci: string; nilai: string; label: "parameter" | "asumsi_tim" | "hasil" }[];
 }
 
-async function q(sql: string, args: InArgs = []): Promise<Row[]> {
+/** Kueri berparameter bersama. `no such table` -> 503 supaya klien tahu pipeline belum jalan. */
+export async function q(sql: string, args: InArgs = []): Promise<Row[]> {
   try {
     return (await db().execute({ sql, args })).rows;
   } catch (e) {

@@ -3,8 +3,10 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { DokumenLoader } from "@/components/usulan/DokumenLoader";
 import { EmptyState, LoadingState } from "@/components/ui/PageState";
-import { getAkun, getDesaCard } from "@/lib/dataSource";
+import { getAkun, getDesaCard, getUsulan } from "@/lib/dataSource";
 import { bisaSusunPrioritas } from "@/lib/kesiapan";
+import { HttpError } from "@/server/http";
+import type { Usulan } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Dokumen Usulan" };
 
@@ -34,13 +36,12 @@ async function Isi({ params }: { params: Promise<{ kode: string; id: string }> }
       </div>
     );
   }
-  const info = {
-    nama: card.desa.nama,
-    kecNama: card.desa.kecNama,
-    kabNama: card.desa.kabNama,
-    kExt: card.paparan.kExt,
-    nExt: card.paparan.nExt,
-    tahunTenang: card.paparan.tahunTenang,
-  };
-  return <DokumenLoader kode={kode} id={nomor} info={info} isDemo={akun.isDemo} />;
+  let usulan: Usulan;
+  try {
+    usulan = await getUsulan(kode, nomor);
+  } catch (e) {
+    if (e instanceof HttpError && e.status === 404) notFound();
+    throw e;
+  }
+  return <DokumenLoader kode={kode} usulan={usulan} isDemo={akun.isDemo} />;
 }

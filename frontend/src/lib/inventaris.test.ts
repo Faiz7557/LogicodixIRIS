@@ -12,7 +12,7 @@ import {
   validasiBaris,
   type FormState,
 } from "./inventaris";
-import { mockCatalog } from "@/mocks/demo";
+import { mockCatalog } from "@/test/fixtures";
 
 const pompa = mockCatalog.find((c) => c.kode === "pompa_jinjing")!;
 const dana = mockCatalog.find((c) => c.kode === "dana_operasi")!;
