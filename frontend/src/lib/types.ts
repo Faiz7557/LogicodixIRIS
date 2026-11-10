@@ -70,6 +70,12 @@ export interface PriorityRow {
   alasan: string;
   kestabilan?: "stabil" | "peka";
 }
+export interface PriorityInput {
+  catalog: CatalogItem[];
+  readiness: ReadinessResult;
+  prices: PriceRow[];
+  paguRp: number;
+}
 export interface PriorityResult {
   paguRp: number;
   terpakaiRp: number;
