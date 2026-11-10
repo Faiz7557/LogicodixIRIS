@@ -224,12 +224,13 @@ export function renderTemplate(facts: Record<string, string>, kanal: Kanal): str
 export async function generateNarrative(facts: Record<string, string>, kanal: Kanal): Promise<{ teks: string; sumber: "ai" | "template"; model: string | null }>;
 ```
 
-**Tempel pesan (FR-19, P1).** `parseInventoryText` mengubah teks menjadi isian formulir. Parser saat ini deterministik: nama katalog dan angka pada baris yang sama dibaca sebagai total dan berfungsi. AI belum dipakai pada jalur ini.
+**Tempel pesan (FR-19, P1).** `parseInventoryText` mengubah teks menjadi isian formulir. Bila `ANTHROPIC_API_KEY` tersedia, server meminta JSON ke Claude lalu memvalidasinya dengan zod; tanpa kunci atau saat AI gagal, parser deterministik membaca nama katalog dan angka pada baris yang sama.
 
 | Hal | Ketentuan |
 |---|---|
 | Masukan | Maksimal 2.000 karakter. Nomor telepon dihapus dengan regex sebelum diproses |
 | Keluaran | JSON divalidasi zod terhadap kode katalog, angka tidak negatif, berfungsi tidak melebihi total |
+| Sumber | `ai` bila keluaran Claude lolos validasi; `deterministik` saat fallback |
 | Penyimpanan | Tidak pernah otomatis. Hasil hanya mengisi formulir |
 | Keamanan | Teks diperlakukan sebagai data. Keluaran di luar skema ditolak |
 | Batas | 10 permintaan per akun per jam |
@@ -255,10 +256,10 @@ Semua respons JSON. Galat: `{ "error": { "kode": string, "pesan": string } }`.
 | GET | `/api/desa/[kode]/prioritas` | `desa` | `PriorityResult` |
 | PUT | `/api/desa/[kode]/rencana` | `desa` | Pagu |
 | PUT | `/api/desa/[kode]/keputusan` | `desa` | Keputusan satu baris |
-| GET, POST | `/api/desa/[kode]/usulan` | `desa` | Daftar, terbitkan |
+| GET, POST | `/api/desa/[kode]/usulan` | `desa` | Daftar dengan cursor (`?limit=&cursor=`), terbitkan |
 | GET | `/api/desa/[kode]/usulan/[id]` | `desa` | Satu usulan |
 
-**Status sukses.** GET `200`; PUT `204`; `POST /api/auth/masuk` `200` dengan cookie sesi; `POST /api/desa/[kode]/inventaris/parse` `200` dengan `{ hasil }`; `POST /api/desa/[kode]/usulan` `201` dengan `{ id }` dan header `Location`.
+**Status sukses.** GET `200`; PUT `204`; `POST /api/auth/masuk` `200` dengan cookie sesi; `GET /api/desa/[kode]/usulan` `200` dengan `{ hasil, meta }`; `POST /api/desa/[kode]/inventaris/parse` `200` dengan `{ hasil, sumber }`; `POST /api/desa/[kode]/usulan` `201` dengan `{ id }` dan header `Location`.
 
 **Status galat.** `400` body/zod tidak sah; `401` tanpa sesi; `403` desa, peran, atau `Origin` salah; `404` resource tidak ada; `409` konflik state (mis. belum ada baris disetujui); `422` data valid secara sintaks tetapi tidak sah secara domain; `429` rate limit dengan `Retry-After`; `503` data pipeline belum ada.
 
