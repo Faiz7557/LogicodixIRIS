@@ -247,6 +247,7 @@ Agen tidak bisa mengerjakan ini. M1 dan M2 menentukan jalur kritis.
 | M7 | Video, surat orisinalitas, submission | Sab 14 Nov 20.00 | Task 23 langkah 3 sampai 8 |
 | M8 | Pastikan surel git lokal tertaut ke akun GitHub anggota terdaftar | Sebelum commit pertama | |
 | M9 | Koreksi registry lokal `papers/papers/literature_review.md` | Sebelum mengutip di README | Task 18 langkah 1 |
+| M10 | Isi 17 sel `PERLU_DIISI` di `data/manual/sumber_data.csv` dari halaman sumber resmi: lisensi FIRMS dan regulasi, URL dan lisensi HDX, URL, lisensi, dan periode WRI, serta dua artikel Mongabay | Sebelum T34 | Schema §6 |
 
 ---
 
