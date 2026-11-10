@@ -54,7 +54,7 @@ export function PrioritasView({ kode, namaDesa, catalog }: { kode: string; namaD
     return () => clearTimeout(t);
   }, [sim.pagu]);
 
-  const konteks = useMemo(() => bangunKonteks(sim), [sim.harga, sim.paket]); // eslint-disable-line react-hooks/exhaustive-deps
+  const konteks = useMemo(() => bangunKonteks(sim, kode), [sim.harga, sim.paket, kode]); // eslint-disable-line react-hooks/exhaustive-deps
   const hasil = useMemo(() => hitungContoh(paguHitung, konteks), [paguHitung, konteks]);
   const menghitung = sim.pagu !== paguHitung;
 

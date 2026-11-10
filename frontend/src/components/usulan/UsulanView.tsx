@@ -31,7 +31,7 @@ export function UsulanView({ kode, namaDesa, info }: { kode: string; namaDesa: s
     /* eslint-enable react-hooks/set-state-in-effect */
   }, [kode]);
 
-  const konteks = useMemo(() => bangunKonteks(sim), [sim]);
+  const konteks = useMemo(() => bangunKonteks(sim, kode), [sim, kode]);
   const hasil = useMemo(() => hitungContoh(sim.pagu, konteks), [sim.pagu, konteks]);
   const disetujui = barisDisetujui(hasil.terpilih, sim.keputusan);
   const total = totalBiaya(disetujui);

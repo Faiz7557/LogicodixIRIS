@@ -21,14 +21,16 @@ import {
   MOCK_KODE,
   mockCatalog,
   mockDesaCard,
+  mockHarga,
   mockPaket,
   mockPergubKalteng,
   mockReadiness,
   stripDari,
 } from "@/mocks/demo";
-import type { Akun, CatalogItem, DesaCard, InventoryRow, PaketRow, ReadinessResult, ReferensiPergub } from "./types";
+import { cariUji, DESA_UJI, kartuUji, kesiapanUji, paketUji } from "@/mocks/desaUji";
+import type { Akun, CatalogItem, HargaRow, DesaCard, InventoryRow, PaketRow, ReadinessResult, ReferensiPergub } from "./types";
 
-const KODE_UJI = new Set([MOCK_KODE, "kalteng", "kosong", "sebagian", "lambat", "galat", "gagal-simpan", "tampakaman", "takpernah"]);
+const KODE_UJI = new Set([MOCK_KODE, "kalteng", "kosong", "sebagian", "lambat", "galat", "gagal-simpan", "tampakaman", "takpernah", ...DESA_UJI.map((d) => d.kode)]);
 const tunggu = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 async function gerbang(kode: string): Promise<boolean> {
@@ -53,6 +55,8 @@ export async function getCatalog(): Promise<CatalogItem[]> {
 
 export async function getDesaCard(kode: string): Promise<DesaCard | null> {
   if (!(await gerbang(kode))) return null;
+  const uji = cariUji(kode);
+  if (uji) return kartuUji(uji);
   if (kode === "kalteng") {
     return {
       ...mockDesaCard,
@@ -80,6 +84,8 @@ export async function getDesaCard(kode: string): Promise<DesaCard | null> {
 
 export async function getKesiapan(kode: string): Promise<ReadinessResult> {
   await gerbang(kode);
+  const uji = cariUji(kode);
+  if (uji) return kesiapanUji(uji);
   if (kode === "kosong") {
     return {
       skor: 0,
@@ -102,12 +108,19 @@ export async function getKesiapan(kode: string): Promise<ReadinessResult> {
 }
 
 export async function getReferensiPergub(kode: string): Promise<ReferensiPergub[]> {
-  return kode === "kalteng" ? mockPergubKalteng : [];
+  return kode === "kalteng" || cariUji(kode)?.provKode === "62" ? mockPergubKalteng : [];
 }
 
 export async function getPaket(kode: string): Promise<PaketRow[]> {
   await gerbang(kode);
-  return mockPaket;
+  const uji = cariUji(kode);
+  return uji ? paketUji(uji) : mockPaket;
+}
+
+/** Harga satuan bersumber per item dan aksi (beli/perbaiki). Item tanpa harga tidak ada di daftar. */
+export async function getHarga(kode: string): Promise<HargaRow[]> {
+  await gerbang(kode);
+  return mockHarga;
 }
 
 export interface InventarisTersimpan {
@@ -118,6 +131,12 @@ export interface InventarisTersimpan {
 
 export async function getInventaris(kode: string): Promise<InventarisTersimpan> {
   await gerbang(kode);
+  const uji = cariUji(kode);
+  if (uji) {
+    return uji.alat.length
+      ? { rows: uji.alat, terakhir: { oleh: "Ketua MPA (uji)", waktu: "2026-11-09T03:15:00Z" } }
+      : { rows: [], terakhir: null };
+  }
   if (kode === "kosong") return { rows: [], terakhir: null };
   // total = berfungsi + rusak, dari data contoh kesiapan
   const rows: InventoryRow[] = mockReadiness.items.map((i) => ({

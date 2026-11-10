@@ -33,7 +33,7 @@ export function susunUsulan(args: {
   setujuSemua?: boolean;
 }): Usulan | null {
   const { id, kode, kanal, info, sim, setujuSemua } = args;
-  const k = bangunKonteks(sim);
+  const k = bangunKonteks(sim, kode);
   const hasil = hitungContoh(sim.pagu, k);
   const keputusan: KeputusanMap = setujuSemua
     ? Object.fromEntries(hasil.terpilih.map((b) => [`${b.itemKode}:${b.aksi}`, { keputusan: "setuju" as const }]))

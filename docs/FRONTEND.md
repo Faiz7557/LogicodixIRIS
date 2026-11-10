@@ -65,6 +65,17 @@ Alur lengkap yang bisa dicoba: Beranda (cari) → Kartu Paparan → Masuk → Ke
 | `/desa/kosong/inventaris` | Formulir kosong, belum pernah disimpan |
 | `/desa/apa-saja/kesiapan` | 404 |
 
+Empat desa uji berlabel (`src/mocks/desaUji.ts`) bisa dicari dengan kata "uji" dan punya alur lengkap. Skornya dihitung mesin asli `computeReadiness`. Nama dan angkanya karangan, bukan desa nyata:
+
+| Kode | Desa | Keadaan |
+|---|---|---|
+| `uji-tanjung` | Desa Uji Tanjung Gambut, Kalbar | Paparan tinggi, alat rawan (10,7) |
+| `uji-parit` | Desa Uji Parit Hilir, Kalteng | Paparan sedang dan aktif, sebagian siap (73,3), keterangan Pergub |
+| `uji-sei` | Desa Uji Sei Kering, Kalbar | Tampak aman, alat siap (100) |
+| `uji-bukit` | Desa Uji Bukit Rendah, Kalteng | Bukan gambut (tanpa sumur bor), tak pernah terdeteksi, alat belum dicatat |
+
+Login lokal: akun `mpa-<nama>` dan `sekdes-<nama>` (mis. `sekdes-tanjung`) dibuat di `data/dev.db` dengan password `DEMO_PASSWORD` dari `frontend/.env.local`. Keduanya hanya ada di komputer masing-masing dan diabaikan git, jadi setiap anggota tim membuatnya sendiri.
+
 Saat backend siap, ganti isi `dataSource.ts` dan hapus `src/mocks/`. Penyimpanan inventaris lewat `src/lib/inventarisApi.ts`: ganti bagian "CONTOH SEMENTARA" dengan pemanggilan `PUT /api/desa/[kode]/inventaris` yang sudah tersedia dalam komentar.
 
 Catatan pengujian: panel pratinjau tidak memberi fokus papan ketik, sehingga `blur` tidak terpicu. Galat per isian yang muncul saat meninggalkan kolom perlu dicoba sekali di browser biasa.
