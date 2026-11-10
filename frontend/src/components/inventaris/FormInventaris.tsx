@@ -10,11 +10,14 @@ import {
   awalForm,
   bacaAngka,
   barisTerisi,
+  ikutTotal,
+  selaraskan,
   berubah,
   susunPayload,
   validasiBaris,
   type FormState,
   type GalatBaris,
+  type NilaiForm,
 } from "@/lib/inventaris";
 import { simpanInventaris } from "@/lib/inventarisApi";
 import type { CatalogItem, InventoryRow } from "@/lib/types";
@@ -33,6 +36,7 @@ export function FormInventaris({
   tersimpan,
   terakhir,
   namaPengisi,
+  onNilai,
 }: {
   kode: string;
   catalog: CatalogItem[];
@@ -41,6 +45,8 @@ export function FormInventaris({
   tersimpan: InventoryRow[];
   terakhir: { oleh: string; waktu: string } | null;
   namaPengisi: string;
+  /** Dipanggil tiap isian berubah, untuk pratinjau langsung di luar formulir. */
+  onNilai?: (form: FormState) => void;
 }) {
   const awal = useMemo(() => awalForm(catalog, tersimpan), [catalog, tersimpan]);
   const [form, setForm] = useState<FormState>(awal);
@@ -54,6 +60,10 @@ export function FormInventaris({
   const [sorot, setSorot] = useState<string | null>(null);
 
   const kotor = berubah(dasar, form);
+
+  useEffect(() => {
+    onNilai?.(form);
+  }, [form, onNilai]);
 
   // Datang dari kartu item di Kesiapan (#alat-<kode>): gulir ke item itu, sorot, dan fokuskan isian pertamanya.
   useEffect(() => {
@@ -77,8 +87,19 @@ export function FormInventaris({
     return () => window.removeEventListener("beforeunload", f);
   }, [kotor]);
 
-  function ubah(kodeItem: string, kolom: "total" | "berfungsi" | "catatan", nilai: string) {
-    setForm((f) => ({ ...f, [kodeItem]: { ...f[kodeItem], [kolom]: nilai } }));
+  // Isian saat kolom total mulai diketik, acuan aturan "ikut total" selama mengetik.
+  const awalKetik = useRef<Record<string, NilaiForm>>({});
+
+  // `selaras` false: total sedang diketik (mis. "1" menuju "12"), jadi berfungsi belum dipotong;
+  // pemotongan menyusul saat kolom total ditinggalkan. "Ikut total" tetap berlaku langsung.
+  function ubah(kodeItem: string, kolom: "total" | "berfungsi" | "catatan", nilai: string, selaras = true) {
+    const item = catalog.find((c) => c.kode === kodeItem)!;
+    setForm((f) => {
+      const lama = f[kodeItem];
+      let baru = { ...lama, [kolom]: nilai };
+      if (kolom === "total") baru = ikutTotal(item, selaras ? lama : (awalKetik.current[kodeItem] ?? lama), baru);
+      return { ...f, [kodeItem]: selaras ? selaraskan(item, baru, kolom) : baru };
+    });
     if (fase === "tersimpan" || fase === "galat") setFase("diam");
   }
 
@@ -136,8 +157,15 @@ export function FormInventaris({
             nilai={form[item.kode]}
             targetItem={target[item.kode]}
             galat={galatTampil(item)}
-            onUbah={(kolom, v) => ubah(item.kode, kolom, v)}
+            onUbah={(kolom, v, selaras) => ubah(item.kode, kolom, v, selaras)}
             onSentuh={() => setDisentuh((d) => ({ ...d, [item.kode]: true }))}
+            onTotalMulai={() => {
+              awalKetik.current[item.kode] = form[item.kode];
+            }}
+            onTotalSelesai={() => {
+              delete awalKetik.current[item.kode];
+              setForm((f) => ({ ...f, [item.kode]: selaraskan(item, f[item.kode], "total") }));
+            }}
             disorot={sorot === item.kode}
           />
         ))}
@@ -179,23 +207,30 @@ function KartuItem({
   galat,
   onUbah,
   onSentuh,
+  onTotalMulai,
+  onTotalSelesai,
   disorot,
 }: {
   item: CatalogItem;
   nilai: { total: string; berfungsi: string; catatan: string };
   targetItem?: number;
   galat: GalatBaris;
-  onUbah: (kolom: "total" | "berfungsi" | "catatan", v: string) => void;
+  onUbah: (kolom: "total" | "berfungsi" | "catatan", v: string, selaras?: boolean) => void;
   onSentuh: () => void;
+  onTotalMulai: () => void;
+  onTotalSelesai: () => void;
   disorot?: boolean;
 }) {
   const b = bacaAngka(nilai.berfungsi);
+  const t = bacaAngka(nilai.total);
+  // Batas atas "Yang berfungsi" = jumlah total (alat rusak tetap boleh membuat total lebih besar).
+  const maks = item.punyaRusak && t.jenis === "ok" ? t.nilai : undefined;
   const ringkas =
     b.jenis === "ok" && targetItem !== undefined ? `${formatAngka(b.nilai)} / ${formatAngka(targetItem)} ${item.satuan}` : null;
   const id = `alat-${item.kode}`;
 
   return (
-    <fieldset id={id} className={`scroll-mt-24 rounded-card border bg-surface px-4 py-4 ${disorot ? "border-ember ring-2 ring-ember/30" : "border-line"}`}>
+    <fieldset id={id} className={`@container scroll-mt-24 rounded-card border bg-surface px-4 py-4 ${disorot ? "border-ember ring-2 ring-ember/30" : "border-line"}`}>
       <legend className="float-left w-full">
         <span className="flex items-center gap-3">
           <GambarItem kode={item.kode} className="size-11" />
@@ -211,9 +246,29 @@ function KartuItem({
       ) : null}
 
       {item.punyaRusak ? (
-        <div className="grid grid-cols-1 gap-x-6 min-[420px]:grid-cols-2">
-          <Stepper id={`${id}-total`} label="Jumlah total" value={nilai.total} onChange={(v) => onUbah("total", v)} onBlur={onSentuh} error={galat.total} />
-          <Stepper id={`${id}-berfungsi`} label="Yang berfungsi" value={nilai.berfungsi} onChange={(v) => onUbah("berfungsi", v)} onBlur={onSentuh} error={galat.berfungsi} />
+        <div className="grid grid-cols-1 gap-x-6 @[31rem]:grid-cols-2">
+          <Stepper
+            id={`${id}-total`}
+            label="Jumlah total"
+            value={nilai.total}
+            onChange={(v, dariTombol) => onUbah("total", v, dariTombol)}
+            onFocus={onTotalMulai}
+            onBlur={() => {
+              onTotalSelesai();
+              onSentuh();
+            }}
+            error={galat.total}
+          />
+          <Stepper
+            id={`${id}-berfungsi`}
+            label="Yang berfungsi"
+            value={nilai.berfungsi}
+            max={maks}
+            bantuanMaks="Sudah sama dengan jumlah total. Tambah jumlah total dulu bila ada alat baru."
+            onChange={(v) => onUbah("berfungsi", v)}
+            onBlur={onSentuh}
+            error={galat.berfungsi}
+          />
         </div>
       ) : (
         <Stepper id={`${id}-berfungsi`} label={`Dana yang tersedia (${item.satuan})`} value={nilai.berfungsi} onChange={(v) => onUbah("berfungsi", v)} onBlur={onSentuh} error={galat.berfungsi} />

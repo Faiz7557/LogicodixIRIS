@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { FormInventaris } from "@/components/inventaris/FormInventaris";
 import { Panel } from "@/components/ui/Panel";
 import { formatAngka, formatRupiah, keteranganMeter } from "@/lib/format";
-import type { CatalogItem, HargaRow, InventoryRow, Peran, ReadinessItem, Status } from "@/lib/types";
+import type { CatalogItem, HargaRow, InventoryRow, Peran, ReadinessItem, ReadinessResult, Status } from "@/lib/types";
+import { CatatDenganPratinjau } from "./CatatDenganPratinjau";
 import { KataCakupan } from "./CoverageBar";
 import { GambarItem } from "./GambarItem";
 import { ReadinessGauge } from "./ReadinessGauge";
@@ -31,6 +31,8 @@ export function RincianItem({
   kode,
   item,
   hasil,
+  desa,
+  catalog,
   harga,
   tersimpan,
   terakhir,
@@ -40,6 +42,9 @@ export function RincianItem({
   kode: string;
   item: CatalogItem;
   hasil: ReadinessItem;
+  /** Kesiapan seluruh desa dan katalog lengkap, untuk pratinjau skor saat mengisi. */
+  desa: ReadinessResult;
+  catalog: CatalogItem[];
   harga: HargaRow[];
   tersimpan: InventoryRow[];
   terakhir: { oleh: string; waktu: string } | null;
@@ -203,12 +208,15 @@ export function RincianItem({
         <h2 id="catat" className="text-xl font-bold">
           Catat {item.nama.toLowerCase()}
         </h2>
-        <p className="mt-1 text-sm text-muted">Perbarui jumlah yang ada dan yang masih berfungsi. Item lain tidak ikut berubah.</p>
-        <div className="mt-4 max-w-[720px]">
-          <FormInventaris
+        <p className="mt-1 text-sm text-muted">Perbarui jumlah yang ada dan yang masih berfungsi. Item lain tidak ikut berubah. Prediksi di samping ikut bergerak saat angka diubah.</p>
+        <div className="mt-4">
+          <CatatDenganPratinjau
             kode={kode}
-            catalog={[item]}
-            target={{ [item.kode]: hasil.target }}
+            item={item}
+            catalog={catalog}
+            items={desa.items}
+            skorAwal={desa.skor}
+            statusAwal={desa.status}
             tersimpan={tersimpan.filter((r) => r.itemKode === item.kode)}
             terakhir={terakhir}
             namaPengisi={namaPengisi}

@@ -50,6 +50,34 @@ export function geser(mentah: string, delta: number): string {
   return String(hasil);
 }
 
+/**
+ * Jaga "berfungsi <= total" saat mengisi (item yang punya kondisi rusak).
+ * Berfungsi yang diketik atau ditambah melewati total dipotong ke total. Total yang diturunkan di bawah
+ * berfungsi ikut menurunkan berfungsi. Total boleh lebih besar dari berfungsi: selisihnya alat rusak.
+ * Isian kosong atau bukan angka dibiarkan apa adanya supaya validasi tetap bisa memberi pesan.
+ */
+export function selaraskan(item: CatalogItem, n: NilaiForm, kolom: "total" | "berfungsi" | "catatan"): NilaiForm {
+  if (!item.punyaRusak || kolom === "catatan") return n;
+  const t = bacaAngka(n.total);
+  const b = bacaAngka(n.berfungsi);
+  if (t.jenis !== "ok" || b.jenis !== "ok" || b.nilai <= t.nilai) return n;
+  return { ...n, berfungsi: n.total.trim() };
+}
+
+/**
+ * "Ikut total": bila sebelum diubah total sama dengan berfungsi (semua alat berfungsi), perubahan total
+ * ikut mengubah berfungsi, naik maupun turun. Bila sebelumnya berbeda (ada alat rusak), berfungsi tidak disentuh;
+ * batas atasnya tetap dijaga `selaraskan`. `awal` = isian sebelum perubahan total dimulai.
+ */
+export function ikutTotal(item: CatalogItem, awal: NilaiForm, baru: NilaiForm): NilaiForm {
+  if (!item.punyaRusak) return baru;
+  const ta = bacaAngka(awal.total);
+  const ba = bacaAngka(awal.berfungsi);
+  const tb = bacaAngka(baru.total);
+  if (ta.jenis !== "ok" || ba.jenis !== "ok" || ta.nilai !== ba.nilai || tb.jenis !== "ok") return baru;
+  return { ...baru, berfungsi: baru.total.trim() };
+}
+
 /** Catatan tidak boleh memuat deret 9 digit atau lebih (nomor HP, NIK). NFR-05. */
 export function catatanMemuatPribadi(catatan: string): boolean {
   return /\d{9,}/.test(catatan.replace(/[\s.\-]/g, ""));

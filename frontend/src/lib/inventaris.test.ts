@@ -6,6 +6,8 @@ import {
   berubah,
   catatanMemuatPribadi,
   geser,
+  ikutTotal,
+  selaraskan,
   susunPayload,
   validasiBaris,
   type FormState,
@@ -107,5 +109,41 @@ describe("awalForm dan berubah", () => {
     const a = awalForm(mockCatalog, []);
     expect(berubah(a, a)).toBe(false);
     expect(berubah(a, { ...a, sumur_bor: { ...kosong, total: "1" } })).toBe(true);
+  });
+});
+
+describe("selaraskan (berfungsi tidak melebihi total)", () => {
+  it("memotong berfungsi yang melewati total", () => {
+    expect(selaraskan(pompa, { total: "4", berfungsi: "5", catatan: "" }, "berfungsi").berfungsi).toBe("4");
+  });
+  it("menurunkan berfungsi saat total diturunkan", () => {
+    expect(selaraskan(pompa, { total: "2", berfungsi: "3", catatan: "" }, "total").berfungsi).toBe("2");
+  });
+  it("membiarkan total lebih besar dari berfungsi (alat rusak)", () => {
+    const n = { total: "6", berfungsi: "2", catatan: "" };
+    expect(selaraskan(pompa, n, "total")).toBe(n);
+  });
+  it("membiarkan isian kosong, bukan angka, dan item tanpa rusak", () => {
+    const k = { total: "", berfungsi: "5", catatan: "" };
+    expect(selaraskan(pompa, k, "berfungsi")).toBe(k);
+    const d = { total: "1", berfungsi: "3", catatan: "" };
+    expect(selaraskan(dana, d, "berfungsi")).toBe(d);
+  });
+});
+
+describe("ikutTotal (berfungsi mengikuti total bila sebelumnya sama)", () => {
+  const sama = { total: "3", berfungsi: "3", catatan: "" };
+  it("ikut naik dan turun bila total dan berfungsi sama", () => {
+    expect(ikutTotal(pompa, sama, { ...sama, total: "4" }).berfungsi).toBe("4");
+    expect(ikutTotal(pompa, sama, { ...sama, total: "2" }).berfungsi).toBe("2");
+    expect(ikutTotal(pompa, sama, { ...sama, total: "12" }).berfungsi).toBe("12");
+  });
+  it("tidak menyentuh berfungsi bila sebelumnya ada alat rusak", () => {
+    const rusak = { total: "5", berfungsi: "3", catatan: "" };
+    expect(ikutTotal(pompa, rusak, { ...rusak, total: "6" }).berfungsi).toBe("3");
+  });
+  it("membiarkan total kosong dan item tanpa rusak", () => {
+    expect(ikutTotal(pompa, sama, { ...sama, total: "" }).berfungsi).toBe("3");
+    expect(ikutTotal(dana, sama, { ...sama, total: "5" }).berfungsi).toBe("3");
   });
 });

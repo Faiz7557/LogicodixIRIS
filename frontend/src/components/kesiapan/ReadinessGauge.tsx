@@ -14,8 +14,19 @@ const WARNA: Record<Status, string> = {
  * Gauge skor kesiapan (Design Brief §7): busur SVG, angka di tengah, status di bawah.
  * Animasi isi 400 ms lewat CSS; mati otomatis pada prefers-reduced-motion (globals.css).
  * Status tampil sebagai ikon + kata, bukan hanya warna.
+ * `transisi`: untuk nilai yang berubah langsung (pratinjau), busur bergeser halus alih-alih animasi masuk.
  */
-export function ReadinessGauge({ skor, status, label }: { skor: number; status: Status; label?: { teks: string; sr: string } }) {
+export function ReadinessGauge({
+  skor,
+  status,
+  label,
+  transisi = false,
+}: {
+  skor: number;
+  status: Status;
+  label?: { teks: string; sr: string };
+  transisi?: boolean;
+}) {
   const pct = Math.min(Math.max(skor, 0), 100);
   const offset = LEN * (1 - pct / 100);
 
@@ -31,7 +42,7 @@ export function ReadinessGauge({ skor, status, label }: { skor: number; status: 
             strokeLinecap="round"
           />
           <path
-            className="gauge-fill"
+            className={transisi ? "gauge-transisi" : "gauge-fill"}
             d={`M ${100 - R} 100 A ${R} ${R} 0 0 1 ${100 + R} 100`}
             fill="none"
             stroke={WARNA[status]}

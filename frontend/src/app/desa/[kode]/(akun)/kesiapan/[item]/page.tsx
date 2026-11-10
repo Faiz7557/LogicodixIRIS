@@ -44,6 +44,8 @@ async function Isi({ params }: { params: Promise<{ kode: string; item: string }>
       kode={kode}
       item={item}
       hasil={baris}
+      desa={hasil}
+      catalog={catalog}
       harga={harga}
       tersimpan={inv.rows}
       terakhir={inv.terakhir}

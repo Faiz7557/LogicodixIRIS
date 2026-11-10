@@ -144,6 +144,11 @@ body {
 .gauge-fill {
   animation: gauge-fill 400ms ease-out both;
 }
+.gauge-transisi {
+  transition:
+    stroke-dashoffset 300ms ease-out,
+    stroke 300ms ease-out;
+}
 
 /* Penanda 2026 muncul bertahap di Time Machine: 200 ms per elemen, tertunda maksimal 760 ms. */
 @keyframes muncul {
