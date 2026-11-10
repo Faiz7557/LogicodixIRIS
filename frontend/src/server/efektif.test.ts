@@ -22,7 +22,7 @@ describe("paket dan harga efektif", () => {
   });
 
   it("alasan pendek ditolak", async () => {
-    await expect(setTarget("TINGGI", 1, "pompa_jinjing", 2, "x")).rejects.toMatchObject({ status: 400 });
+    await expect(setTarget("TINGGI", 1, "pompa_jinjing", 2, "x")).rejects.toMatchObject({ status: 422 });
   });
 
   it("sumur keluar pada desa non-gambut", async () => {
@@ -36,7 +36,7 @@ describe("paket dan harga efektif", () => {
   });
 
   it("harga bukan bilangan bulat ditolak", async () => {
-    await expect(setHarga("TINGGI", 1, "pompa_jinjing", "beli", 1.5, "Toko")).rejects.toMatchObject({ status: 400 });
+    await expect(setHarga("TINGGI", 1, "pompa_jinjing", "beli", 1.5, "Toko")).rejects.toMatchObject({ status: 422 });
   });
 
   it("referensi Pergub hanya Kalteng", async () => {

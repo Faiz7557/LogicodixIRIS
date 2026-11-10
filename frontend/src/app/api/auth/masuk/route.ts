@@ -16,7 +16,7 @@ export const POST = handle(async (req) => {
   const { username, password } = schema.parse(await req.json().catch(() => null));
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0].trim() || req.headers.get("x-real-ip") || "lokal";
   if (!(await hitRateLimit(`masuk:${username.toLowerCase()}|${ip}`, 10, 15))) {
-    throw new HttpError(429, "terlalu_banyak", "Coba lagi dalam 15 menit.");
+    throw new HttpError(429, "terlalu_banyak", "Coba lagi dalam 15 menit.", { "Retry-After": "900" });
   }
 
   const r = await db().execute({

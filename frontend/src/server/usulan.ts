@@ -2,7 +2,7 @@ import type { Row } from "@libsql/client";
 import { formatRupiah, formatSkor, formatTanggal } from "@/lib/format";
 import { totalBiaya } from "@/lib/prioritas";
 import type { CatalogItem, DesaCard, HargaRow, Kanal, PrioritasPayload, PriorityRow, ReadinessResult, Usulan } from "@/lib/types";
-import { writeAudit } from "./audit";
+import { auditStatement } from "./audit";
 import { db } from "./db";
 import { getHargaEfektif } from "./efektif";
 import { HttpError } from "./http";
@@ -76,23 +76,30 @@ function bekukanBaris(k: Konteks): (PriorityRow & { nama?: string; satuan?: stri
 }
 
 export async function terbitkanUsulan(kode: string, akunId: number, kanal: Kanal): Promise<number> {
-  if (!KANAL.includes(kanal)) throw new HttpError(400, "input_tidak_sah", "Kanal tidak dikenal.");
+  if (!KANAL.includes(kanal)) throw new HttpError(422, "input_tidak_sah", "Kanal tidak dikenal.");
   const k = await konteks(kode);
-  if (k.disetujui.length === 0) throw new HttpError(400, "belum_ada_keputusan", "Belum ada baris yang disetujui.");
+  if (k.disetujui.length === 0) throw new HttpError(409, "belum_ada_keputusan", "Belum ada baris yang disetujui.");
 
   const facts = susunFakta(k);
   const baris = bekukanBaris(k);
   const narasi = await generateNarrative(facts, kanal);
   const waktu = new Date().toISOString();
 
-  const hasil = await db().execute({
-    sql: `INSERT INTO usulan (desa_kode, kanal, facts_json, baris_json, teks, sumber_teks, model, created_by, created_at)
-          VALUES (?,?,?,?,?,?,?,?,?)`,
-    args: [kode, kanal, JSON.stringify(facts), JSON.stringify(baris), narasi.teks, narasi.sumber, narasi.model, akunId, waktu],
-  });
-  const id = Number(hasil.lastInsertRowid);
-  await writeAudit(akunId, kode, "terbitkan_usulan", { id, kanal });
-  return id;
+  const tx = await db().transaction("write");
+  try {
+    const hasil = await tx.execute({
+      sql: `INSERT INTO usulan (desa_kode, kanal, facts_json, baris_json, teks, sumber_teks, model, created_by, created_at)
+            VALUES (?,?,?,?,?,?,?,?,?)`,
+      args: [kode, kanal, JSON.stringify(facts), JSON.stringify(baris), narasi.teks, narasi.sumber, narasi.model, akunId, waktu],
+    });
+    const id = Number(hasil.lastInsertRowid);
+    await tx.execute(auditStatement(akunId, kode, "terbitkan_usulan", { id, kanal }));
+    await tx.commit();
+    return id;
+  } catch (e) {
+    await tx.rollback();
+    throw e;
+  }
 }
 
 function toUsulan(r: Row): Usulan {

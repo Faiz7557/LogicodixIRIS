@@ -94,6 +94,7 @@ describe("auth", () => {
       for (let i = 0; i < 10; i++) await masuk(reqMasuk("uji-masuk", "salah"), {});
       const res = await masuk(reqMasuk("uji-masuk", "rahasia-uji"), {});
       expect(res.status).toBe(429);
+      expect(res.headers.get("retry-after")).toBe("900");
       expect(await res.json()).toEqual({ error: { kode: "terlalu_banyak", pesan: "Coba lagi dalam 15 menit." } });
     });
   });

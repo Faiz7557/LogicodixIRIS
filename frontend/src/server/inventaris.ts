@@ -1,7 +1,8 @@
+import type { InStatement } from "@libsql/client";
 import { z } from "zod";
 import type { CatalogItem, InventoryRow } from "@/lib/types";
 import { PESAN, catatanMemuatPribadi, type InventoryInput } from "@/lib/inventaris";
-import { writeAudit } from "./audit";
+import { auditStatement } from "./audit";
 import { db } from "./db";
 import { HttpError } from "./http";
 import { getCatalog, q } from "./queries";
@@ -24,8 +25,8 @@ export const inventarisSchema = z.array(baris).max(100).superRefine((rows, ctx) 
   }
 });
 
-function tolak(pesan: string): never {
-  throw new HttpError(400, "input_tidak_sah", pesan);
+function tolak(pesan: string, status = 400): never {
+  throw new HttpError(status, "input_tidak_sah", pesan);
 }
 
 async function katalogUntukDesa(kode: string): Promise<{ catalog: CatalogItem[]; peatFrac: number }> {
@@ -68,27 +69,28 @@ export async function saveInventaris(kode: string, akunId: number, rows: Invento
   // Item tanpa kondisi rusak hanya punya satu angka: berfungsi. Total selalu sama.
   const normal = rows.map((r) => {
     const item = byKode.get(r.itemKode);
-    if (!item) tolak("Item tidak dikenal.");
+    if (!item) tolak("Item tidak dikenal.", 422);
     return item.punyaRusak ? r : { ...r, total: r.berfungsi };
   });
 
   const parsed = inventarisSchema.safeParse(normal);
-  if (!parsed.success) tolak(parsed.error.issues[0]?.message ?? "Isian tidak sah.");
+  if (!parsed.success) {
+    const issue = parsed.error.issues[0];
+    tolak(issue?.message ?? "Isian tidak sah.", issue?.code === "custom" ? 422 : 400);
+  }
   for (const r of parsed.data) {
-    if (r.catatan && catatanMemuatPribadi(r.catatan)) tolak(PESAN.catatanPribadi);
+    if (r.catatan && catatanMemuatPribadi(r.catatan)) tolak(PESAN.catatanPribadi, 422);
   }
 
   const waktu = new Date().toISOString();
-  await db().batch(
-    parsed.data.map((r) => ({
-      sql: `INSERT INTO inventaris_item (desa_kode, item_kode, total, berfungsi, catatan, updated_by, updated_at)
-            VALUES (?,?,?,?,?,?,?)
-            ON CONFLICT (desa_kode, item_kode) DO UPDATE SET
-              total = excluded.total, berfungsi = excluded.berfungsi,
-              catatan = excluded.catatan, updated_by = excluded.updated_by, updated_at = excluded.updated_at`,
-      args: [kode, r.itemKode, r.total, r.berfungsi, r.catatan ?? null, akunId, waktu],
-    })),
-    "write",
-  );
-  await writeAudit(akunId, kode, "simpan_inventaris", { jumlah: parsed.data.length });
+  const statements: InStatement[] = parsed.data.map((r) => ({
+    sql: `INSERT INTO inventaris_item (desa_kode, item_kode, total, berfungsi, catatan, updated_by, updated_at)
+          VALUES (?,?,?,?,?,?,?)
+          ON CONFLICT (desa_kode, item_kode) DO UPDATE SET
+            total = excluded.total, berfungsi = excluded.berfungsi,
+            catatan = excluded.catatan, updated_by = excluded.updated_by, updated_at = excluded.updated_at`,
+    args: [kode, r.itemKode, r.total, r.berfungsi, r.catatan ?? null, akunId, waktu],
+  }));
+  statements.push(auditStatement(akunId, kode, "simpan_inventaris", { jumlah: parsed.data.length }));
+  await db().batch(statements, "write");
 }

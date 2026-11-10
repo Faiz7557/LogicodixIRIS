@@ -37,16 +37,16 @@ describe("inventaris", () => {
   });
 
   it("menolak kode di luar katalog", async () => {
-    await expect(saveInventaris("D", 1, [{ itemKode: "tank", total: 1, berfungsi: 1 }])).rejects.toMatchObject({ status: 400 });
+    await expect(saveInventaris("D", 1, [{ itemKode: "tank", total: 1, berfungsi: 1 }])).rejects.toMatchObject({ status: 422 });
   });
 
   it("menolak sumur bor pada desa non-gambut", async () => {
-    await expect(saveInventaris("NONGAMBUT", 1, [{ itemKode: "sumur_bor", total: 1, berfungsi: 1 }])).rejects.toMatchObject({ status: 400 });
+    await expect(saveInventaris("NONGAMBUT", 1, [{ itemKode: "sumur_bor", total: 1, berfungsi: 1 }])).rejects.toMatchObject({ status: 422 });
   });
 
   it("menolak catatan berisi nomor pribadi", async () => {
     await expect(
       saveInventaris("D", 1, [{ itemKode: "pompa_jinjing", total: 1, berfungsi: 1, catatan: "081234567890" }]),
-    ).rejects.toMatchObject({ status: 400 });
+    ).rejects.toMatchObject({ status: 422 });
   });
 });

@@ -1,7 +1,8 @@
+import type { InStatement } from "@libsql/client";
 import { rankPriorities } from "@/lib/engine/priority";
 import { PAGU_DEFAULT, PAGU_MAKS, barisDisetujui, keyBaris, type KeputusanMap } from "@/lib/prioritas";
 import type { Aksi, CatalogItem, Keputusan, PrioritasPayload, PriorityRow } from "@/lib/types";
-import { writeAudit } from "./audit";
+import { auditStatement } from "./audit";
 import { db } from "./db";
 import { getHargaEfektif, getTargetEfektif } from "./efektif";
 import { HttpError } from "./http";
@@ -55,19 +56,22 @@ export async function getBarisDisetujui(kode: string): Promise<PriorityRow[]> {
 
 export async function setPagu(kode: string, akunId: number, paguRp: number): Promise<void> {
   if (!Number.isInteger(paguRp) || paguRp < 0 || paguRp > PAGU_MAKS) {
-    throw new HttpError(400, "input_tidak_sah", `Pagu harus bilangan bulat 0 sampai ${PAGU_MAKS}.`);
+    throw new HttpError(422, "input_tidak_sah", `Pagu harus bilangan bulat 0 sampai ${PAGU_MAKS}.`);
   }
   const [d] = await q("SELECT kode FROM desa WHERE kode = ?", [kode]);
   if (!d) throw new HttpError(404, "desa_tidak_ada", "Desa tidak ditemukan.");
 
   const waktu = new Date().toISOString();
-  await db().execute({
-    sql: `INSERT INTO rencana (desa_kode, pagu_rp, updated_by, updated_at) VALUES (?,?,?,?)
-          ON CONFLICT (desa_kode) DO UPDATE SET
-            pagu_rp = excluded.pagu_rp, updated_by = excluded.updated_by, updated_at = excluded.updated_at`,
-    args: [kode, paguRp, akunId, waktu],
-  });
-  await writeAudit(akunId, kode, "ubah_pagu", { paguRp });
+  const statements: InStatement[] = [
+    {
+      sql: `INSERT INTO rencana (desa_kode, pagu_rp, updated_by, updated_at) VALUES (?,?,?,?)
+            ON CONFLICT (desa_kode) DO UPDATE SET
+              pagu_rp = excluded.pagu_rp, updated_by = excluded.updated_by, updated_at = excluded.updated_at`,
+      args: [kode, paguRp, akunId, waktu],
+    },
+    auditStatement(akunId, kode, "ubah_pagu", { paguRp }),
+  ];
+  await db().batch(statements, "write");
 }
 
 export async function setKeputusan(
@@ -79,19 +83,22 @@ export async function setKeputusan(
   catatan?: string,
 ): Promise<void> {
   const [item] = await q("SELECT kode FROM katalog_item WHERE kode = ?", [itemKode]);
-  if (!item) throw new HttpError(400, "input_tidak_sah", "Item tidak dikenal.");
-  if (!AKSI.includes(aksi)) throw new HttpError(400, "input_tidak_sah", "Aksi tidak dikenal.");
-  if (!KEPUTUSAN.includes(keputusan)) throw new HttpError(400, "input_tidak_sah", "Keputusan tidak dikenal.");
+  if (!item) throw new HttpError(422, "input_tidak_sah", "Item tidak dikenal.");
+  if (!AKSI.includes(aksi)) throw new HttpError(422, "input_tidak_sah", "Aksi tidak dikenal.");
+  if (!KEPUTUSAN.includes(keputusan)) throw new HttpError(422, "input_tidak_sah", "Keputusan tidak dikenal.");
   const catatanBersih = catatan?.trim() || null;
-  if (catatanBersih && catatanBersih.length > 500) throw new HttpError(400, "input_tidak_sah", "Catatan maksimal 500 karakter.");
+  if (catatanBersih && catatanBersih.length > 500) throw new HttpError(422, "input_tidak_sah", "Catatan maksimal 500 karakter.");
 
   const waktu = new Date().toISOString();
-  await db().execute({
-    sql: `INSERT INTO keputusan (desa_kode, item_kode, aksi, keputusan, catatan, updated_by, updated_at) VALUES (?,?,?,?,?,?,?)
-          ON CONFLICT (desa_kode, item_kode, aksi) DO UPDATE SET
-            keputusan = excluded.keputusan, catatan = excluded.catatan,
-            updated_by = excluded.updated_by, updated_at = excluded.updated_at`,
-    args: [kode, itemKode, aksi, keputusan, catatanBersih, akunId, waktu],
-  });
-  await writeAudit(akunId, kode, "putuskan_baris", { itemKode, aksi, keputusan });
+  const statements: InStatement[] = [
+    {
+      sql: `INSERT INTO keputusan (desa_kode, item_kode, aksi, keputusan, catatan, updated_by, updated_at) VALUES (?,?,?,?,?,?,?)
+            ON CONFLICT (desa_kode, item_kode, aksi) DO UPDATE SET
+              keputusan = excluded.keputusan, catatan = excluded.catatan,
+              updated_by = excluded.updated_by, updated_at = excluded.updated_at`,
+      args: [kode, itemKode, aksi, keputusan, catatanBersih, akunId, waktu],
+    },
+    auditStatement(akunId, kode, "putuskan_baris", { itemKode, aksi, keputusan }),
+  ];
+  await db().batch(statements, "write");
 }

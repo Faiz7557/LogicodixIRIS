@@ -32,11 +32,11 @@ describe("prioritas", () => {
 
   it.each([1.5, -1, 1_000_000_001])("menolak pagu %s", async (p) => {
     await setPagu("D", 1, 7e6);
-    await expect(setPagu("D", 1, p)).rejects.toMatchObject({ status: 400 });
+    await expect(setPagu("D", 1, p)).rejects.toMatchObject({ status: 422 });
     expect((await getPrioritas("D")).paguRp).toBe(7e6);
   });
 
   it("menolak keputusan tak dikenal", async () => {
-    await expect(setKeputusan("D", 1, "pompa_jinjing", "beli", "diterima" as never)).rejects.toMatchObject({ status: 400 });
+    await expect(setKeputusan("D", 1, "pompa_jinjing", "beli", "diterima" as never)).rejects.toMatchObject({ status: 422 });
   });
 });
