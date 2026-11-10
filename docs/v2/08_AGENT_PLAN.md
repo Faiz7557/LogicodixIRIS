@@ -660,7 +660,7 @@ Persis rencana 06 Task 21, dengan path `frontend/src/server/parseInventaris.ts`,
 
 - [ ] **Step 1:** Run `cd frontend && npm test && npm run build` dan `py -m pytest pipeline/tests`. Catat hasilnya.
 - [ ] **Step 2:** Run `git log -p | grep -iE "api[_-]?key|token|password"`. Expected: hanya nama variabel.
-- [ ] **Step 3:** Run `grep` kata terlarang di section 1 pada `frontend/src` dan `pipeline`. Expected: tidak ada klaim produk.
+- [ ] **Step 3:** Run `grep` kata terlarang di section 1 pada `frontend/src` dan `pipeline`. Expected: tidak ada klaim produk. Run `grep -rn "PERLU_DIISI" data/manual`. Expected: tidak ada hasil.
 - [ ] **Step 4:** Jalankan daftar periksa Design Brief §12 butir demi butir pada 360 px. Tulis lulus atau gagal beserta buktinya di `QA.md`. Butir gagal dilaporkan ke orkestrator, tidak diperbaiki sendiri.
 - [ ] **Step 5:** Commit `chore: add qa checklist results`.
 
