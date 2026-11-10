@@ -6,6 +6,7 @@ import type { CatalogItem, HargaRow, InventoryRow, Peran, ReadinessItem, Readine
 import { CatatDenganPratinjau } from "./CatatDenganPratinjau";
 import { KataCakupan } from "./CoverageBar";
 import { GambarItem } from "./GambarItem";
+import { KotakModel3D } from "./model3d/KotakModel3D";
 import { ReadinessGauge } from "./ReadinessGauge";
 
 /** Status satu item dari cakupannya, dengan ambang yang sama dengan mesin (TRD §6). */
@@ -14,6 +15,9 @@ function statusItem(coverage: number): Status {
   if (coverage < 0.25) return "rawan";
   return "sebagian";
 }
+
+// Item yang sudah punya model 3D prosedural (lihat model3d/). Item lain menampilkan ilustrasi sementara.
+const PUNYA_MODEL_3D = new Set(["pompa_jinjing"]);
 
 // Keterangan khusus tiap item, ditulis sebagai fakta paket, bukan klaim dampak.
 const CATATAN_ITEM: Record<string, string> = {
@@ -106,22 +110,28 @@ export function RincianItem({
           <h2 id="model-judul" className="sr-only">
             Model 3D {item.nama}
           </h2>
-          <div className="flex flex-1 flex-col items-center justify-center gap-4 p-6 text-center">
-            <GambarItem kode={item.kode} className="size-40 bg-white/60 shadow-sm" />
-            <p className="max-w-[36ch] text-sm text-muted">
-              Model 3D {item.nama.toLowerCase()} akan tampil di sini. Untuk sementara, gambar ini hanya ilustrasi.
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center justify-between gap-2 p-4">
-            <button
-              type="button"
-              disabled
-              className="inline-flex min-h-11 items-center gap-2 rounded-full bg-ink px-5 text-sm font-semibold text-white disabled:opacity-50"
-            >
-              Buka model 3D
-            </button>
-            <span className="rounded-full bg-surface px-3 py-1.5 text-sm text-muted shadow-sm">Model 3D belum tersedia</span>
-          </div>
+          {PUNYA_MODEL_3D.has(item.kode) ? (
+            <KotakModel3D kode={item.kode} nama={item.nama.toLowerCase()} />
+          ) : (
+            <>
+              <div className="flex flex-1 flex-col items-center justify-center gap-4 p-6 text-center">
+                <GambarItem kode={item.kode} className="size-40 bg-white/60 shadow-sm" />
+                <p className="max-w-[36ch] text-sm text-muted">
+                  Model 3D {item.nama.toLowerCase()} akan tampil di sini. Untuk sementara, gambar ini hanya ilustrasi.
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center justify-between gap-2 p-4">
+                <button
+                  type="button"
+                  disabled
+                  className="inline-flex min-h-11 items-center gap-2 rounded-full bg-ink px-5 text-sm font-semibold text-white disabled:opacity-50"
+                >
+                  Buka model 3D
+                </button>
+                <span className="rounded-full bg-surface px-3 py-1.5 text-sm text-muted shadow-sm">Model 3D belum tersedia</span>
+              </div>
+            </>
+          )}
         </section>
 
         <div className="flex flex-col gap-4">
