@@ -1,7 +1,5 @@
 /*
- * DATA CONTOH SINTETIS, hanya untuk membangun tampilan sebelum API backend siap.
- * Bukan data satelit, bukan survei lapangan, dan tidak boleh tampil di demo atau video.
- * Hapus folder `src/mocks/` sebelum code freeze (lihat docs/FRONTEND.md).
+ * Fixture uji: data contoh sintetis untuk tes fungsi murni. Bukan data satelit dan tidak dipakai runtime.
  *
  * Angka dihitung dengan rumus TRD v2 §6 agar konsisten:
  *   skor = 100 * Σ(bobot * coverage) / Σ(bobot), bobot 15/20/20/20.

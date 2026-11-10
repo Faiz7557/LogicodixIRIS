@@ -5,6 +5,7 @@ import { SearchBox } from "@/components/paparan/SearchBox";
 import { TEKS_BELUM_DIUJI } from "@/components/ui/PernyataanAsumsi";
 import { LANGKAH, PERAN, STATISTIK } from "@/content/beranda";
 import { getGerbang } from "@/lib/dataSource";
+import { countTampakAman } from "@/server/queries";
 import { bolehTagline } from "@/lib/kalimat";
 
 /*
@@ -14,6 +15,7 @@ import { bolehTagline } from "@/lib/kalimat";
  */
 export default async function BerandaPage() {
   const gerbang = await getGerbang();
+  const tampakAman = gerbang === "buang" ? null : await countTampakAman();
   const kelasJudul = "text-balance text-3xl font-semibold leading-tight tracking-tight sm:text-4xl";
 
   return (
@@ -164,8 +166,8 @@ export default async function BerandaPage() {
           </div>
           {gerbang !== "buang" ? (
             <p className="mx-auto mt-6 max-w-[52ch] text-sm text-white/70">
-              Desa yang tampak aman di wilayah cakupan: <span className="tabular font-bold text-white">–</span> (diisi dari data satelit setelah
-              pipeline selesai). Tampak aman bukan berarti aman.
+              Desa yang tampak aman di wilayah cakupan: <span className="tabular font-bold text-white">{tampakAman ?? "–"}</span> desa.
+              Tampak aman bukan berarti aman.
             </p>
           ) : null}
         </div>

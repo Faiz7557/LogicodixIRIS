@@ -9,11 +9,11 @@ import {
   ringkasKeputusan,
   totalBiaya,
 } from "./prioritas";
-import { mockCatalog, mockHarga, mockReadiness } from "@/mocks/demo";
-import { rankPriorities } from "@/mocks/engine";
+import { mockCatalog, mockHarga, mockReadiness } from "@/test/fixtures";
+import { rankPriorities } from "./engine/priority";
 
 const hitung = (pagu: number, harga = mockHarga) =>
-  rankPriorities({ catalog: mockCatalog, items: mockReadiness.items, prices: harga, paguRp: pagu });
+  rankPriorities({ catalog: mockCatalog, readiness: mockReadiness, prices: harga, paguRp: pagu });
 
 describe("parsePagu", () => {
   it("menerima format Rupiah dan angka polos", () => {
