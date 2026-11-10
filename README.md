@@ -23,6 +23,25 @@ npm run build && npm start
 
 Butuh Node.js 20 atau lebih baru.
 
+## Pipeline data
+
+Pipeline Python ada di `pipeline/`. Dependency dikelola `uv` lewat `pyproject.toml` dan `uv.lock`. Pasang `uv` bila belum ada (`curl -LsSf https://astral.sh/uv/install.sh | sh`), lalu:
+
+```bash
+uv sync
+uv run python pipeline/fetch_firms.py   # butuh FIRMS_MAP_KEY
+uv run python pipeline/run_all.py
+uv run pytest pipeline/tests -q
+```
+
+`uv sync` membuat `.venv/` dengan Python 3.13. Untuk memakai `python` biasa, aktifkan venv dulu:
+
+```bash
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
+python pipeline/run_all.py
+deactivate
+```
+
 ## Struktur repositori
 
 | Folder | Isi |

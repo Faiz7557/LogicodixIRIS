@@ -49,7 +49,7 @@ flowchart LR
 | Password | `node:crypto` `scrypt` | Tanpa dependensi |
 | Cetak | CSS `@media print`, `window.print()` | Fitur browser |
 | Tes | Vitest, pytest | Mesin dan pipeline |
-| Pipeline | Python 3.11+, `geopandas`, `pyogrio`, `pandas` | Geospasial dan agregasi |
+| Pipeline | Python 3.11+, `uv`, `geopandas`, `pyogrio`, `pandas` | Geospasial dan agregasi; dependency dari `pyproject.toml` |
 
 Sintaks SDK dan kuota Turso dicek di dokumentasi resmi saat pemasangan.
 
@@ -294,8 +294,9 @@ LogicodixIRIS/
   db/schema.sql
   data/siapkemarau.db
   data/manual/{katalog_item,paket_minimum,referensi_pergub,harga_item,sumber_data,dq_issue}.csv
+  pyproject.toml  uv.lock  .python-version
   pipeline/{params,fetch_firms,wilayah,firms,paparan,backtest,export,run_all}.py
-  pipeline/tests/  pipeline/requirements.txt
+  pipeline/tests/
   scripts/{seed-accounts,push-remote}.ts
   src/app/...  src/components/...  src/lib/*.ts
   src/lib/engine/{types,readiness,priority,stability}.ts
