@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { GambarItem } from "@/components/kesiapan/GambarItem";
 import { Stepper } from "@/components/ui/Stepper";
 import { ApiError } from "@/lib/api-client";
 import { formatAngka, formatWaktu, keteranganMeter } from "@/lib/format";
@@ -50,8 +51,23 @@ export function FormInventaris({
   const [pesanGalat, setPesanGalat] = useState("");
   const [info, setInfo] = useState(terakhir);
   const formRef = useRef<HTMLFormElement>(null);
+  const [sorot, setSorot] = useState<string | null>(null);
 
   const kotor = berubah(dasar, form);
+
+  // Datang dari kartu item di Kesiapan (#alat-<kode>): gulir ke item itu, sorot, dan fokuskan isian pertamanya.
+  useEffect(() => {
+    const m = /^#alat-(.+)$/.exec(window.location.hash);
+    if (!m || !catalog.some((c) => c.kode === m[1])) return;
+    const kodeItem = m[1];
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- hash hanya bisa dibaca setelah mount
+    setSorot(kodeItem);
+    requestAnimationFrame(() => {
+      const el = document.getElementById(`alat-${kodeItem}`);
+      el?.scrollIntoView({ block: "start" });
+      el?.querySelector<HTMLInputElement>("input")?.focus({ preventScroll: true });
+    });
+  }, [catalog]);
 
   // Peringatan bila meninggalkan halaman dengan isian belum tersimpan.
   useEffect(() => {
@@ -122,6 +138,7 @@ export function FormInventaris({
             galat={galatTampil(item)}
             onUbah={(kolom, v) => ubah(item.kode, kolom, v)}
             onSentuh={() => setDisentuh((d) => ({ ...d, [item.kode]: true }))}
+            disorot={sorot === item.kode}
           />
         ))}
       </div>
@@ -162,6 +179,7 @@ function KartuItem({
   galat,
   onUbah,
   onSentuh,
+  disorot,
 }: {
   item: CatalogItem;
   nilai: { total: string; berfungsi: string; catatan: string };
@@ -169,6 +187,7 @@ function KartuItem({
   galat: GalatBaris;
   onUbah: (kolom: "total" | "berfungsi" | "catatan", v: string) => void;
   onSentuh: () => void;
+  disorot?: boolean;
 }) {
   const b = bacaAngka(nilai.berfungsi);
   const ringkas =
@@ -176,10 +195,15 @@ function KartuItem({
   const id = `alat-${item.kode}`;
 
   return (
-    <fieldset className="rounded-card border border-line bg-surface px-4 py-4">
+    <fieldset id={id} className={`scroll-mt-24 rounded-card border bg-surface px-4 py-4 ${disorot ? "border-ember ring-2 ring-ember/30" : "border-line"}`}>
       <legend className="float-left w-full">
-        <span className="text-lg font-bold">{item.nama}</span>
-        <span className="ml-2 text-sm text-muted">({item.satuan})</span>
+        <span className="flex items-center gap-3">
+          <GambarItem kode={item.kode} className="size-11" />
+          <span>
+            <span className="text-lg font-bold">{item.nama}</span>
+            <span className="ml-2 text-sm text-muted">({item.satuan})</span>
+          </span>
+        </span>
       </legend>
       <div className="clear-both" />
       {targetItem !== undefined ? (

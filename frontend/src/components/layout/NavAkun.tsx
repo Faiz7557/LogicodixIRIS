@@ -2,9 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { GambarItem } from "@/components/kesiapan/GambarItem";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { formatSkor } from "@/lib/format";
 import type { Peran, Status } from "@/lib/types";
+import { CariDesaSidebar } from "./CariDesaSidebar";
+import { TombolKeluar } from "./TombolKeluar";
 
 type Item = { href: (kode: string) => string; label: string; peran: Peran[]; icon: React.ReactNode; aktifSampai?: "persis" };
 type Kelompok = { tanya: string; items: Item[] };
@@ -13,7 +16,7 @@ type Kelompok = { tanya: string; items: Item[] };
 const kelompok: Kelompok[] = [
   {
     tanya: "Seberapa siap kita?",
-    items: [{ href: (k) => `/desa/${k}/kesiapan`, label: "Kesiapan", peran: ["mpa", "desa"], icon: <IconGauge /> }],
+    items: [{ href: (k) => `/desa/${k}/kesiapan`, label: "Kesiapan", peran: ["mpa", "desa"], icon: <IconGauge />, aktifSampai: "persis" }],
   },
   {
     tanya: "Apa yang kita punya?",
@@ -48,6 +51,8 @@ export type RingkasanNav = {
   /** null = belum ada alat yang dicatat. */
   skor: number | null;
   status: Status;
+  /** Item paket minimum desa ini, untuk sub-menu di bawah Kesiapan. */
+  items: { kode: string; nama: string; kurang: number; belumDiisi: boolean }[];
 };
 
 /**
@@ -72,6 +77,7 @@ export function NavAkun({ r }: { r: RingkasanNav }) {
           aria-label="Menu desa"
           className="sticky top-0 flex max-h-dvh min-h-[calc(100dvh-3rem)] flex-col gap-5 overflow-y-auto border-r border-line bg-surface/60 px-3 py-5"
         >
+          <CariDesaSidebar />
           <div className="space-y-4">
             {kelompok.map((g) => {
               const tampil = g.items.filter((i) => i.peran.includes(r.peran));
@@ -94,6 +100,7 @@ export function NavAkun({ r }: { r: RingkasanNav }) {
                             <span className={on ? "text-ember" : ""}>{i.icon}</span>
                             {i.label}
                           </Link>
+                          {i.label === "Kesiapan" && r.items.length ? <SubItem r={r} pathname={pathname} /> : null}
                         </li>
                       );
                     })}
@@ -104,6 +111,7 @@ export function NavAkun({ r }: { r: RingkasanNav }) {
           </div>
 
           <div className="mt-auto space-y-3">
+            <TombolKeluar className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm text-muted hover:bg-paper hover:text-ink disabled:opacity-60" ikon={<IconKeluar />} />
             <div className="flex items-center gap-3 rounded-2xl border border-line bg-paper p-3">
               <span aria-hidden="true" className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#f7e3d8] text-sm font-bold text-ember">
                 {inisial(r.namaTampil)}
@@ -160,6 +168,52 @@ export function NavAkun({ r }: { r: RingkasanNav }) {
         </ul>
       </nav>
     </>
+  );
+}
+
+/**
+ * Sub-menu item di bawah Kesiapan (pola daftar mesin Sparekit): gambar kecil, nama, lencana jumlah kurang.
+ * Lencana bertuliskan angka dan diberi teks pembaca layar; item terpenuhi bertanda centang.
+ */
+function SubItem({ r, pathname }: { r: RingkasanNav; pathname: string }) {
+  return (
+    <ul aria-label="Item kesiapan" className="ml-5 mt-0.5 space-y-0.5 border-l border-line pl-2">
+      {r.items.map((it) => {
+        const href = `/desa/${r.kode}/kesiapan/${it.kode}`;
+        const on = pathname === href;
+        return (
+          <li key={it.kode}>
+            <Link
+              href={href}
+              aria-current={on ? "page" : undefined}
+              className={`flex min-h-11 items-center gap-2.5 rounded-xl px-2 text-sm ${
+                on ? "bg-[#f7e3d8] font-semibold text-ink" : "text-muted hover:bg-paper hover:text-ink"
+              }`}
+            >
+              <GambarItem kode={it.kode} className="size-8 rounded-lg" />
+              <span className="min-w-0 flex-1 truncate">{it.nama}</span>
+              {it.belumDiisi ? (
+                <span className="shrink-0 rounded-md bg-paper px-1.5 text-sm text-muted">
+                  –<span className="sr-only">, belum dicatat</span>
+                </span>
+              ) : it.kurang > 0 ? (
+                <span className="tabular shrink-0 rounded-md bg-ember-soft px-1.5 text-sm font-semibold text-ember">
+                  {it.kurang}
+                  <span className="sr-only"> kurang</span>
+                </span>
+              ) : (
+                <span className="shrink-0 text-ok">
+                  <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M5 12l5 5 9-10" />
+                  </svg>
+                  <span className="sr-only">terpenuhi</span>
+                </span>
+              )}
+            </Link>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 
@@ -228,6 +282,14 @@ function IconData() {
     <svg {...ikon}>
       <ellipse cx="12" cy="6" rx="7" ry="3" />
       <path d="M5 6v6c0 1.700 3.100 3 7 3s7-1.300 7-3V6M5 12v6c0 1.700 3.100 3 7 3s7-1.300 7-3v-6" />
+    </svg>
+  );
+}
+function IconKeluar() {
+  return (
+    <svg {...ikon}>
+      <path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3" />
+      <path d="M10 8l-4 4 4 4M6 12h10" />
     </svg>
   );
 }

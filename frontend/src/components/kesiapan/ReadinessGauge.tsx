@@ -15,7 +15,7 @@ const WARNA: Record<Status, string> = {
  * Animasi isi 400 ms lewat CSS; mati otomatis pada prefers-reduced-motion (globals.css).
  * Status tampil sebagai ikon + kata, bukan hanya warna.
  */
-export function ReadinessGauge({ skor, status }: { skor: number; status: Status }) {
+export function ReadinessGauge({ skor, status, label }: { skor: number; status: Status; label?: { teks: string; sr: string } }) {
   const pct = Math.min(Math.max(skor, 0), 100);
   const offset = LEN * (1 - pct / 100);
 
@@ -43,8 +43,8 @@ export function ReadinessGauge({ skor, status }: { skor: number; status: Status 
           />
         </svg>
         <p className="tabular absolute inset-x-0 bottom-0 text-center text-5xl font-bold leading-none">
-          {formatSkor(skor)}
-          <span className="sr-only"> dari 100</span>
+          {label ? label.teks : formatSkor(skor)}
+          <span className="sr-only">{label ? label.sr : " dari 100"}</span>
         </p>
       </div>
       <div className="mt-3">
