@@ -1,0 +1,5 @@
+geopandas
+pyogrio
+pandas
+pyarrow
+pytest
