@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Panel } from "@/components/ui/Panel";
-import { formatAngka, formatRupiah, keteranganMeter } from "@/lib/format";
+import { TanggalHariIni } from "@/components/ui/TanggalHariIni";
+import { formatAngka, formatRupiah, formatTanggal, keteranganMeter } from "@/lib/format";
 import type { CatalogItem, HargaRow, InventoryRow, Peran, ReadinessItem, ReadinessResult, Status } from "@/lib/types";
 import { CatatDenganPratinjau } from "./CatatDenganPratinjau";
 import { KataCakupan } from "./CoverageBar";
@@ -168,7 +169,7 @@ export function RincianItem({
         <h2 id="angka" className="sr-only">
           Angka {item.nama}
         </h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <KartuAngka
             gelap={kurang > 0}
             ikon={<IconPeringatan />}
@@ -176,23 +177,42 @@ export function RincianItem({
             satuan={satuan}
             label="Kurang dari paket minimum"
           />
-          <KartuAngka ikon={<IconKunci />} nilai={item.punyaRusak ? formatAngka(hasil.rusak) : "–"} satuan={item.punyaRusak ? satuan : ""} label="Perlu diperbaiki" />
+          <KartuAngka
+            ikon={<IconKunci />}
+            nilai={item.punyaRusak ? formatAngka(hasil.rusak) : "–"}
+            satuan={item.punyaRusak ? satuan : ""}
+            label="Perlu diperbaiki"
+            catatan={
+              !item.punyaRusak
+                ? "Item ini tidak punya kondisi rusak."
+                : hasil.rusak === 0
+                  ? "Tidak ada yang rusak."
+                  : biayaPerbaiki !== null
+                    ? `Perkiraan biaya perbaikan ${formatRupiah(biayaPerbaiki)} (${formatAngka(hasil.rusak)} × ${formatRupiah(perbaiki!.hargaRp)}).`
+                    : "Belum ada harga perbaikan bersumber."
+            }
+          />
           <KartuAngka
             ikon={<IconRupiah />}
             nilai={biayaBeli !== null ? formatRupiah(biayaBeli) : "–"}
             label="Perkiraan biaya menambah"
             catatan={beli ? `${formatAngka(kurang)} × ${formatRupiah(beli.hargaRp)}. Sumber: ${beli.sumber}` : "Belum ada harga bersumber untuk item ini."}
           />
+          {/* Harga satuan dengan tanggal hari ini (berganti sendiri tiap hari). Sumber dan tanggal cek tetap ditulis:
+              ini harga acuan dokumen, bukan harga pasar harian. */}
           <KartuAngka
-            ikon={<IconRupiah />}
-            nilai={!item.punyaRusak ? "–" : biayaPerbaiki !== null ? formatRupiah(biayaPerbaiki) : "–"}
-            label="Perkiraan biaya perbaikan"
+            ikon={<IconKalender />}
+            nilai={beli ? formatRupiah(beli.hargaRp) : "–"}
+            satuan={beli ? `/ ${satuan}` : ""}
+            label={
+              <>
+                Harga satuan per <TanggalHariIni />
+              </>
+            }
             catatan={
-              !item.punyaRusak
-                ? "Item ini tidak punya kondisi rusak."
-                : perbaiki
-                  ? `${formatAngka(hasil.rusak)} × ${formatRupiah(perbaiki.hargaRp)}. Sumber: ${perbaiki.sumber}`
-                  : "Belum ada harga perbaikan bersumber."
+              beli
+                ? `Harga acuan ${beli.sumber}${beli.tanggal ? `, terakhir dicek ${formatTanggal(beli.tanggal)}` : ""}.`
+                : "Belum ada harga bersumber untuk item ini."
             }
           />
         </div>
@@ -277,7 +297,7 @@ function KartuAngka({
   ikon: React.ReactNode;
   nilai: string;
   satuan?: string;
-  label: string;
+  label: React.ReactNode;
   catatan?: string;
   gelap?: boolean;
 }) {
@@ -294,7 +314,8 @@ function KartuAngka({
         {ikon}
       </span>
       <p>
-        <span className="tabular block text-3xl font-semibold leading-tight tracking-[-0.03em]">
+        {/* Angka panjang (mis. Rp28.028.610) dikecilkan supaya tidak terpotong di kartu sempit. */}
+        <span className={`tabular block font-semibold leading-tight tracking-[-0.03em] ${nilai.length > 10 ? "text-2xl" : "text-3xl"}`}>
           {nilai}
           {satuan ? <span className={`ml-1 text-base font-normal ${gelap ? "text-white/70" : "text-muted"}`}>{satuan}</span> : null}
         </span>
@@ -315,6 +336,15 @@ function IconPeringatan() {
     </svg>
   );
 }
+function IconKalender() {
+  return (
+    <svg aria-hidden="true" {...ikon}>
+      <rect x="3" y="5" width="18" height="16" rx="2" />
+      <path d="M3 10h18M8 3v4M16 3v4" />
+    </svg>
+  );
+}
+
 function IconKunci() {
   return (
     <svg {...ikon}>
