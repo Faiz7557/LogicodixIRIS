@@ -1,0 +1,4 @@
+VOTE: GUILTY
+REASON: Uang saya tidak akan masuk ke produk yang diklaim "setiap fiturnya berguna serta punya nilai jual" padahal belum ada satu pun pengguna atau pemegang dana yang ditanya, uang di desa jangkarnya sedang menyusut, dan pembela sendiri mengakui klaim "setiap fitur" belum bisa dibuktikan; arahnya layak diuji, tetapi tidak layak didanai seperti yang dinyatakan.
+DECIDING FACT: "Nol wawancara pengguna sudah dilakukan", dan berkas tidak memuat satu pun kanal (APBDes, BPBD, Daops, atau CSR) yang terbukti menerima usulan semacam ini.
+WOULD FLIP IF: Wawancara 10-11 November menghasilkan satu pemegang dana nyata (sekdes, BPBD, Daops, atau CSR) yang menyatakan secara tercatat akan menilai usulan format FR-15 pada jendela anggaran yang masih terbuka, sehingga alur inti punya pembeli dan klaim bisa dipersempit ke fitur yang terbukti dipakai.

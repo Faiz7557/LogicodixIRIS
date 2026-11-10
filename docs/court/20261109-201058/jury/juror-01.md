@@ -1,0 +1,4 @@
+VOTE: GUILTY
+REASON: Saya mengikuti uangnya dan tidak menemukan apa-apa: alat ini mengurutkan belanja di bawah pagu, tetapi harganya belum ada, bobotnya asumsi tim, tidak ada pihak yang terbukti akan membayar usulannya, dan pembela sendiri mengakui "setiap fitur" belum bisa dibuktikan.
+DECIDING FACT: Berkas mencatat "tidak ditemukan harga resmi terbuka" dan satu-satunya angka adalah sekitar Rp10 juta per titik bor "sebagai upah tim bor saja", padahal sumur bor berbobot 20 dan FR-11 mengeluarkan item tanpa harga dari FR-12, sehingga daftar prioritas pendanaan belum punya dasar rupiah.
+WOULD FLIP IF: Sebelum code freeze, CSV harga bersumber untuk kesembilan item sudah terisi dan minimal satu penerima dana bernama (perubahan APBDes, BPBD, Daops, atau CSR) menyatakan masih punya anggaran terbuka dan bersedia menerima usulan dalam format FR-15.

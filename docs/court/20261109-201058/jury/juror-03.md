@@ -1,0 +1,4 @@
+VOTE: GUILTY
+REASON: Sebagai pesaing saya tidak perlu melawan ini, cukup menyalin bagian yang laku dengan satu spreadsheet di grup WhatsApp, sebab data paparannya publik, bobot dan targetnya asumsi tim, dan belum ada satu pengguna atau penerima usulan pun yang terikat, sehingga klaim "setiap fitur berguna dan bernilai jual" belum punya apa pun untuk dipertahankan.
+DECIDING FACT: "Nol wawancara pengguna sudah dilakukan", sementara berkas sendiri mencatat petahana sebenarnya di desa adalah WhatsApp dan tidak menunjukkan satu pun BPBD, Daops, atau CSR yang menerima usulan dalam format ini.
+WOULD FLIP IF: Sebelum code freeze, satu BPBD, Daops, atau pemberi CSR bernama menyatakan bersedia menerima dan menilai usulan dari FR-15 dalam format itu, karena penerima yang terikat adalah satu-satunya hal yang tidak bisa saya salin dalam semalam.

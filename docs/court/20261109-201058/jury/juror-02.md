@@ -1,0 +1,4 @@
+VOTE: GUILTY
+REASON: Kalau saya sekdes yang baru mendengar ini hari ini dan dana desa saya sedang menyusut, saya tidak akan meluangkan waktu mengisi inventaris dan menyusun usulan lewat alat yang belum pernah ditanyakan ke satu pun orang seperti saya, tanpa tanda ada pihak yang mau menerima dokumennya, apalagi perkara ini mengklaim setiap fitur berguna.
+DECIDING FACT: "Nol wawancara pengguna sudah dilakukan", sehingga klaim "setiap fiturnya benar-benar berguna" belum punya satu pun bukti dari sekdes atau ketua MPA, dan pembela sendiri mengakui itu belum bisa dibuktikan hari ini.
+WOULD FLIP IF: Wawancara 10-11 November menghasilkan setidaknya satu sekdes yang menyatakan masih ada kanal dana terbuka dan satu penerima nyata (BPBD, Daops, atau CSR) yang menyatakan bersedia menilai usulan dalam format FR-15, dan klaimnya dipersempit ke fitur yang benar-benar diminta mereka.

@@ -1,0 +1,92 @@
+{
+  "verdict": "GUILTY",
+  "guilty": 12,
+  "not_guilty": 0,
+  "no_vote": 0,
+  "jurors": [
+    {
+      "juror": "The Accountant",
+      "vote": "GUILTY",
+      "reason": "Saya mengikuti uangnya dan tidak menemukan apa-apa: alat ini mengurutkan belanja di bawah pagu, tetapi harganya belum ada, bobotnya asumsi tim, tidak ada pihak yang terbukti akan membayar usulannya, dan pembela sendiri mengakui \"setiap fitur\" belum bisa dibuktikan.",
+      "fact": "Berkas mencatat \"tidak ditemukan harga resmi terbuka\" dan satu-satunya angka adalah sekitar Rp10 juta per titik bor \"sebagai upah tim bor saja\", padahal sumur bor berbobot 20 dan FR-11 mengeluarkan item tanpa harga dari FR-12, sehingga daftar prioritas pendanaan belum punya dasar rupiah.",
+      "flip": "Sebelum code freeze, CSV harga bersumber untuk kesembilan item sudah terisi dan minimal satu penerima dana bernama (perubahan APBDes, BPBD, Daops, atau CSR) menyatakan masih punya anggaran terbuka dan bersedia menerima usulan dalam format FR-15."
+    },
+    {
+      "juror": "The First-Time Customer",
+      "vote": "GUILTY",
+      "reason": "Kalau saya sekdes yang baru mendengar ini hari ini dan dana desa saya sedang menyusut, saya tidak akan meluangkan waktu mengisi inventaris dan menyusun usulan lewat alat yang belum pernah ditanyakan ke satu pun orang seperti saya, tanpa tanda ada pihak yang mau menerima dokumennya, apalagi perkara ini mengklaim setiap fitur berguna.",
+      "fact": "\"Nol wawancara pengguna sudah dilakukan\", sehingga klaim \"setiap fiturnya benar-benar berguna\" belum punya satu pun bukti dari sekdes atau ketua MPA, dan pembela sendiri mengakui itu belum bisa dibuktikan hari ini.",
+      "flip": "Wawancara 10-11 November menghasilkan setidaknya satu sekdes yang menyatakan masih ada kanal dana terbuka dan satu penerima nyata (BPBD, Daops, atau CSR) yang menyatakan bersedia menilai usulan dalam format FR-15, dan klaimnya dipersempit ke fitur yang benar-benar diminta mereka."
+    },
+    {
+      "juror": "The Competitor",
+      "vote": "GUILTY",
+      "reason": "Sebagai pesaing saya tidak perlu melawan ini, cukup menyalin bagian yang laku dengan satu spreadsheet di grup WhatsApp, sebab data paparannya publik, bobot dan targetnya asumsi tim, dan belum ada satu pengguna atau penerima usulan pun yang terikat, sehingga klaim \"setiap fitur berguna dan bernilai jual\" belum punya apa pun untuk dipertahankan.",
+      "fact": "\"Nol wawancara pengguna sudah dilakukan\", sementara berkas sendiri mencatat petahana sebenarnya di desa adalah WhatsApp dan tidak menunjukkan satu pun BPBD, Daops, atau CSR yang menerima usulan dalam format ini.",
+      "flip": "Sebelum code freeze, satu BPBD, Daops, atau pemberi CSR bernama menyatakan bersedia menerima dan menilai usulan dari FR-15 dalam format itu, karena penerima yang terikat adalah satu-satunya hal yang tidak bisa saya salin dalam semalam."
+    },
+    {
+      "juror": "The Retired Judge",
+      "vote": "GUILTY",
+      "reason": "Klaim yang diajukan adalah produk \"benar-benar\" menjawab masalah dan \"setiap\" fiturnya berguna serta bernilai jual, tetapi beban pembuktian itu belum dipikul, sebab Pembela sendiri mengakui \"setiap fitur\" belum bisa dibuktikan dan yang tersisa di berkas hanyalah harapan yang dijadwalkan untuk diuji besok.",
+      "fact": "Per 9 November \"Nol wawancara pengguna sudah dilakukan\", belum ada kode, belum ada data yang diunduh, dan data FIRMS yang menjadi syarat fitur P0 FR-02 dan FR-04 belum diminta.",
+      "flip": "Berkas memuat hasil wawancara 10-11 November yang menunjukkan sekdes masih punya kanal dana terbuka dan ketua MPA benar-benar akan memakai daftar alat itu, disertai data FIRMS yang sudah di tangan, dengan klaim dipersempit dari \"setiap fitur\" menjadi fitur yang terbukti."
+    },
+    {
+      "juror": "The Teenager",
+      "vote": "GUILTY",
+      "reason": "Tagline-nya keren, tapi ini intinya formulir yang jadi dokumen buat orang yang keluhannya soal duit dan selang, belum ada satu pun dari mereka yang ditanya mau pakai atau enggak, jadi klaim \"setiap fitur berguna\" itu cuma omongan tim sendiri dan pembelanya aja ngaku belum terbukti.",
+      "fact": "\"Nol wawancara pengguna sudah dilakukan\", padahal temuan tim sendiri bilang kesaksian lapangan nyaris tidak meminta \"informasi lebih banyak\" dan petahana di desa adalah WhatsApp.",
+      "flip": "Wawancara 10-11 November menunjukkan sekdes dan ketua MPA benar-benar mau mengisi dan memakai ini ketimbang WhatsApp, dan minimal satu kanal (BPBD, Daops, atau CSR) bilang mau menerima usulannya, lalu fitur yang tidak mereka pedulikan dibuang dari klaim."
+    },
+    {
+      "juror": "The Engineer",
+      "vote": "GUILTY",
+      "reason": "Sebagai orang yang membangun barang, saya tidak bisa meloloskan 13 fitur P0 dari nol kode dalam lima hari dengan submission sekali, ketika yang pertama patah adalah pipa datanya: FR-02, FR-03, dan FR-04 bergantung pada arsip yang belum diminta, tanpa rencana cadangan, dan data simulasi dilarang.",
+      "fact": "Per 9 November \"Belum ada kode. Belum ada data yang diunduh\", data FIRMS belum diminta dan antreannya memakai surel \"dengan durasi tidak diketahui\", sedangkan code freeze 14 November pukul 23.59 WIB.",
+      "flip": "Data FIRMS 2012-2026 untuk Kalbar dan Kalteng sudah di tangan dan pipeline sudah menghasilkan kartu paparan nyata (FR-02) untuk seluruh desa dalam cakupan, sehingga sisa pekerjaan tinggal mesin TypeScript dan layar yang memang bisa dibangun sebelum freeze."
+    },
+    {
+      "juror": "The Small-Business Owner",
+      "vote": "GUILTY",
+      "reason": "Dua puluh tahun buka toko mengajari saya bahwa daftar belanja yang rapi tidak mengisi laci kas, dan di sini belum ada satu ketua MPA pun yang ditanya apakah mau mengisi inventaris pada hari Senin, belum ada satu pihak pun yang terbukti mau membayar usulannya, jadi klaim \"setiap fiturnya berguna dan punya nilai jual\" belum bisa saya terima.",
+      "fact": "Di kasus jangkar sendiri, dana desa Kalibandung turun dari sekitar Rp1 miliar ke sekitar Rp300 juta karena efisiensi sampai warga patungan BBM, sedangkan berkas mencatat nol wawancara pengguna dan tidak memuat satu pun usulan desa yang terdanai atau kanal yang menerima format ini.",
+      "flip": "Wawancara 10-11 November menghasilkan setidaknya satu pemegang dana nyata (BPBD, Daops, atau CSR) yang menyatakan punya anggaran terbuka dan mau menerima usulan format FR-15, serta satu ketua MPA yang menyatakan bersedia mengisi FR-07 sendiri, dan klaim \"setiap fitur\" dipersempit hanya ke fitur yang lolos uji itu."
+    },
+    {
+      "juror": "The Statistician",
+      "vote": "GUILTY",
+      "reason": "Klaim universal bahwa produk \"benar-benar menjawab\" masalah dan \"setiap fiturnya\" berguna diajukan dengan sampel nol pengguna, satu desa jangkar yang dipilih karena ceritanya cocok, dan kesaksian yang sangat bergantung pada satu media, sementara berkas tidak memuat base rate apa pun tentang seberapa sering usulan desa semacam ini terdanai, jadi arahnya mungkin masuk akal tetapi klaim seperti yang dinyatakan tidak punya penyebut.",
+      "fact": "\"Nol wawancara pengguna sudah dilakukan\", gerbang data belum dijalankan, dan data FIRMS belum diminta, sehingga pada 9 November n = 0 baik untuk kegunaan fitur maupun untuk klaim \"tampak aman\", dan berkas tidak memuat satu pun usulan yang terdanai.",
+      "flip": "Gerbang data dijalankan pada seluruh desa Kalbar dan Kalteng dan lolos rasio 1,5 kali, dan wawancara lintas beberapa desa (bukan satu kasus) menunjukkan sekdes dan ketua MPA akan memakai alurnya serta ada kanal dana yang masih terbuka dan bersedia menerima format usulan ini."
+    },
+    {
+      "juror": "The Parent",
+      "vote": "GUILTY",
+      "reason": "Kalau desa saya memakai skor ini untuk memutuskan ke mana uang yang menyusut pergi dan apakah kami \"siap\" menghadapi api, saya perlu tahu angkanya layak dipercaya, dan hari ini belum ada satu pun sekdes atau ketua MPA yang ditanya, jadi klaim \"benar-benar menjawab dan setiap fitur berguna\" belum boleh dijalankan seperti yang dinyatakan.",
+      "fact": "Seluruh bobot serta target tingkat rendah, sumur bor, dan BBM adalah asumsi tim, standar regu sumbernya \"bukan kewajiban desa\", padahal \"Nol wawancara pengguna sudah dilakukan\".",
+      "flip": "Wawancara 10-11 November menunjukkan sekdes dan ketua MPA sungguh memakai daftar ini, target dan bobotnya mereka anggap masuk akal, dan masih ada kanal dana terbuka yang mau menerima usulannya."
+    },
+    {
+      "juror": "The Investor",
+      "vote": "GUILTY",
+      "reason": "Uang saya tidak akan masuk ke produk yang diklaim \"setiap fiturnya berguna serta punya nilai jual\" padahal belum ada satu pun pengguna atau pemegang dana yang ditanya, uang di desa jangkarnya sedang menyusut, dan pembela sendiri mengakui klaim \"setiap fitur\" belum bisa dibuktikan; arahnya layak diuji, tetapi tidak layak didanai seperti yang dinyatakan.",
+      "fact": "\"Nol wawancara pengguna sudah dilakukan\", dan berkas tidak memuat satu pun kanal (APBDes, BPBD, Daops, atau CSR) yang terbukti menerima usulan semacam ini.",
+      "flip": "Wawancara 10-11 November menghasilkan satu pemegang dana nyata (sekdes, BPBD, Daops, atau CSR) yang menyatakan secara tercatat akan menilai usulan format FR-15 pada jendela anggaran yang masih terbuka, sehingga alur inti punya pembeli dan klaim bisa dipersempit ke fitur yang terbukti dipakai."
+    },
+    {
+      "juror": "The Designer",
+      "vote": "GUILTY",
+      "reason": "Tagline dan satu layar Kesiapan Desa memang mudah ditangkap orang asing dalam lima detik, tetapi kalimat paling jelas itu justru belum terbukti, dan belum ada satu pun sekdes atau ketua MPA yang pernah melihat apakah kejelasan itu sampai kepada mereka, jadi klaim \"setiap fiturnya berguna\" belum boleh dinyatakan.",
+      "fact": "Gerbang data untuk klaim \"tampak aman\" belum dijalankan dan, menurut tabel uji tim sendiri, kegagalannya berarti \"Buang klaim 'tampak aman'\", padahal itulah janji di balik tagline \"Enam tahun tanpa api bukan berarti aman.\"",
+      "flip": "Gerbang data lolos dan pada wawancara 10-11 November seorang sekdes, setelah melihat Kartu Paparan dan layar Kesiapan Desa tanpa dijelaskan, bisa mengatakan sendiri apa artinya bagi desanya dan dana apa yang akan ia usulkan."
+    },
+    {
+      "juror": "The Lawyer",
+      "vote": "GUILTY",
+      "reason": "Sebagai pengacara saya tidak bisa meloloskan produk yang menerbitkan usulan belanja uang publik (FR-15) untuk ditandatangani perangkat desa sementara dasar hukum penganggarannya belum dibaca tim, targetnya dipinjam dari aturan yang bukan untuk desa, dan berkas sama sekali diam soal siapa yang menanggung akibat bila usulan itu keliru.",
+      "fact": "Berkas mencatat jadwal RKP Desa dan APBDes hanya dari materi turunan dengan \"Teks resmi Permendagri belum dibuka\" dan tidak ditemukan Permendes fokus Dana Desa 2027, padahal FR-15 menghasilkan dokumen untuk perubahan APBDes.",
+      "flip": "Sebelum code freeze tim membuka teks resmi aturan penganggaran desa yang berlaku untuk 2027 dan memastikan satu kanal FR-15 secara sah masih bisa menerima usulan itu, dengan setiap dokumen keluaran menyatakan terang bahwa target dan bobotnya asumsi tim, bukan standar yang mengikat desa."
+    }
+  ]
+}

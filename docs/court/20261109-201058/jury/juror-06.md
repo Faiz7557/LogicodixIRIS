@@ -1,0 +1,4 @@
+VOTE: GUILTY
+REASON: Sebagai orang yang membangun barang, saya tidak bisa meloloskan 13 fitur P0 dari nol kode dalam lima hari dengan submission sekali, ketika yang pertama patah adalah pipa datanya: FR-02, FR-03, dan FR-04 bergantung pada arsip yang belum diminta, tanpa rencana cadangan, dan data simulasi dilarang.
+DECIDING FACT: Per 9 November "Belum ada kode. Belum ada data yang diunduh", data FIRMS belum diminta dan antreannya memakai surel "dengan durasi tidak diketahui", sedangkan code freeze 14 November pukul 23.59 WIB.
+WOULD FLIP IF: Data FIRMS 2012-2026 untuk Kalbar dan Kalteng sudah di tangan dan pipeline sudah menghasilkan kartu paparan nyata (FR-02) untuk seluruh desa dalam cakupan, sehingga sisa pekerjaan tinggal mesin TypeScript dan layar yang memang bisa dibangun sebelum freeze.

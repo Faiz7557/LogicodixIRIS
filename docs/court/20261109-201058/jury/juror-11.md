@@ -1,0 +1,4 @@
+VOTE: GUILTY
+REASON: Tagline dan satu layar Kesiapan Desa memang mudah ditangkap orang asing dalam lima detik, tetapi kalimat paling jelas itu justru belum terbukti, dan belum ada satu pun sekdes atau ketua MPA yang pernah melihat apakah kejelasan itu sampai kepada mereka, jadi klaim "setiap fiturnya berguna" belum boleh dinyatakan.
+DECIDING FACT: Gerbang data untuk klaim "tampak aman" belum dijalankan dan, menurut tabel uji tim sendiri, kegagalannya berarti "Buang klaim 'tampak aman'", padahal itulah janji di balik tagline "Enam tahun tanpa api bukan berarti aman."
+WOULD FLIP IF: Gerbang data lolos dan pada wawancara 10-11 November seorang sekdes, setelah melihat Kartu Paparan dan layar Kesiapan Desa tanpa dijelaskan, bisa mengatakan sendiri apa artinya bagi desanya dan dana apa yang akan ia usulkan.

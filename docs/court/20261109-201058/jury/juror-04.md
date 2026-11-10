@@ -1,0 +1,4 @@
+VOTE: GUILTY
+REASON: Klaim yang diajukan adalah produk "benar-benar" menjawab masalah dan "setiap" fiturnya berguna serta bernilai jual, tetapi beban pembuktian itu belum dipikul, sebab Pembela sendiri mengakui "setiap fitur" belum bisa dibuktikan dan yang tersisa di berkas hanyalah harapan yang dijadwalkan untuk diuji besok.
+DECIDING FACT: Per 9 November "Nol wawancara pengguna sudah dilakukan", belum ada kode, belum ada data yang diunduh, dan data FIRMS yang menjadi syarat fitur P0 FR-02 dan FR-04 belum diminta.
+WOULD FLIP IF: Berkas memuat hasil wawancara 10-11 November yang menunjukkan sekdes masih punya kanal dana terbuka dan ketua MPA benar-benar akan memakai daftar alat itu, disertai data FIRMS yang sudah di tangan, dengan klaim dipersempit dari "setiap fitur" menjadi fitur yang terbukti.

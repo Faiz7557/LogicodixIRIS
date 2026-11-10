@@ -1,0 +1,4 @@
+VOTE: GUILTY
+REASON: Sebagai pengacara saya tidak bisa meloloskan produk yang menerbitkan usulan belanja uang publik (FR-15) untuk ditandatangani perangkat desa sementara dasar hukum penganggarannya belum dibaca tim, targetnya dipinjam dari aturan yang bukan untuk desa, dan berkas sama sekali diam soal siapa yang menanggung akibat bila usulan itu keliru.
+DECIDING FACT: Berkas mencatat jadwal RKP Desa dan APBDes hanya dari materi turunan dengan "Teks resmi Permendagri belum dibuka" dan tidak ditemukan Permendes fokus Dana Desa 2027, padahal FR-15 menghasilkan dokumen untuk perubahan APBDes.
+WOULD FLIP IF: Sebelum code freeze tim membuka teks resmi aturan penganggaran desa yang berlaku untuk 2027 dan memastikan satu kanal FR-15 secara sah masih bisa menerima usulan itu, dengan setiap dokumen keluaran menyatakan terang bahwa target dan bobotnya asumsi tim, bukan standar yang mengikat desa.
