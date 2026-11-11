@@ -63,7 +63,7 @@ export const AKIBAT_UJI =
   "Dua lulus: pertahankan klaim. A lulus, B gagal: lunakkan kalimat. A gagal: buang klaim “tampak aman”, fakta paparan tetap.";
 
 export const AI = [
-  { label: "Model", isi: "Claude (claude-opus-5-5) atau 9router (gemini-3.8-flash-low) bila kunci API tersedia." },
+  { label: "Model", isi: "Claude (claude-opus-5-5), OpenAI (gpt-6-luna), atau 9router (gemini-3.8-flash-low) bila kunci API tersedia." },
   { label: "Dipakai untuk", isi: "Menyusun kalimat narasi dokumen usulan, dan membantu mengisi formulir alat dari pesan yang ditempel. Tanpa kunci API, isian alat memakai parser deterministik." },
   {
     label: "Batas",

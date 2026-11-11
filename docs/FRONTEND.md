@@ -61,7 +61,7 @@ npm run dev
 
 DB ini diabaikan git. Setiap anggota tim membuatnya sendiri, dan akun demo hanya ada di komputer masing-masing.
 
-Catatan: route `POST /api/desa/[kode]/inventaris/parse` sudah hidup (Claude, lalu 9router, lalu parser deterministik), tetapi formulir Catat Alat belum memanggilnya. `generateNarrative` juga belum memanggil model; dokumen usulan memakai template.
+Catatan: route `POST /api/desa/[kode]/inventaris/parse` sudah hidup (Claude, lalu OpenAI, lalu 9router, lalu parser deterministik), tetapi formulir Catat Alat belum memanggilnya. `generateNarrative` juga belum memanggil model; dokumen usulan memakai template.
 
 Catatan pengujian: panel pratinjau tidak memberi fokus papan ketik, sehingga `blur` tidak terpicu. Galat per isian yang muncul saat meninggalkan kolom perlu dicoba sekali di browser biasa.
 

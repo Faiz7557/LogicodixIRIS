@@ -103,8 +103,10 @@ Jalankan `make env` untuk menyalin `frontend/.env.example` ke `frontend/.env` da
 | `DATABASE_AUTH_TOKEN` | Deploy | Kosong di lokal, diisi untuk libSQL jarak jauh |
 | `ANTHROPIC_API_KEY` | Tidak | Jalur pertama parse pesan inventaris |
 | `ANTHROPIC_MODEL` | Tidak | Bawaan `claude-opus-5-5` |
-| `NINE_ROUTER_BASE_URL` | Tidak | Endpoint OpenAI-compatible untuk jalur kedua parse |
-| `NINE_ROUTER_API_KEY` | Tidak | Tanpa kunci ini dan tanpa Anthropic, parse memakai parser deterministik |
+| `OPENAI_API_KEY` | Tidak | Jalur kedua parse pesan inventaris |
+| `OPENAI_MODEL_CLASSIFIER` | Tidak | Bawaan `gpt-6-luna` |
+| `NINE_ROUTER_BASE_URL` | Tidak | Endpoint OpenAI-compatible untuk jalur ketiga parse |
+| `NINE_ROUTER_API_KEY` | Tidak | Tanpa kunci ini, tanpa Anthropic, dan tanpa OpenAI, parse memakai parser deterministik |
 | `NINE_ROUTER_MODEL` | Tidak | Bawaan `ag/gemini-3.8-flash-low` |
 | `NINE_ROUTER_PATH` | Tidak | Bawaan `/v1/chat/completions` |
 | `TRUST_PROXY` | Tidak | `1` hanya bila platform benar-benar mengisi `x-forwarded-for` |
@@ -142,7 +144,7 @@ Aturan yang berlaku di semua route ber-`[kode]`:
 - Semua SQL berparameter; nilai desa ditimpa lalu dicatat ke `audit_log`.
 - Mutasi menyimpan `updated_by` dan `updated_at`.
 
-`inventaris/parse` mencoba Claude, lalu 9router, lalu parser deterministik. Semua keluaran AI divalidasi zod terhadap kode katalog dan angka tidak negatif. Hasil tidak pernah disimpan otomatis.
+`inventaris/parse` mencoba Claude, lalu OpenAI, lalu 9router, lalu parser deterministik. Semua keluaran AI divalidasi zod terhadap kode katalog dan angka tidak negatif. Hasil tidak pernah disimpan otomatis.
 
 ## Pipeline data
 
@@ -193,6 +195,6 @@ deactivate
 
 ## Penggunaan AI
 
-Kode ditulis dengan bantuan AI coding assistant (Claude Code, model Claude Opus 5.5). Model yang dapat dipakai aplikasi: `ANTHROPIC_MODEL` (bawaan `claude-opus-5-5`) untuk parse inventaris, dan `NINE_ROUTER_MODEL` sebagai jalur cadangan. Narasi usulan belum memanggil model; `generateNarrative` masih mengembalikan template.
+Kode ditulis dengan bantuan AI coding assistant (Claude Code, model Claude Opus 5.5). Model yang dapat dipakai aplikasi untuk parse inventaris: `ANTHROPIC_MODEL` (bawaan `claude-opus-5-5`), `OPENAI_MODEL_CLASSIFIER` (bawaan `gpt-6-luna`), dan `NINE_ROUTER_MODEL` sebagai jalur terakhir. Narasi usulan belum memanggil model; `generateNarrative` masih mengembalikan template.
 
 P0 berjalan tanpa internet dan tanpa kunci API. Tanpa kunci, parse pesan memakai parser deterministik dan narasi memakai template.
