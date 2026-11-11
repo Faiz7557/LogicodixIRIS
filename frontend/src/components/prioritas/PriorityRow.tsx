@@ -4,23 +4,37 @@ import { formatAngka, formatRupiah } from "@/lib/format";
 import { namaAksi } from "@/lib/prioritas";
 import type { Aksi, Keputusan, PriorityRow as Baris } from "@/lib/types";
 
-const PILIHAN: { nilai: Keputusan; label: string; aktif: string }[] = [
-  { nilai: "setuju", label: "Setuju", aktif: "border-ok bg-ok text-white" },
-  { nilai: "tunda", label: "Tunda", aktif: "border-warn bg-warn text-white" },
-  { nilai: "tolak", label: "Tolak", aktif: "border-danger bg-danger text-white" },
-];
+export const idKartu = (b: Pick<Baris, "itemKode" | "aksi">) => `kartu-${b.itemKode}-${b.aksi}`;
+
+/** Jumlah alat berfungsi dan target paket untuk bilah "Ada X dari Y". */
+export type Stok = { berfungsi: number; target: number };
+
+const TOMBOL_IKON: Record<Exclude<Keputusan, "setuju">, { label: string; kelas: string; ikon: React.ReactNode }> = {
+  tunda: {
+    label: "Tunda",
+    kelas: "text-warn hover:bg-warn-soft",
+    ikon: (
+      <>
+        <circle cx="12" cy="12" r="8" />
+        <path d="M12 8v4l2.5 1.5" />
+      </>
+    ),
+  },
+  tolak: { label: "Tolak", kelas: "text-danger hover:bg-danger-soft", ikon: <path d="M7 7l10 10M17 7L7 17" /> },
+};
 
 /**
- * Satu baris belanja terpilih (Design Brief v2 §7): urutan, aksi, item, jumlah, biaya, sumber harga,
- * alasan, dan keputusan. Keputusan memakai tombol asli dengan aria-pressed; pilihan juga tampil sebagai
- * kata, bukan hanya warna. Catatan muncul saat Tolak atau Tunda dipilih.
+ * Satu kartu saran belanja (pola kartu tugas Sparekit): chip aksi, nama item, sumber harga,
+ * bilah "Ada X dari Y", cakupan sesudah dan biaya, lalu tombol keputusan.
+ * Setujui jadi tombol utama; Tunda dan Tolak tombol ikon berlabel. Kolom yang sedang ditempati tidak diberi tombol.
  */
-export function PriorityRow({
+export function KartuBelanja({
   nomor,
   baris,
   namaItem,
   satuan,
   sumberHarga,
+  stok,
   keputusan,
   catatan,
   onKeputusan,
@@ -31,61 +45,64 @@ export function PriorityRow({
   namaItem: string;
   satuan: string;
   sumberHarga?: string;
+  stok?: Stok;
   keputusan?: Keputusan;
   catatan?: string;
   onKeputusan: (k: Keputusan) => void;
   onCatatan: (c: string) => void;
 }) {
-  const id = `baris-${baris.itemKode}-${baris.aksi}`;
+  const id = idKartu(baris);
+  const persen = stok && stok.target > 0 ? Math.min(stok.berfungsi / stok.target, 1) : 0;
+  const sesudah = stok && stok.target > 0 ? Math.min((stok.berfungsi + baris.qty) / stok.target, 1) : null;
+  const ikon = (["tunda", "tolak"] as const).filter((k) => k !== keputusan);
+
   return (
-    <li className="px-4 py-4">
-      <div className="flex items-start gap-3">
-        <span aria-hidden="true" className="tabular flex size-8 shrink-0 items-center justify-center rounded-full bg-paper text-sm font-bold">
-          {nomor}
+    <li
+      id={id}
+      tabIndex={-1}
+      style={{ viewTransitionName: id }}
+      className="rounded-xl border border-line bg-surface p-3 shadow-card outline-none focus-visible:ring-2 focus-visible:ring-ember"
+    >
+      <div className="flex items-center justify-between gap-2">
+        <span
+          className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-semibold ${
+            baris.aksi === "beli" ? "bg-water-soft text-water" : "bg-ok-soft text-ok"
+          }`}
+        >
+          {namaAksi(baris.aksi)} {formatAngka(baris.qty)} {satuan}
         </span>
-        <div className="min-w-0 flex-1">
-          <h3 className="font-bold">
-            <AksiLabel aksi={baris.aksi} /> {namaItem}
-          </h3>
-          <p className="tabular mt-0.5 flex flex-wrap items-baseline gap-x-2">
-            <span className="text-sm text-muted">
-              {formatAngka(baris.qty)} {satuan}
-            </span>
-            <span className="text-lg font-bold">{formatRupiah(baris.biayaRp)}</span>
-          </p>
-          <p className="mt-1">{baris.alasan}</p>
-          {sumberHarga ? <p className="mt-1 text-sm text-muted">Harga: {sumberHarga}</p> : null}
-        </div>
+        <span className="tabular text-xs text-muted">
+          <span className="sr-only">Urutan </span>#{nomor}
+        </span>
       </div>
 
-      <div role="group" aria-label={`Keputusan untuk ${namaAksi(baris.aksi)} ${namaItem}`} className="mt-3 grid grid-cols-3 gap-2">
-        {PILIHAN.map((p) => {
-          const dipilih = keputusan === p.nilai;
-          return (
-            <button
-              key={p.nilai}
-              type="button"
-              aria-pressed={dipilih}
-              onClick={() => onKeputusan(p.nilai)}
-              className={`flex min-h-11 items-center justify-center gap-1 rounded-card border text-sm font-semibold ${
-                dipilih ? p.aktif : "border-line bg-surface text-ink"
-              }`}
-            >
-              {dipilih ? (
-                <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M5 12l5 5 9-10" />
-                </svg>
-              ) : null}
-              {p.label}
-            </button>
-          );
-        })}
+      <h3 className="mt-2 font-semibold leading-snug">{namaItem}</h3>
+      {sumberHarga ? (
+        <p title={sumberHarga} className="truncate text-xs text-muted">
+          Harga: {sumberHarga}
+        </p>
+      ) : null}
+
+      {stok ? (
+        <div className="mt-2.5 flex items-center gap-3">
+          <span aria-hidden="true" className="h-1.5 flex-1 overflow-hidden rounded-full bg-line">
+            <span className="block h-full rounded-full bg-ember" style={{ width: `${persen * 100}%` }} />
+          </span>
+          <span className="tabular shrink-0 text-xs text-muted">
+            Ada <span className="font-semibold text-ink">{formatAngka(stok.berfungsi)}</span> dari {formatAngka(stok.target)} {satuan}
+          </span>
+        </div>
+      ) : null}
+
+      <div className="mt-2.5 flex items-baseline justify-between gap-2 border-t border-line pt-2.5 text-sm">
+        <span className="text-muted">{sesudah !== null ? `Naik ke ${Math.round(sesudah * 100)}%` : baris.alasan}</span>
+        <span className="tabular font-semibold">{formatRupiah(baris.biayaRp)}</span>
       </div>
 
       {keputusan === "tolak" || keputusan === "tunda" ? (
-        <div className="mt-2">
-          <label htmlFor={`${id}-catatan`} className="text-sm font-semibold">
-            Catatan <span className="font-normal text-muted">(boleh kosong)</span>
+        <div className="mt-2.5">
+          <label htmlFor={`${id}-catatan`} className="sr-only">
+            Catatan untuk {namaItem}
           </label>
           <input
             id={`${id}-catatan`}
@@ -93,10 +110,47 @@ export function PriorityRow({
             maxLength={200}
             value={catatan ?? ""}
             onChange={(e) => onCatatan(e.target.value)}
-            className="mt-1 min-h-11 w-full rounded-card border border-line bg-surface px-3"
+            placeholder={keputusan === "tunda" ? "Catatan: tunggu APBDes perubahan" : "Catatan: sudah dibantu BPBD"}
+            className="min-h-9 w-full rounded-lg border border-line bg-paper px-2.5 text-sm"
           />
         </div>
       ) : null}
+
+      <div role="group" aria-label={`Keputusan untuk ${namaAksi(baris.aksi)} ${namaItem}`} className="mt-3 flex items-center gap-2">
+        {keputusan !== "setuju" ? (
+          <button
+            type="button"
+            onClick={() => onKeputusan("setuju")}
+            className="flex min-h-9 flex-1 items-center justify-center gap-1.5 rounded-lg bg-ink px-3 text-sm font-semibold text-white hover:bg-ink/85"
+          >
+            Setujui
+            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M5 12h14M13 6l6 6-6 6" />
+            </svg>
+          </button>
+        ) : (
+          <span className="flex min-h-9 flex-1 items-center gap-1.5 text-sm font-semibold text-ok">
+            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M5 12l5 5 9-10" />
+            </svg>
+            Masuk usulan
+          </span>
+        )}
+        {ikon.map((k) => (
+          <button
+            key={k}
+            type="button"
+            onClick={() => onKeputusan(k)}
+            aria-label={TOMBOL_IKON[k].label}
+            title={TOMBOL_IKON[k].label}
+            className={`flex size-9 shrink-0 items-center justify-center rounded-lg border border-line bg-surface ${TOMBOL_IKON[k].kelas}`}
+          >
+            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              {TOMBOL_IKON[k].ikon}
+            </svg>
+          </button>
+        ))}
+      </div>
     </li>
   );
 }

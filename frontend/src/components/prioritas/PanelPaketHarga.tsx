@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { GambarItem } from "@/components/kesiapan/GambarItem";
 import { AssumptionNote } from "@/components/ui/AssumptionNote";
 import { formatAngka, formatRupiah } from "@/lib/format";
 import { ALASAN_MIN, namaAksi, parsePagu } from "@/lib/prioritas";
@@ -11,7 +12,7 @@ export type Edit = { jenis: "target"; itemKode: string } | { jenis: "harga"; ite
 /**
  * Panel paket minimum dan harga (App Flow v2 §3.8 butir 6).
  * Mengubah target wajib alasan; mengubah atau mengisi harga wajib sumber (Jobdesk: harga tanpa sumber dilarang).
- * Satu formulir terbuka pada satu waktu.
+ * Satu kartu per item dalam grid dua kolom; satu formulir terbuka pada satu waktu.
  */
 export function PanelPaketHarga({
   catalog,
@@ -44,68 +45,103 @@ export function PanelPaketHarga({
       <summary className="flex min-h-12 cursor-pointer items-center px-4 font-bold">Paket minimum dan harga</summary>
       <div className="space-y-4 border-t border-line px-4 py-4">
         <AssumptionNote>Target, bobot, dan sebagian harga bukan standar yang mengikat desa. Desa boleh mengubahnya dengan alasan.</AssumptionNote>
-        <ul className="divide-y divide-line">
+        <ul className="grid gap-3 md:grid-cols-2">
           {catalog.map((c) => {
             const p = paket.find((x) => x.itemKode === c.kode);
             const aksiList: Aksi[] = c.punyaRusak ? ["beli", "perbaiki"] : ["beli"];
             return (
-              <li key={c.kode} className="py-3">
-                <p className="font-bold">{c.nama}</p>
-                <div className="mt-1 flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-sm">
-                    Target: <span className="tabular font-semibold">{p ? formatAngka(p.target) : "–"} {c.satuan}</span>
-                    <span className="block text-muted">{p?.sumber}</span>
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => setEdit({ jenis: "target", itemKode: c.kode })}
-                    className="min-h-11 rounded-card border border-line px-3 text-sm font-semibold"
-                  >
-                    Ubah target
-                  </button>
+              <li key={c.kode} className="flex flex-col rounded-xl border border-line bg-surface p-4 shadow-card">
+                <div className="flex items-center gap-3">
+                  <GambarItem kode={c.kode} className="size-10 rounded-lg" />
+                  <h3 className="font-semibold">{c.nama}</h3>
                 </div>
-                {edit?.jenis === "target" && edit.itemKode === c.kode ? (
-                  <FormTarget awal={p?.target ?? 0} onBatal={() => setEdit(null)} onSimpan={(t, a) => onSimpanTarget(c.kode, t, a)} />
-                ) : null}
 
-                {aksiList.map((aksi) => {
-                  const h = harga.find((x) => x.itemKode === c.kode && x.aksi === aksi);
-                  return (
-                    <div key={aksi} className="mt-2">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <p className="text-sm">
-                          Harga {namaAksi(aksi).toLowerCase()}:{" "}
-                          {h ? (
-                            <span className="tabular font-semibold">{formatRupiah(h.hargaRp)}</span>
-                          ) : (
-                            <span className="font-semibold text-warn">Belum ada harga</span>
-                          )}
-                          {h ? <span className="block text-muted">{h.sumber}</span> : null}
-                        </p>
-                        <button
-                          type="button"
-                          onClick={() => setEdit({ jenis: "harga", itemKode: c.kode, aksi })}
-                          className="min-h-11 rounded-card border border-line px-3 text-sm font-semibold"
-                        >
-                          {h ? "Ubah harga" : "Isi harga"}
-                        </button>
-                      </div>
-                      {edit?.jenis === "harga" && edit.itemKode === c.kode && edit.aksi === aksi ? (
-                        <FormHarga
-                          awal={h?.hargaRp}
-                          onBatal={() => setEdit(null)}
-                          onSimpan={(rp, sumber) => onSimpanHarga(c.kode, aksi, rp, sumber)}
-                        />
-                      ) : null}
-                    </div>
-                  );
-                })}
+                <div className="mt-3 divide-y divide-line border-t border-line">
+                  <Baris
+                    label="Target"
+                    nilai={`${p ? formatAngka(p.target) : "–"} ${c.satuan}`}
+                    sumber={p?.sumber}
+                    tombol="Ubah"
+                    labelTombol={`Ubah target ${c.nama}`}
+                    onTombol={() => setEdit({ jenis: "target", itemKode: c.kode })}
+                  >
+                    {edit?.jenis === "target" && edit.itemKode === c.kode ? (
+                      <FormTarget awal={p?.target ?? 0} onBatal={() => setEdit(null)} onSimpan={(t, a) => onSimpanTarget(c.kode, t, a)} />
+                    ) : null}
+                  </Baris>
+
+                  {aksiList.map((aksi) => {
+                    const h = harga.find((x) => x.itemKode === c.kode && x.aksi === aksi);
+                    return (
+                      <Baris
+                        key={aksi}
+                        label={`Harga ${namaAksi(aksi).toLowerCase()}`}
+                        nilai={h ? formatRupiah(h.hargaRp) : null}
+                        sumber={h?.sumber}
+                        tombol={h ? "Ubah" : "Isi harga"}
+                        labelTombol={`${h ? "Ubah" : "Isi"} harga ${namaAksi(aksi).toLowerCase()} ${c.nama}`}
+                        onTombol={() => setEdit({ jenis: "harga", itemKode: c.kode, aksi })}
+                      >
+                        {edit?.jenis === "harga" && edit.itemKode === c.kode && edit.aksi === aksi ? (
+                          <FormHarga awal={h?.hargaRp} onBatal={() => setEdit(null)} onSimpan={(rp, sumber) => onSimpanHarga(c.kode, aksi, rp, sumber)} />
+                        ) : null}
+                      </Baris>
+                    );
+                  })}
+                </div>
               </li>
             );
           })}
         </ul>
       </div>
     </details>
+  );
+}
+
+/** Satu baris di kartu item: label, nilai, sumber satu baris, tombol kecil, lalu formulir bila sedang diubah. */
+function Baris({
+  label,
+  nilai,
+  sumber,
+  tombol,
+  labelTombol,
+  onTombol,
+  children,
+}: {
+  label: string;
+  /** null = belum ada nilai. */
+  nilai: string | null;
+  sumber?: string;
+  tombol: string;
+  labelTombol: string;
+  onTombol: () => void;
+  children?: React.ReactNode;
+}) {
+  return (
+    <div className="py-2.5">
+      <div className="flex items-start justify-between gap-3">
+        <p className="min-w-0 text-sm">
+          <span className="text-muted">{label}: </span>
+          {nilai !== null ? <span className="tabular font-semibold">{nilai}</span> : <span className="font-semibold text-warn">Belum ada harga</span>}
+          {sumber ? (
+            <span title={sumber} className="block truncate text-xs text-muted">
+              {sumber}
+            </span>
+          ) : null}
+        </p>
+        <button
+          type="button"
+          onClick={onTombol}
+          aria-label={labelTombol}
+          className={`min-h-9 shrink-0 rounded-lg border px-3 text-sm font-semibold ${
+            nilai === null ? "border-ember/40 bg-ember-soft text-ember" : "border-line bg-surface hover:bg-paper"
+          }`}
+        >
+          {tombol}
+        </button>
+      </div>
+      {children}
+    </div>
   );
 }
 

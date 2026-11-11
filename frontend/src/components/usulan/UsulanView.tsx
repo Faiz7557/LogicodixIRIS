@@ -92,7 +92,7 @@ export function UsulanView({
 
       {disetujui.length === 0 ? (
         <div className="mt-5">
-          <EmptyState title="Setujui dulu minimal satu baris belanja." action={{ href: `/desa/${kode}/prioritas`, label: "Ke Prioritas" }}>
+          <EmptyState title="Setujui dulu minimal satu baris belanja." action={{ href: `/desa/${kode}/prioritas`, label: "Ke Keputusan" }}>
             Usulan hanya memuat baris yang sudah disetujui desa.
           </EmptyState>
         </div>
