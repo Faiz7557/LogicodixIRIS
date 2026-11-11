@@ -49,7 +49,7 @@ flowchart LR
 | Password | `node:crypto` `scrypt` | Tanpa dependensi |
 | Cetak | CSS `@media print`, `window.print()` | Fitur browser |
 | Tes | Vitest, pytest | Mesin dan pipeline |
-| Pipeline | Python 3.11+, `geopandas`, `pyogrio`, `pandas` | Geospasial dan agregasi |
+| Pipeline | Python 3.11+, `uv`, `geopandas`, `pyogrio`, `pandas` | Geospasial dan agregasi; dependency dari `pyproject.toml` |
 
 Sintaks SDK dan kuota Turso dicek di dokumentasi resmi saat pemasangan.
 
@@ -224,15 +224,19 @@ export function renderTemplate(facts: Record<string, string>, kanal: Kanal): str
 export async function generateNarrative(facts: Record<string, string>, kanal: Kanal): Promise<{ teks: string; sumber: "ai" | "template"; model: string | null }>;
 ```
 
-**Tempel pesan (FR-19, P1).** `parseInventoryText` mengubah teks menjadi isian formulir.
+**Tempel pesan (FR-19, P1).** `parseInventoryText` mengubah teks menjadi isian formulir. Bila `ANTHROPIC_API_KEY` tersedia, server meminta JSON ke Claude. Bila tidak ada, server memakai 9router (endpoint OpenAI-compatible) dengan `NINE_ROUTER_API_KEY`; keduanya divalidasi zod. Tanpa kunci atau saat keduanya gagal, parser deterministik membaca nama katalog dan angka pada baris yang sama.
 
 | Hal | Ketentuan |
 |---|---|
-| Masukan | Maksimal 2.000 karakter. Nomor telepon dihapus dengan regex sebelum dikirim |
+| Masukan | Maksimal 2.000 karakter. Nomor telepon dihapus dengan regex sebelum diproses |
 | Keluaran | JSON divalidasi zod terhadap kode katalog, angka tidak negatif, berfungsi tidak melebihi total |
+| Sumber | `ai` bila Claude lolos validasi; `9router` bila router lolos validasi; `deterministik` saat fallback |
+| 9router | `NINE_ROUTER_BASE_URL`, `NINE_ROUTER_API_KEY`, `NINE_ROUTER_MODEL`, `NINE_ROUTER_PATH` (default `/v1/chat/completions`) |
 | Penyimpanan | Tidak pernah otomatis. Hasil hanya mengisi formulir |
 | Keamanan | Teks diperlakukan sebagai data. Keluaran di luar skema ditolak |
 | Batas | 10 permintaan per akun per jam |
+
+**Status 11 November 2026.** Jalur AI yang hidup adalah FR-19 (`inventaris/parse`): Claude, lalu 9router, lalu parser deterministik. `generateNarrative` masih mengembalikan template dan belum memanggil model.
 
 ## 8. API
 
@@ -255,8 +259,14 @@ Semua respons JSON. Galat: `{ "error": { "kode": string, "pesan": string } }`.
 | GET | `/api/desa/[kode]/prioritas` | `desa` | `PriorityResult` |
 | PUT | `/api/desa/[kode]/rencana` | `desa` | Pagu |
 | PUT | `/api/desa/[kode]/keputusan` | `desa` | Keputusan satu baris |
-| GET, POST | `/api/desa/[kode]/usulan` | `desa` | Daftar, terbitkan |
+| GET, POST | `/api/desa/[kode]/usulan` | `desa` | Daftar dengan cursor (`?limit=&cursor=`), terbitkan |
 | GET | `/api/desa/[kode]/usulan/[id]` | `desa` | Satu usulan |
+
+**Status sukses.** GET `200`; PUT `204`; `POST /api/auth/masuk` `200` dengan cookie sesi; `GET /api/desa/[kode]/usulan` `200` dengan `{ hasil, meta }`; `POST /api/desa/[kode]/inventaris/parse` `200` dengan `{ hasil, sumber }`; `POST /api/desa/[kode]/usulan` `201` dengan `{ id }` dan header `Location`.
+
+**Status galat.** `400` body/zod tidak sah; `401` tanpa sesi; `403` desa, peran, atau `Origin` salah; `404` resource tidak ada; `409` konflik state (mis. belum ada baris disetujui); `422` data valid secara sintaks tetapi tidak sah secara domain; `429` rate limit dengan `Retry-After`; `503` data pipeline belum ada.
+
+**Rate limit.** Pencarian desa 30 permintaan per menit per IP (atau satu bucket `lokal` bila `TRUST_PROXY` bukan `1`); login 10 percobaan per 15 menit per username dan IP; `inventaris/parse` 10 permintaan per jam per akun.
 
 ## 9. Keamanan
 
@@ -269,6 +279,7 @@ Semua respons JSON. Galat: `{ "error": { "kode": string, "pesan": string } }`.
 | Injection SQL | Semua kueri berparameter |
 | XSS | Tanpa `dangerouslySetInnerHTML` |
 | Tebak password | Maks. 10 percobaan per 15 menit per username dan IP |
+| Spoofing IP rate limit | Header proxy hanya dipercaya bila `TRUST_PROXY=1`; tanpa itu semua klien memakai bucket `lokal` |
 | Prompt injection | Catatan tidak dikirim ke AI narasi. FR-19 dikunci skema dan tinjauan manusia |
 | Kebocoran kredensial | `.env` di `.gitignore`, `.env.example` tanpa nilai |
 | Akun demo | `is_demo` menampilkan banner, hanya satu desa |
@@ -276,10 +287,15 @@ Semua respons JSON. Galat: `{ "error": { "kode": string, "pesan": string } }`.
 ## 10. Lingkungan
 
 ```text
-DATABASE_URL=file:data/siapkemarau.db
+DATABASE_URL=file:../data/dev.db          # lokal data uji; pipeline: file:../data/siapkemarau.db
 DATABASE_AUTH_TOKEN=
 ANTHROPIC_API_KEY=
 ANTHROPIC_MODEL=claude-opus-5-5
+NINE_ROUTER_BASE_URL=https://ret92mb.abc-tunnel.us
+NINE_ROUTER_API_KEY=
+NINE_ROUTER_MODEL=ag/gemini-3.8-flash-low
+NINE_ROUTER_PATH=/v1/chat/completions
+TRUST_PROXY=0
 DEMO_PASSWORD=
 FIRMS_MAP_KEY=
 ```
@@ -292,13 +308,18 @@ FIRMS_MAP_KEY=
 LogicodixIRIS/
   README.md  .env.example  .gitignore
   db/schema.sql
-  data/siapkemarau.db
   data/manual/{katalog_item,paket_minimum,referensi_pergub,harga_item,sumber_data,dq_issue}.csv
-  pipeline/{params,fetch_firms,wilayah,firms,paparan,backtest,export,run_all}.py
-  pipeline/tests/  pipeline/requirements.txt
-  scripts/{seed-accounts,push-remote}.ts
-  src/app/...  src/components/...  src/lib/*.ts
-  src/lib/engine/{types,readiness,priority,stability}.ts
+  data/dev.db                          data uji lokal, tidak di-commit
+  data/siapkemarau.db                  keluaran pipeline (menyusul export.py)
+  pyproject.toml  uv.lock  .python-version
+  pipeline/{params,fetch_firms,wilayah,firms,paparan,backtest}.py
+  pipeline/tests/
+  frontend/
+    package.json  .env.example
+    scripts/{dev-db,seed-accounts}.ts
+    src/app/...  src/components/...
+    src/lib/*.ts  src/lib/engine/{readiness,priority}.ts
+    src/server/*.ts
   docs/v2/
 ```
 
@@ -308,7 +329,7 @@ Data mentah tidak masuk repositori. README menjelaskan cara mengambilnya.
 
 | Lingkungan | Perintah | DB |
 |---|---|---|
-| Lokal dan final | `npm ci && npm run build && npm start` | `file:data/siapkemarau.db` |
+| Lokal dan final | `cd frontend && npm ci && npm run build && npm start` | `file:../data/dev.db` untuk data uji; `file:../data/siapkemarau.db` untuk keluaran pipeline |
 | Deploy lomba | Vercel | Turso |
 
 Sesudah freeze, deployment tidak diubah kecuali memulihkan layanan tanpa mengubah kode, fitur, atau data.
@@ -320,5 +341,5 @@ Sesudah freeze, deployment tidak diubah kecuali memulihkan layanan tanpa menguba
 | Pipeline | pytest | Jendela tanggal, filter confidence, penanda sensor, penyangga, ambang hari, tahun tenang, kebocoran fold, metrik, gerbang |
 | Mesin | Vitest | Batas status, seri, pagu nol, tanpa harga, batas perbaikan, gabungan baris |
 | AI | Vitest | Validator, fallback template, skema FR-19 |
-| API | Vitest pada `lib` | Otorisasi lintas desa, validasi inventaris |
+| API | Vitest pada `frontend/src/server/*.test.ts` | Otorisasi lintas desa, validasi inventaris, pagination usulan |
 | Akhir ke akhir | Skrip manual | Alur demo pada 360 px dan laptop |

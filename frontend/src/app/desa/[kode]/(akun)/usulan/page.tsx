@@ -3,8 +3,9 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { UsulanView } from "@/components/usulan/UsulanView";
 import { EmptyState, LoadingState } from "@/components/ui/PageState";
-import { getAkun, getDesaCard } from "@/lib/dataSource";
+import { getAkun, getDesaCard, getPrioritas, listUsulanPage } from "@/lib/dataSource";
 import { bisaSusunPrioritas } from "@/lib/kesiapan";
+import { barisDisetujui, keyBaris, type KeputusanMap } from "@/lib/prioritas";
 
 export const metadata: Metadata = { title: "Usulan" };
 
@@ -24,7 +25,7 @@ export default function UsulanPage({ params }: PageProps<"/desa/[kode]/usulan">)
 
 async function Isi({ params }: { params: Promise<{ kode: string }> }) {
   const { kode } = await params;
-  const [card, akun] = await Promise.all([getDesaCard(kode), getAkun()]);
+  const [card, akun, prioritas, riwayat] = await Promise.all([getDesaCard(kode), getAkun(), getPrioritas(kode), listUsulanPage(kode, 20)]);
   if (!card) notFound();
   if (!bisaSusunPrioritas(akun.peran)) {
     return (
@@ -36,13 +37,18 @@ async function Isi({ params }: { params: Promise<{ kode: string }> }) {
       </div>
     );
   }
-  const info = {
-    nama: card.desa.nama,
-    kecNama: card.desa.kecNama,
-    kabNama: card.desa.kabNama,
-    kExt: card.paparan.kExt,
-    nExt: card.paparan.nExt,
-    tahunTenang: card.paparan.tahunTenang,
-  };
-  return <UsulanView kode={kode} namaDesa={card.desa.nama} info={info} />;
+  // Baris yang boleh dimuat usulan: terpilih di Prioritas dan sudah disetujui desa.
+  const keputusan: KeputusanMap = Object.fromEntries(
+    prioritas.keputusan.map((k) => [keyBaris(k), { keputusan: k.keputusan, catatan: k.catatan ?? undefined }]),
+  );
+  return (
+    <UsulanView
+      kode={kode}
+      namaDesa={card.desa.nama}
+      paguRp={prioritas.paguRp}
+      disetujui={barisDisetujui(prioritas.terpilih, keputusan)}
+      riwayat={riwayat.hasil}
+      nextCursor={riwayat.meta.nextCursor}
+    />
+  );
 }

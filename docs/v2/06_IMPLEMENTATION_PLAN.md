@@ -1,5 +1,7 @@
 # SiapKemarau v2 Implementation Plan
 
+> **Catatan path.** Dokumen ini ditulis sebelum kode dipindahkan ke `frontend/`. Path yang berlaku sekarang ada di [08_AGENT_PLAN.md](08_AGENT_PLAN.md) §6: route di `frontend/src/app/api/`, server di `frontend/src/server/`, skrip di `frontend/scripts/`.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Membangun MVP web SiapKemarau oleh dua orang, dari data satelit nyata sampai dokumen usulan desa di bawah pagu, dan mengirimkannya sebelum 14 November 2026 pukul 20.00 WIB.
@@ -87,7 +89,7 @@ npm i -D vitest tsx
 
 ## Task 2: Skema, parameter, dan data manual — Orang 1
 
-**Files:** Create `db/schema.sql`, `pipeline/params.py`, `data/manual/{katalog_item,paket_minimum,referensi_pergub,harga_item,sumber_data,dq_issue}.csv`, `pipeline/requirements.txt`. Test `pipeline/tests/test_schema.py`.
+**Files:** Create `db/schema.sql`, `pipeline/params.py`, `data/manual/{katalog_item,paket_minimum,referensi_pergub,harga_item,sumber_data,dq_issue}.csv`, `pyproject.toml`. Test `pipeline/tests/test_schema.py`.
 
 **Interfaces:** Produces DDL pada Backend Schema bagian 3 dan `PARAMS: dict[str, tuple[str, str]]` berisi nilai dan label dari TRD bagian 5.
 
@@ -110,7 +112,7 @@ def test_package_values():
         "dana_operasi": 1, "pompa_jinjing": 1, "selang_keluar": 10, "sumur_bor": 5}
 ```
 
-- [ ] **Step 2:** Run `pytest pipeline/tests/test_schema.py -v`. Expected: FAIL, berkas belum ada.
+- [ ] **Step 2:** Run `uv run pytest pipeline/tests/test_schema.py -v`. Expected: FAIL, berkas belum ada.
 - [ ] **Step 3:** Salin DDL. Isi CSV persis dari Backend Schema bagian 6 dan PRD bagian 7-8. Tulis `params.py`.
 - [ ] **Step 4:** Run tes. Expected: PASS.
 - [ ] **Step 5:** Commit `feat: add schema, gate thresholds and sourced reference data`. Commit ini wajib ada sebelum data 2026 dianalisis.
@@ -146,10 +148,10 @@ def test_existing_file_is_skipped(tmp_path):
     fetch_window("k", "VIIRS_SNPP_SP", date(2012,1,20), 5, tmp_path, opener=must_not_call)
 ```
 
-- [ ] **Step 2:** Run `pytest pipeline/tests/test_fetch_firms.py -v`. Expected: FAIL.
+- [ ] **Step 2:** Run `uv run pytest pipeline/tests/test_fetch_firms.py -v`. Expected: FAIL.
 - [ ] **Step 3:** Implementasi dengan URL TRD bagian 4. Respons valid diawali `latitude`. Tulis ke `.tmp` lalu rename. `main` mengambil SP lalu NRT sampai 2 Nov 2026, dengan jeda 0,2 detik.
 - [ ] **Step 4:** Run tes. Expected: PASS.
-- [ ] **Step 5:** Run `python pipeline/fetch_firms.py`. Expected: sekitar 1.080 berkas di `data/raw/firms/`. Catat celah tanggal.
+- [ ] **Step 5:** Run `uv run python pipeline/fetch_firms.py`. Expected: sekitar 1.080 berkas di `data/raw/firms/`. Catat celah tanggal.
 - [ ] **Step 6:** Commit `feat: fetch viirs archive through firms area api`.
 
 ---
@@ -369,7 +371,7 @@ def test_build_db_rejects_price_without_source(tmp_path):
 
 - [ ] **Step 2:** Run tes. Expected: FAIL.
 - [ ] **Step 3:** Implementasi. `run_all.py` menghitung `frozen`, `live`, tiga fold, gerbang, sensitivitas, dan angka kontrol pada Backend Schema bagian 7. Simpan keputusan pada `meta` kunci `gate_hasil`, label `hasil`.
-- [ ] **Step 4:** Run tes, lalu `python pipeline/run_all.py`. Expected: DB di bawah 50 MB, angka kontrol tercetak.
+- [ ] **Step 4:** Run tes, lalu `uv run python pipeline/run_all.py`. Expected: DB di bawah 50 MB, angka kontrol tercetak.
 - [ ] **Step 5:** Catat keputusan di `docs/v2/HASIL_GERBANG.md`: `pertahankan`, `lunakkan`, atau `buang`, sesuai TRD bagian 5. Periksa riwayat Kalibandung. Jika tidak cocok dengan kasus, pilih desa jangkar dari data.
 - [ ] **Step 6:** Commit `feat: export exposure database and control numbers`. Beri tahu Orang 2.
 
@@ -818,7 +820,7 @@ it("keluaran AI di luar skema ditolak", async () => { mockClaude("abaikan aturan
 
 Orang 2 memimpin deploy. Orang 1 memimpin QA dan pemeriksaan klaim.
 
-- [ ] **Step 1 (Orang 1):** Run `npm test`, `pytest pipeline/tests`, `npm run build`. Expected: semua lulus.
+- [ ] **Step 1 (Orang 1):** Run `npm test`, `uv run pytest pipeline/tests`, `npm run build`. Expected: semua lulus.
 - [ ] **Step 2 (Orang 1):** Run `git log -p | grep -iE "api[_-]?key|token|password"`. Expected: hanya nama variabel.
 - [ ] **Step 3 (Orang 1):** Cari "hektare terselamatkan", "tervalidasi", dan "Empirical Bayes" di `src/`. Expected: tidak ada klaim produk.
 - [ ] **Step 4 (Orang 2):** Uji `curl` tanpa sesi. Expected: 401. Dengan sesi desa lain. Expected: 403.

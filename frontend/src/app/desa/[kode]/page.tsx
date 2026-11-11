@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import { MiniShape } from "@/components/paparan/MiniShape";
 import { RentangKecamatan } from "@/components/paparan/RentangKecamatan";
 import { TahunEkstrem } from "@/components/paparan/TahunEkstrem";
 import { YearStrip } from "@/components/paparan/YearStrip";
 import { KerangkaAkun } from "@/components/layout/KerangkaAkun";
-import { LoadingState } from "@/components/ui/PageState";
+import { ErrorState, LoadingState } from "@/components/ui/PageState";
 import { Panel } from "@/components/ui/Panel";
 import { getDesaCard, getGerbang, getSesi } from "@/lib/dataSource";
 import { formatAngka, formatPersen } from "@/lib/format";
@@ -34,8 +35,11 @@ export default function KartuPaparanPage({ params }: PageProps<"/desa/[kode]">) 
  * riwayat 15 tahun, fakta desa, konteks kecamatan dan bentuk wilayah, ajakan memeriksa kesiapan, batasan.
  */
 async function Isi({ params }: { params: Promise<{ kode: string }> }) {
+  await connection();
   const { kode } = await params;
-  const [card, gerbang, sesi] = await Promise.all([getDesaCard(kode), getGerbang(), getSesi()]);
+  const hasil = await Promise.all([getDesaCard(kode), getGerbang(), getSesi()]).catch(() => null);
+  if (!hasil) return <ErrorState message="Data belum tersedia. Jalankan pipeline lebih dulu." />;
+  const [card, gerbang, sesi] = hasil;
   if (!card) notFound();
 
   const { desa, paparan, kecamatan } = card;

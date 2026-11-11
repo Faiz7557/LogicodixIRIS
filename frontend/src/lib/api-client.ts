@@ -5,7 +5,7 @@ export class ApiError extends Error {
   constructor(
     public status: number,
     public kode: string,
-    pesan: string,
+    public pesan: string,
   ) {
     super(pesan);
   }

@@ -4,39 +4,195 @@
 
 SiapKemarau membantu desa rawan karhutla mengetahui seberapa terpapar mereka di tahun kering ekstrem, alat padam apa yang benar-benar berfungsi, dan apa yang harus didanai lebih dulu, sebelum musim kering tiba.
 
+Berbasis data publik dan belum diuji pengguna.
+
 Kategori: **Web** · LOGICODIX 2026
 
-> README ini masih kerangka. Isi wajib submission (tim, fitur, arsitektur, akun demo, dokumentasi AI, atribusi) dilengkapi pada Task 23, lihat [docs/v2/06_IMPLEMENTATION_PLAN.md](docs/v2/06_IMPLEMENTATION_PLAN.md).
+Bagian submission (tim, video, surat orisinalitas, atribusi lengkap) dilengkapi pada Task 23 di [docs/v2/06_IMPLEMENTATION_PLAN.md](docs/v2/06_IMPLEMENTATION_PLAN.md).
 
-## Menjalankan di lokal
+## Status per 11 November 2026
 
-Aplikasi web ada di folder `frontend/`.
+| Bagian | Status |
+|---|---|
+| API dan lapisan server Next.js | Hidup: auth sesi, otorisasi per desa, inventaris, paket, harga, kesiapan, prioritas, keputusan, usulan, parse pesan |
+| Basis data aplikasi | `db/schema.sql` lengkap. Lokal memakai `data/dev.db` berisi data uji |
+| Pipeline Python | Pengunduh FIRMS dan modul hitung tersedia. Ekspor DB (`export.py`, `run_all.py`) belum ada |
+| Narasi usulan | Masih template. Jalur AI yang hidup hanya parse pesan inventaris |
+| Deploy | Belum dikerjakan |
 
-```bash
-cd frontend
-npm ci
-cp .env.example .env
-npm run dev        # http://localhost:3000
-npm test           # tes Vitest
-npm run build && npm start
+Data uji tidak boleh tampil sebagai hasil. Angka desa nyata baru ada setelah pipeline menulis `data/siapkemarau.db`.
+
+## Arsitektur
+
+```text
+pipeline/*.py          komputasi offline: FIRMS, wilayah, paparan, backtest
+db/schema.sql          otoritas skema SQLite/libSQL
+data/manual/*.csv      katalog, paket minimum, harga acuan, sumber, catatan data
+data/dev.db            data uji lokal (dibuat scripts/dev-db.ts, diabaikan git)
+data/siapkemarau.db    target keluaran pipeline (belum dihasilkan)
+
+frontend/src/app/**    halaman Next.js App Router dan route handler tipis
+frontend/src/server/   logika bisnis, auth, audit, query berparameter
+frontend/src/lib/      tipe, format, pemanggil API, fungsi murni
+frontend/src/lib/engine/  mesin kesiapan dan prioritas tanpa I/O
 ```
 
-Butuh Node.js 20 atau lebih baru.
+Aplikasi membaca DB lewat `@libsql/client`: `file:` di lokal, `libsql://` di deploy. Tidak ada server terpisah; route handler memanggil `frontend/src/server/*` langsung.
+
+## Menjalankan dari clone baru
+
+Prasyarat:
+
+| Alat | Versi | Cara pasang |
+|---|---|---|
+| Git | terbaru | <https://git-scm.com/downloads> |
+| Node.js dan npm | Node.js 20.9 atau lebih baru | <https://nodejs.org/en/download>. `npm` ikut terpasang bersama Node.js; dokumentasi npm ada di <https://docs.npmjs.com/downloading-and-installing-node-js-and-npm> |
+| uv | terbaru | <https://docs.astral.sh/uv/getting-started/installation/> |
+| make | opsional | Biasanya sudah ada di Linux/macOS. Di Windows jalankan lewat WSL |
+
+Repo ini tidak memakai `requirements.txt`. Dependency Python ada di `pyproject.toml` dan `uv.lock`; `uv sync` yang membuat `.venv/` dan memasang semuanya, termasuk `pytest`. Jangan menjalankan `pip install -r requirements.txt`, filenya tidak ada.
+
+```bash
+git clone https://github.com/Faiz7557/LogicodixIRIS.git
+cd LogicodixIRIS
+make setup
+```
+
+`make setup` menjalankan `npm ci`, `uv sync`, menyalin `frontend/.env.example` menjadi `frontend/.env` dan `.env.example` akar menjadi `.env` bila belum ada, lalu membuat `data/dev.db` berisi 25 desa uji. Setelah itu isi `DEMO_PASSWORD` di `frontend/.env`, lalu:
+
+```bash
+make seed
+make dev
+```
+
+Buka <http://localhost:3000>. Masuk dengan `demo-mpa` (ketua MPA) atau `demo-sekdes` (sekdes) memakai `DEMO_PASSWORD` yang baru diisi. `make seed DESA=KALIBANDUNG` membuat akun untuk desa lain.
+
+`make setup` dan `make db` membuat ulang `data/dev.db`, jadi data inventaris uji di dalamnya ikut hilang. `make env` tidak menimpa `.env` yang sudah ada. `make help` menampilkan semua target.
+
+### Padanan perintah Make dan perintah asli
+
+Semua perintah asli dijalankan dari akar repo.
+
+| Kebutuhan | Dengan Make | Perintah asli |
+|---|---|---|
+| Pasang dependency | `make install` | `cd frontend && npm ci` lalu `uv sync` |
+| Salin env | `make env` | `cp frontend/.env.example frontend/.env` dan `cp .env.example .env` (hanya bila belum ada) |
+| Buat DB uji | `make db` | `cd frontend && npx tsx scripts/dev-db.ts` |
+| Buat akun demo | `make seed` | `cd frontend && npx tsx scripts/seed-accounts.ts --desa TINGGI` |
+| Jalankan dev | `make dev` | `cd frontend && npm run dev` |
+| Tes | `make test` | `cd frontend && npm test` lalu `uv run pytest pipeline/tests -q` |
+| Typecheck | `make typecheck` | `cd frontend && npm run typecheck` |
+| Lint | `make lint` | `cd frontend && npm run lint` |
+| Build | `make build` | `cd frontend && npm run build` |
+| Jalankan hasil build | `make start` | `cd frontend && npm run build && npm start` |
+| Gate sebelum commit | `make gate` | `npm test`, `npm run typecheck`, `npm run lint`, `npm run build` dari `frontend/`, lalu `uv run pytest pipeline/tests -q` |
+| Unduh FIRMS | `make pipeline-fetch` | `uv run python pipeline/fetch_firms.py` |
+| Bersihkan build | `make clean` | `rm -rf frontend/.next` |
+
+`npm ci` dipakai karena `package-lock.json` sudah ada dan hasilnya deterministik. Bila menambah dependency baru, pakai `npm install <paket>` dari `frontend/`, lalu commit `package.json` dan `package-lock.json`.
+
+Pipeline membutuhkan `FIRMS_MAP_KEY` di `.env` akar repo. Isi lewat `make env` lalu edit `.env`, atau langsung tambahkan barisnya.
+
+## Konfigurasi lingkungan
+
+Jalankan `make env` untuk menyalin `frontend/.env.example` ke `frontend/.env` dan `.env.example` akar ke `.env` bila belum ada. Jangan commit `.env`.
+
+| Variabel | Wajib | Keterangan |
+|---|---|---|
+| `DATABASE_URL` | Tidak | Bawaan `file:../data/siapkemarau.db`. Lokal memakai `file:../data/dev.db` |
+| `DATABASE_AUTH_TOKEN` | Deploy | Kosong di lokal, diisi untuk libSQL jarak jauh |
+| `ANTHROPIC_API_KEY` | Tidak | Jalur pertama parse pesan inventaris |
+| `ANTHROPIC_MODEL` | Tidak | Bawaan `claude-opus-5-5` |
+| `NINE_ROUTER_BASE_URL` | Tidak | Endpoint OpenAI-compatible untuk jalur kedua parse |
+| `NINE_ROUTER_API_KEY` | Tidak | Tanpa kunci ini dan tanpa Anthropic, parse memakai parser deterministik |
+| `NINE_ROUTER_MODEL` | Tidak | Bawaan `ag/gemini-3.8-flash-low` |
+| `NINE_ROUTER_PATH` | Tidak | Bawaan `/v1/chat/completions` |
+| `TRUST_PROXY` | Tidak | `1` hanya bila platform benar-benar mengisi `x-forwarded-for` |
+| `DEMO_PASSWORD` | Seed | Password akun `demo-mpa` dan `demo-sekdes` |
+| `FIRMS_MAP_KEY` | Pipeline | Hanya dibaca `pipeline/fetch_firms.py` dari `.env` akar repo |
+
+## API
+
+Semua respons JSON. Galat memakai `{ "error": { "kode": "...", "pesan": "..." } }`. Status yang dipakai: `200`, `201` + `Location`, `204`, `400`, `401`, `403`, `404`, `409`, `422`, `429` + `Retry-After`, `503` saat tabel pipeline belum ada.
+
+| Metode | Path | Akses | Sukses |
+|---|---|---|---|
+| GET | `/api/desa?q=` | Publik, 30/menit per IP | 200 `{ hasil }`, maks. 20, minimal 2 karakter |
+| GET | `/api/desa/[kode]` | Publik | 200 `DesaCard` |
+| GET | `/api/backtest` | Publik | 200 metrik, grup, gerbang, 20 teratas |
+| GET | `/api/data` | Publik | 200 sumber, sensor, catatan data, meta, paket, harga |
+| POST | `/api/auth/masuk` | Publik, 10/15 menit per username+IP | 200 `{ akun }` + cookie sesi |
+| POST | `/api/auth/keluar` | Publik | 204, cookie dihapus |
+| GET | `/api/auth/saya` | Akun | 200 `{ akun }` |
+| GET, PUT | `/api/desa/[kode]/inventaris` | `mpa`, `desa` | 200 `{ rows, terakhir }`, 200 `{ disimpanPada }` |
+| POST | `/api/desa/[kode]/inventaris/parse` | `mpa`, `desa`, 10/jam per akun | 200 `{ hasil, sumber }` |
+| GET, PUT | `/api/desa/[kode]/paket` | GET `mpa`/`desa`, PUT `desa` | 200 `{ hasil }`, 204 |
+| GET, PUT | `/api/desa/[kode]/harga` | GET `mpa`/`desa`, PUT `desa` | 200 `{ hasil }`, 204 |
+| GET | `/api/desa/[kode]/kesiapan` | `mpa`, `desa` | 200 `ReadinessResult` |
+| GET | `/api/desa/[kode]/prioritas` | `desa` | 200 `PriorityResult` + keputusan |
+| PUT | `/api/desa/[kode]/rencana` | `desa` | 204, pagu 0 sampai Rp100.000.000 |
+| PUT | `/api/desa/[kode]/keputusan` | `desa` | 204, satu baris prioritas |
+| GET, POST | `/api/desa/[kode]/usulan` | `desa` | 200 `{ hasil, meta }` (`?limit=1..50&cursor=`), 201 `{ id }` + `Location` |
+| GET | `/api/desa/[kode]/usulan/[id]` | `desa` | 200 `Usulan` dengan fakta beku |
+
+Aturan yang berlaku di semua route ber-`[kode]`:
+
+- Metode tulis wajib lolos `assertOrigin` (Origin harus sama dengan Host).
+- `requireDesaAccess` menolak akun desa lain atau peran yang tidak cocok.
+- Semua SQL berparameter; nilai desa ditimpa lalu dicatat ke `audit_log`.
+- Mutasi menyimpan `updated_by` dan `updated_at`.
+
+`inventaris/parse` mencoba Claude, lalu 9router, lalu parser deterministik. Semua keluaran AI divalidasi zod terhadap kode katalog dan angka tidak negatif. Hasil tidak pernah disimpan otomatis.
+
+## Pipeline data
+
+Dependency Python dikelola `uv` lewat `pyproject.toml` dan `uv.lock` (Python 3.13).
+
+```bash
+uv sync
+uv run python pipeline/fetch_firms.py   # butuh FIRMS_MAP_KEY di .env akar
+uv run pytest pipeline/tests -q
+```
+
+Modul yang ada:
+
+| Berkas | Isi |
+|---|---|
+| `pipeline/params.py` | Parameter dan label dari TRD |
+| `pipeline/fetch_firms.py` | Unduh CSV VIIRS S-NPP SP dan NRT dari FIRMS |
+| `pipeline/wilayah.py` | Tabel desa, luas, fraksi gambut |
+| `pipeline/firms.py` | Agregasi deteksi per desa dan tahun |
+| `pipeline/paparan.py` | Paparan per desa dan kecamatan |
+| `pipeline/backtest.py` | Time Machine, tiga fold, gerbang |
+
+`export.py` dan `run_all.py` belum ada. Karena itu `data/siapkemarau.db` belum terbentuk dan aplikasi lokal memakai `data/dev.db` berisi data uji. `scripts/dev-db.ts` membaca `db/schema.sql` dan `data/manual/*.csv`, bukan menyalin angka dari dokumen.
+
+Untuk memakai `python` biasa, aktifkan venv dulu:
+
+```bash
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
+python pipeline/fetch_firms.py
+deactivate
+```
 
 ## Struktur repositori
 
-| Folder | Isi |
+| Path | Isi |
 |---|---|
-| `frontend/` | Aplikasi web Next.js: halaman, komponen, tipe, dan konfigurasi (`package.json`, `.env.example`) |
-| `frontend/src/app/` | Halaman Next.js (App Router) |
-| `frontend/src/components/` | Komponen antarmuka |
-| `frontend/src/lib/` | Tipe, format, dan pemanggil API |
-| `docs/` | Dokumen v2 di docs/v2/: Jobdesk, PRD, TRD, App Flow, Design Brief, skema, rencana implementasi, audit, plan agen |
-| `reports/`, `research_notes/` | Riset pemilihan masalah |
-| `papers/` | Registry bukti ilmiah dan regulasi (transkrip `.md`; PDF tidak disertakan) |
-
-Panduan frontend: [docs/FRONTEND.md](docs/FRONTEND.md).
+| `frontend/` | Aplikasi Next.js 16 App Router |
+| `frontend/src/app/api/` | Route handler tipis: zod, auth, `server/*`, `Response.json` |
+| `frontend/src/server/` | Auth, DB, query, inventaris, paket/harga, kesiapan, prioritas, usulan, narasi, parse |
+| `frontend/src/lib/engine/` | Fungsi murni kesiapan dan prioritas |
+| `frontend/scripts/` | `dev-db.ts`, `seed-accounts.ts` |
+| `db/schema.sql` | DDL lengkap, termasuk tabel sesi, rate limit, audit, usulan |
+| `pipeline/` | Komputasi offline dan tes pytest |
+| `data/manual/` | CSV acuan yang ikut repo |
+| `docs/v2/` | Jobdesk, PRD, TRD, App Flow, Design Brief, skema, rencana, audit, plan agen |
+| `docs/FRONTEND.md` | Panduan UI/UX dan keadaan layar |
+| `reports/`, `research_notes/`, `papers/` | Riset pemilihan masalah dan transkrip bukti |
 
 ## Penggunaan AI
 
-Kode ditulis dengan bantuan AI coding assistant (Claude Code, model Claude Opus 5.5). Rincian lengkap menyusul di Task 23.
+Kode ditulis dengan bantuan AI coding assistant (Claude Code, model Claude Opus 5.5). Model yang dapat dipakai aplikasi: `ANTHROPIC_MODEL` (bawaan `claude-opus-5-5`) untuk parse inventaris, dan `NINE_ROUTER_MODEL` sebagai jalur cadangan. Narasi usulan belum memanggil model; `generateNarrative` masih mengembalikan template.
+
+P0 berjalan tanpa internet dan tanpa kunci API. Tanpa kunci, parse pesan memakai parser deterministik dan narasi memakai template.

@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { SkeletonBlock } from "@/components/ui/PageState";
+import { api } from "@/lib/api-client";
+import type { DesaHit } from "@/lib/types";
 import { KartuHasilDesa, type HasilCari } from "./KartuHasilDesa";
-import { cariDesaContoh } from "@/mocks/pencarian";
 
 type Hasil = { untuk: string; hits: HasilCari[] } | { untuk: string; galat: true };
 
@@ -11,7 +12,7 @@ type Hasil = { untuk: string; hits: HasilCari[] } | { untuk: string; galat: true
  * Pencarian desa (App Flow v2 §3.1): mulai setelah 2 karakter, jeda 250 ms, maksimal 20 hasil.
  * Tampil sebagai kartu mengambang di hero: kolom besar + tombol bulat. Menekan tombol atau Enter
  * mengulang pencarian segera. Keadaan: petunjuk, memuat, hasil, tidak ada hasil, gagal jaringan.
- * SEMENTARA: memakai pencarian tiruan; ganti dengan GET /api/desa?q= lewat api() di lib/api-client.
+ * Sumber: GET /api/desa?q= lewat api() di lib/api-client.
  */
 export function SearchBox() {
   const [q, setQ] = useState("");
@@ -24,8 +25,8 @@ export function SearchBox() {
     if (kurang) return;
     let batal = false;
     const t = setTimeout(() => {
-      cariDesaContoh(kata)
-        .then((hits) => !batal && setHasil({ untuk: kata, hits }))
+      api<{ hasil: DesaHit[] }>(`/api/desa?q=${encodeURIComponent(kata)}`)
+        .then(({ hasil }) => !batal && setHasil({ untuk: kata, hits: hasil }))
         .catch(() => !batal && setHasil({ untuk: kata, galat: true }));
     }, 250);
     return () => {

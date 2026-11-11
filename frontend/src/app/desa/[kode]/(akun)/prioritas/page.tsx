@@ -3,8 +3,12 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { PrioritasView } from "@/components/prioritas/PrioritasView";
 import { EmptyState, LoadingState } from "@/components/ui/PageState";
-import { getAkun, getCatalog, getDesaCard } from "@/lib/dataSource";
+import { getAkun, getDesaCard } from "@/lib/dataSource";
 import { bisaSusunPrioritas } from "@/lib/kesiapan";
+import { getHargaEfektif, getTargetEfektif } from "@/server/efektif";
+import { getKesiapan } from "@/server/kesiapan";
+import { getPrioritas } from "@/server/prioritas";
+import { getCatalog } from "@/server/queries";
 
 export const metadata: Metadata = { title: "Prioritas" };
 
@@ -24,7 +28,7 @@ export default function PrioritasPage({ params }: PageProps<"/desa/[kode]/priori
 
 async function Isi({ params }: { params: Promise<{ kode: string }> }) {
   const { kode } = await params;
-  const [card, catalog, akun] = await Promise.all([getDesaCard(kode), getCatalog(), getAkun()]);
+  const [card, akun] = await Promise.all([getDesaCard(kode), getAkun()]);
   if (!card) notFound();
 
   // Akun mpa tidak boleh mengakses (403 di API). Di layar: penjelasan dan jalan keluar, bukan halaman kosong.
@@ -38,5 +42,25 @@ async function Isi({ params }: { params: Promise<{ kode: string }> }) {
       </div>
     );
   }
-  return <PrioritasView kode={kode} namaDesa={card.desa.nama} catalog={catalog} />;
+
+  // Urutan, skor, pagu, dan keputusan dihitung server. Halaman hanya menyusun tampilan.
+  const [awal, kesiapan, paket, harga, catalog] = await Promise.all([
+    getPrioritas(kode),
+    getKesiapan(kode),
+    getTargetEfektif(kode),
+    getHargaEfektif(kode),
+    getCatalog(),
+  ]);
+
+  return (
+    <PrioritasView
+      kode={kode}
+      namaDesa={card.desa.nama}
+      catalog={catalog}
+      awal={awal}
+      skorSekarang={kesiapan.skor}
+      paket={paket}
+      harga={harga}
+    />
+  );
 }

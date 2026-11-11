@@ -2,50 +2,73 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import { BilahAksi, kelasAksiUtama } from "@/components/ui/BilahAksi";
 import { EmptyState } from "@/components/ui/PageState";
+import { ApiError, api } from "@/lib/api-client";
 import { formatRupiah, formatTanggal } from "@/lib/format";
-import { barisDisetujui, totalBiaya } from "@/lib/prioritas";
+import { totalBiaya } from "@/lib/prioritas";
 import { KANAL, KANAL_META, labelKanal } from "@/lib/usulan";
-import type { Kanal } from "@/lib/types";
-import { bangunKonteks, hitungContoh } from "@/mocks/prioritasContoh";
-import { bacaSimpanan, simpananAwal, tulisSimpanan, type Simpanan } from "@/mocks/store";
-import { susunUsulan, type InfoDesa } from "@/mocks/usulanContoh";
+import type { Kanal, PriorityRow, Usulan } from "@/lib/types";
 
 /**
  * Layar Usulan (App Flow v2 §3.9): daftar usulan yang pernah terbit, pilihan kanal, tombol terbitkan.
  * Usulan tidak bisa diubah setelah terbit; untuk memperbarui, terbitkan yang baru.
+ * Semua fakta dibekukan server saat terbit; layar ini hanya memilih kanal lalu pindah ke dokumen.
  */
-export function UsulanView({ kode, namaDesa, info }: { kode: string; namaDesa: string; info: InfoDesa }) {
+export function UsulanView({
+  kode,
+  namaDesa,
+  paguRp,
+  disetujui,
+  riwayat,
+  nextCursor,
+}: {
+  kode: string;
+  namaDesa: string;
+  paguRp: number;
+  disetujui: PriorityRow[];
+  riwayat: Usulan[];
+  nextCursor: number | null;
+}) {
   const router = useRouter();
-  const [sim, setSim] = useState<Simpanan>(simpananAwal);
-  const [siap, setSiap] = useState(false);
   const [kanal, setKanal] = useState<Kanal>("apbdes_perubahan");
   const [galat, setGalat] = useState("");
+  const [mengirim, setMengirim] = useState(false);
+  const [daftar, setDaftar] = useState(riwayat);
+  const [cursor, setCursor] = useState(nextCursor);
+  const [memuatLagi, setMemuatLagi] = useState(false);
+  const [galatLagi, setGalatLagi] = useState("");
 
-  useEffect(() => {
-    /* eslint-disable react-hooks/set-state-in-effect */
-    setSim(bacaSimpanan(kode));
-    setSiap(true);
-    /* eslint-enable react-hooks/set-state-in-effect */
-  }, [kode]);
-
-  const konteks = useMemo(() => bangunKonteks(sim, kode), [sim, kode]);
-  const hasil = useMemo(() => hitungContoh(sim.pagu, konteks), [sim.pagu, konteks]);
-  const disetujui = barisDisetujui(hasil.terpilih, sim.keputusan);
   const total = totalBiaya(disetujui);
-  const riwayat = [...sim.usulan].sort((a, b) => b.id - a.id);
 
-  function terbitkan() {
-    const id = (sim.usulan.reduce((m, u) => Math.max(m, u.id), 0)) + 1;
-    const u = susunUsulan({ id, kode, kanal, info, sim });
-    if (!u) {
-      setGalat("Belum ada baris yang disetujui.");
-      return;
+  async function terbitkan() {
+    setGalat("");
+    setMengirim(true);
+    try {
+      const { id } = await api<{ id: number }>(`/api/desa/${kode}/usulan`, { method: "POST", json: { kanal } });
+      router.push(`/desa/${kode}/usulan/${id}`);
+    } catch (e) {
+      setGalat(e instanceof ApiError ? e.message : "Terjadi galat. Coba lagi.");
+      setMengirim(false);
     }
-    tulisSimpanan(kode, { ...sim, usulan: [...sim.usulan, u] });
-    router.push(`/desa/${kode}/usulan/${id}`);
+  }
+
+  async function muatLagi() {
+    if (cursor === null) return;
+    setGalatLagi("");
+    setMemuatLagi(true);
+    try {
+      const r = await api<{ hasil: Usulan[]; meta: { nextCursor: number | null } }>(
+        `/api/desa/${kode}/usulan?limit=20&cursor=${cursor}`,
+      );
+      setDaftar((lama) => [...lama, ...r.hasil]);
+      setCursor(r.meta.nextCursor);
+    } catch (e) {
+      setGalatLagi(e instanceof ApiError ? e.message : "Gagal memuat usulan lama. Coba lagi.");
+    } finally {
+      setMemuatLagi(false);
+    }
   }
 
   return (
@@ -53,6 +76,7 @@ export function UsulanView({ kode, namaDesa, info }: { kode: string; namaDesa: s
       <header>
         <h1 className="text-2xl font-bold">Usulan</h1>
         <p className="text-sm text-muted">{namaDesa}</p>
+        <p className="mt-1 text-sm text-muted">Pagu rencana {formatRupiah(paguRp)}.</p>
         <p className="mt-3 text-xl font-semibold leading-snug">
           {disetujui.length > 0
             ? `${disetujui.length} baris disetujui, total ${formatRupiah(total)}. Pilih tujuan usulan.`
@@ -60,7 +84,13 @@ export function UsulanView({ kode, namaDesa, info }: { kode: string; namaDesa: s
         </p>
       </header>
 
-      {siap && disetujui.length === 0 ? (
+      {galat ? (
+        <p role="alert" className="mt-3 rounded-card border border-danger/40 bg-surface px-4 py-3 text-sm font-semibold text-danger">
+          {galat}
+        </p>
+      ) : null}
+
+      {disetujui.length === 0 ? (
         <div className="mt-5">
           <EmptyState title="Setujui dulu minimal satu baris belanja." action={{ href: `/desa/${kode}/prioritas`, label: "Ke Prioritas" }}>
             Usulan hanya memuat baris yang sudah disetujui desa.
@@ -111,11 +141,11 @@ export function UsulanView({ kode, namaDesa, info }: { kode: string; namaDesa: s
         <h2 id="riwayat" className="text-lg font-bold">
           Usulan yang pernah terbit
         </h2>
-        {riwayat.length === 0 ? (
+        {daftar.length === 0 ? (
           <p className="mt-1 text-muted">Belum ada. Usulan pertama akan muncul di sini setelah diterbitkan.</p>
         ) : (
           <ul className="mt-2 divide-y divide-line rounded-card border border-line bg-surface">
-            {riwayat.map((u) => (
+            {daftar.map((u) => (
               <li key={u.id}>
                 <Link href={`/desa/${kode}/usulan/${u.id}`} className="flex min-h-14 items-center justify-between gap-3 px-4 py-3">
                   <span>
@@ -128,16 +158,26 @@ export function UsulanView({ kode, namaDesa, info }: { kode: string; namaDesa: s
             ))}
           </ul>
         )}
+        {galatLagi ? (
+          <p role="alert" className="mt-2 text-sm font-semibold text-danger">
+            {galatLagi}
+          </p>
+        ) : null}
+        {cursor !== null ? (
+          <button type="button" onClick={muatLagi} disabled={memuatLagi} className="btn btn-kedua mt-3">
+            {memuatLagi ? "Memuat…" : "Muat usulan lama"}
+          </button>
+        ) : null}
       </section>
 
-      <BilahAksi teks={galat || (disetujui.length > 0 ? `Tujuan: ${labelKanal(kanal)}.` : "Belum ada baris yang disetujui.")} ragam={galat ? "galat" : "normal"}>
+      <BilahAksi teks={disetujui.length > 0 ? `Tujuan: ${labelKanal(kanal)}.` : "Belum ada baris yang disetujui."} ragam="normal">
         <button
           type="button"
           onClick={terbitkan}
-          aria-disabled={disetujui.length === 0}
-          className={`${kelasAksiUtama} ${disetujui.length === 0 ? "opacity-50" : ""}`}
+          disabled={mengirim || disetujui.length === 0}
+          className={`${kelasAksiUtama} ${mengirim || disetujui.length === 0 ? "opacity-50" : ""}`}
         >
-          Terbitkan usulan
+          {mengirim ? "Menerbitkan…" : "Terbitkan usulan"}
         </button>
       </BilahAksi>
     </div>
