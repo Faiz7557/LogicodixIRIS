@@ -208,4 +208,4 @@ Direkam dari commit final, tanpa slide, mockup, animasi, atau hasil rekayasa.
 | 5-6 | Time Machine: bukti dan batas |
 | 6-7 | Etika, status belum diuji pengguna, langkah pilot |
 
-Jalur cadangan: `ANTHROPIC_API_KEY` kosong tetap menghasilkan dokumen template. Rekaman video disiapkan di laptop.
+Jalur cadangan: `ANTHROPIC_API_KEY` kosong tetap menghasilkan dokumen template. Saat ini `generateNarrative` selalu memakai template; AI yang hidup hanya parse pesan inventaris dengan fallback deterministik. Rekaman video disiapkan di laptop.

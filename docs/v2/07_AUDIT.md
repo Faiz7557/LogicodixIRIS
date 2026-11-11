@@ -2,6 +2,8 @@
 
 > Tanggal: 10 November 2026. Objek: repo `Faiz7557/LogicodixIRIS` pada commit `aeb07d8`, dibandingkan dengan `v2/v2/00` sampai `06`. Rujukan desain: proyek lokal `caliber-final` (Sparekit, CALIBER 2026). Rencana tindak lanjut ada di [08_AGENT_PLAN.md](08_AGENT_PLAN.md).
 
+> **Status 11 November 2026.** Dokumen ini potret commit `aeb07d8`. Branch `feat/backend-api-wiring` sudah menutup K1 dan K2: skema, query berparameter, auth sesi, otorisasi desa, route handler, mesin server, dan audit hidup; `src/mocks/` dihapus. K3 dan K4 belum tertutup: data FIRMS belum diunduh dan `pipeline/export.py`/`run_all.py` belum ada, sehingga layar publik baru punya data uji dari `data/dev.db`, bukan hasil pipeline. Temuan lain di bawah tetap historis.
+
 ## 1. Ringkasan
 
 1. **Yang ada baru lapisan tampilan.** Sepuluh layar sudah dibangun dan rapi, tetapi semuanya membaca data contoh dari `frontend/src/mocks/`. Belum ada basis data, pipeline, mesin di server, autentikasi, atau satu pun route handler.

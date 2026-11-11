@@ -15,68 +15,53 @@ Jobdesk memberi Orang 2 peran APP dan UI. Pada tim ini, **yang dikerjakan di dok
 | Tampilan dokumen usulan dan tombol cetak | `narasi.ts`, `usulan.ts` (isi teks dan fakta) |
 | Kerangka pemanggil API sisi klien (`api-client.ts`) | Deploy, video, README, pipeline Python |
 
-Aturan kerja: frontend **hanya mengonsumsi tipe di `src/lib/types.ts`**. Selama API belum ada, pakai data contoh di `src/mocks/`.
+Aturan kerja: frontend **hanya mengonsumsi tipe di `src/lib/types.ts`**. Server Component membaca data nyata lewat `src/lib/dataSource.ts`, yang meneruskan ke `src/server/*`. Client Component memakai `src/lib/api-client.ts`. Tidak ada data contoh di `src/mocks/`; folder itu sudah dihapus.
 
 ## 2. Hal yang perlu disepakati dengan tim
 
-1. **Siapa mengerjakan mesin, login, dan API** (Task 9–12, 14–16 bagian server). Layar saya bergantung pada hasilnya.
-2. **Struktur repo.** TRD §11 menaruh `src/` dan `package.json` di akar repo `LogicodixIRIS`. Saat ini kode ada di `frontend/`. Konsekuensi: alamat DB `file:data/siapkemarau.db`, perintah `npm ci && npm run build && npm start`, dan tempat `app/api`.
+1. **Mesin, login, dan API** sudah dikerjakan di `src/server/` dan `src/app/api/`. Layar desa memakai hasilnya; perubahan kontrak harus lewat `types.ts` dan TRD §8.
+2. **Struktur repo.** Kode web ada di `frontend/`, bukan di akar. Konsekuensi: alamat DB lokal `file:../data/dev.db` (data uji) atau `file:../data/siapkemarau.db` (keluaran pipeline), perintah dijalankan dari `frontend/`, dan route handler ada di `frontend/src/app/api/`.
 3. **Pemilik halaman publik** (Beranda, Kartu Paparan, Time Machine, Data) adalah Orang 1. Token dan komponen dipakai bersama, jadi koordinasikan `YearStrip`, `MetricTable`, `MiniShape`.
 4. **Usulan kontrak** (ditandai di `types.ts`): `DesaCard.gerbang` agar label "Tampak aman" dan tagline bisa disembunyikan sesuai keputusan gerbang.
-5. **Isi repo.** Jobdesk §7: hanya `docs/v2/` yang masuk repo. `papers/`, `reports/`, `research_notes/`, dan `docs/` lama harus dikeluarkan sebelum push pertama.
+5. **Isi repo.** Jobdesk §7 meminta hanya `docs/v2/` yang masuk repo, sedangkan `papers/`, `reports/`, `research_notes/`, dan `docs/v1/` masih ada. Penghapusan belum diputuskan; lihat `docs/v2/07_AUDIT.md` §7 butir 1.
 6. **Trailer commit.** Jobdesk menyarankan commit tanpa `Co-Authored-By`.
 
 ## 3. Status layar
 
-Semua layar sudah dibangun dengan data contoh (`src/mocks/`). Ranah: UI/UX saya (Orang 2) untuk alur desa; halaman publik adalah milik Orang 1, dibuat di sini agar gambaran utuh dan bisa diserahkan.
+Semua layar membaca DB nyata lewat `src/lib/dataSource.ts` dan `src/server/*`. Data uji berasal dari `data/dev.db` yang dibuat `scripts/dev-db.ts`; bukan dari `src/mocks/`, karena folder itu sudah dihapus.
 
 | Path | Layar | FR | Pemilik | Status |
 |---|---|---|---|---|
-| `/` | Beranda / pengantar (hero, kartu pencarian, angka, alasan, cara kerja, peran) | FR-01 | Orang 1 | dibangun, mengacu referensi landing page; angka dari definisi produk, bukan hasil ukur |
-| `/desa/[kode]` | Kartu Paparan | FR-02, FR-03 | Orang 1 | dibangun (YearStrip, MiniShape) |
-| `/time-machine` | Time Machine | FR-04 | Orang 1 | dibangun (**angka contoh**) |
-| `/data` | Data dan Asumsi | FR-05 | Orang 1 | dibangun (isi dari dokumen v2) |
-| `/masuk` | Masuk | FR-06 | Orang 2 | dibangun (akun tiruan) |
-| `/desa/[kode]/kesiapan` | Kesiapan Desa (hero) | FR-10 | Orang 2 | dibangun |
-| `/desa/[kode]/inventaris` | Catat Alat | FR-07 | Orang 2 | dibangun (tempel pesan FR-19 belum) |
-| `/desa/[kode]/prioritas` | Prioritas dan keputusan | FR-09, FR-11–FR-13 | Orang 2 | dibangun (mesin tiruan; label kestabilan FR-14 belum) |
-| `/desa/[kode]/usulan` | Daftar dan terbitkan | FR-15 | Orang 2 | dibangun |
-| `/desa/[kode]/usulan/[id]` | Dokumen dan cetak A4 | FR-15, FR-16 | Orang 2 | dibangun (templat tiruan, badge AI) |
+| `/` | Beranda / pengantar (hero, kartu pencarian, angka, alasan, cara kerja, peran) | FR-01 | Orang 1 | dibangun; pencarian memanggil `/api/desa`, angka dari definisi produk |
+| `/desa/[kode]` | Kartu Paparan | FR-02, FR-03 | Orang 1 | dibangun dari `getDesaCard`; 404 bila kode tidak ada |
+| `/time-machine` | Time Machine | FR-04 | Orang 1 | dibangun dari `getBacktest` di server; kosong bila pipeline belum mengisi tabel backtest |
+| `/data` | Data dan Asumsi | FR-05 | Orang 1 | dibangun dari `getDataPage` di server |
+| `/masuk` | Masuk | FR-06 | Orang 2 | dibangun dengan sesi nyata (`POST /api/auth/masuk`) |
+| `/desa/[kode]/kesiapan` | Kesiapan Desa (hero) | FR-10 | Orang 2 | dibangun dari `computeReadiness` di server |
+| `/desa/[kode]/inventaris` | Catat Alat | FR-07 | Orang 2 | dibangun; simpan lewat `PUT /api/desa/[kode]/inventaris`. Tempel pesan FR-19 belum disambungkan ke UI |
+| `/desa/[kode]/prioritas` | Prioritas dan keputusan | FR-09, FR-11–FR-13 | Orang 2 | dibangun; `rankPriorities` dihitung server, pagu dan keputusan tersimpan |
+| `/desa/[kode]/usulan` | Daftar dan terbitkan | FR-15 | Orang 2 | dibangun; daftar memakai cursor `?limit=&cursor=` |
+| `/desa/[kode]/usulan/[id]` | Dokumen dan cetak A4 | FR-15, FR-16 | Orang 2 | dibangun; fakta dibekukan saat terbit, narasi masih template |
 
-Akun contoh: halaman Masuk mengisi cookie `mock-peran`. Masuk sebagai `demo-mpa` untuk melihat tampilan ketua MPA, `demo-sekdes` untuk sekdes. Tanpa cookie, layar berakun memakai akun sekdes.
+Akun demo dibuat di DB dengan `scripts/seed-accounts.ts`: `demo-mpa` (peran `mpa`) dan `demo-sekdes` (peran `desa`). Password diambil dari `DEMO_PASSWORD` di `frontend/.env`. Login menulis cookie `sk_sesi`; tanpa sesi halaman berakun diarahkan ke `/masuk`.
 
 Alur lengkap yang bisa dicoba: Beranda (cari) → Kartu Paparan → Masuk → Kesiapan → Catat Alat → Prioritas (ubah pagu, setujui) → Usulan (pilih tujuan, terbitkan) → Dokumen (cetak).
 
-### Menguji keadaan tanpa backend
+### Data uji lokal
 
-`src/lib/dataSource.ts` adalah satu-satunya pintu data sementara. Kode desa khusus membuka tiap keadaan UX:
+```bash
+cd frontend
+cp .env.example .env        # isi DEMO_PASSWORD
+npx tsx scripts/dev-db.ts   # membuat ../data/dev.db
+npx tsx scripts/seed-accounts.ts --desa TINGGI
+npm run dev
+```
 
-| URL | Keadaan |
-|---|---|
-| `/desa/contoh/kesiapan` | Normal (Kalbar, sebagian siap) |
-| `/desa/kalteng/kesiapan` | Memuat keterangan Pergub (pembanding) |
-| `/desa/kosong/kesiapan` | Belum ada inventaris (Catat alat dulu) |
-| `/desa/sebagian/kesiapan` | Sebagian terisi (label Belum lengkap) |
-| `/desa/lambat/kesiapan` | Keadaan memuat (2 detik) |
-| `/desa/galat/kesiapan` | Keadaan galat (Coba lagi) |
-| `/desa/tampakaman` | Kartu dengan label Tampak aman |
-| `/desa/takpernah` | Kartu tanpa deteksi (bukan jaminan aman) |
-| `/desa/gagal-simpan/inventaris` | Halaman normal, tombol Simpan gagal (isian tetap ada, tombol Coba lagi) |
-| `/desa/kosong/inventaris` | Formulir kosong, belum pernah disimpan |
-| `/desa/apa-saja/kesiapan` | 404 |
+`scripts/dev-db.ts` membaca `db/schema.sql` dan `data/manual/*.csv`, lalu membuat 25 desa uji. Nama desa memuat "Uji" dan bisa dicari dengan kata "uji", mis. `TINGGI`, `KOSONG`, `NONGAMBUT`, dan `KALIBANDUNG`. Skor dan riwayatnya sintetis, bukan desa nyata.
 
-Empat desa uji berlabel (`src/mocks/desaUji.ts`) bisa dicari dengan kata "uji" dan punya alur lengkap. Skornya dihitung mesin asli `computeReadiness`. Nama dan angkanya karangan, bukan desa nyata:
+DB ini diabaikan git. Setiap anggota tim membuatnya sendiri, dan akun demo hanya ada di komputer masing-masing.
 
-| Kode | Desa | Keadaan |
-|---|---|---|
-| `uji-tanjung` | Desa Uji Tanjung Gambut, Kalbar | Paparan tinggi, alat rawan (10,7) |
-| `uji-parit` | Desa Uji Parit Hilir, Kalteng | Paparan sedang dan aktif, sebagian siap (73,3), keterangan Pergub |
-| `uji-sei` | Desa Uji Sei Kering, Kalbar | Tampak aman, alat siap (100) |
-| `uji-bukit` | Desa Uji Bukit Rendah, Kalteng | Bukan gambut (tanpa sumur bor), tak pernah terdeteksi, alat belum dicatat |
-
-Login lokal: akun `mpa-<nama>` dan `sekdes-<nama>` (mis. `sekdes-tanjung`) dibuat di `data/dev.db` dengan password `DEMO_PASSWORD` dari `frontend/.env.local`. Keduanya hanya ada di komputer masing-masing dan diabaikan git, jadi setiap anggota tim membuatnya sendiri.
-
-Saat backend siap, ganti isi `dataSource.ts` dan hapus `src/mocks/`. Penyimpanan inventaris lewat `src/lib/inventarisApi.ts`: ganti bagian "CONTOH SEMENTARA" dengan pemanggilan `PUT /api/desa/[kode]/inventaris` yang sudah tersedia dalam komentar.
+Catatan: route `POST /api/desa/[kode]/inventaris/parse` sudah hidup (Claude, lalu 9router, lalu parser deterministik), tetapi formulir Catat Alat belum memanggilnya. `generateNarrative` juga belum memanggil model; dokumen usulan memakai template.
 
 Catatan pengujian: panel pratinjau tidak memberi fokus papan ketik, sehingga `blur` tidak terpicu. Galat per isian yang muncul saat meninggalkan kolom perlu dicoba sekali di browser biasa.
 
@@ -104,6 +89,7 @@ Semua path relatif terhadap `frontend/`.
 
 ```text
 src/app/
+  api/                                route handler tipis: zod, auth, server/*, Response.json
   layout.tsx, globals.css             token dan font (Public Sans, Source Serif 4 untuk cetak)
   page.tsx, time-machine/, data/      publik (Orang 1)
   desa/[kode]/page.tsx                Kartu Paparan (Orang 1)
@@ -112,12 +98,19 @@ src/app/
   masuk/
 src/components/
   layout/   SiteHeader, NavAkun, DemoBanner
-  ui/       PageState, StatusBadge, AssumptionNote, AiBadge, PernyataanAsumsi, Placeholder
+  ui/       PageState, StatusBadge, AssumptionNote, AiBadge, PernyataanAsumsi
+src/server/
+  auth.ts db.ts http.ts queries.ts    sesi, klien libSQL, error, query berparameter
+  inventaris.ts efektif.ts kesiapan.ts prioritas.ts usulan.ts
+  narasi.ts parseInventaris.ts audit.ts
 src/lib/
   types.ts        kontrak data (TRD v2 §6, §8; Schema v2 §3)
   format.ts       Rupiah, angka, tanggal WIB, keteranganMeter
   api-client.ts   fetch untuk Client Component, galat { error: { kode, pesan } }
-src/mocks/        data contoh sintetis, DIHAPUS sebelum code freeze
+  dataSource.ts   jembatan Server Component ke server/*
+  engine/         readiness.ts, priority.ts (fungsi murni)
+src/test/         testDb.ts, buildTestDb.ts, fixtures.ts
+scripts/          dev-db.ts, seed-accounts.ts
 ```
 
 `(akun)` adalah route group: tidak muncul di URL, hanya memberi layout bersama.
@@ -156,7 +149,7 @@ Mengikuti jadwal Jobdesk (Kam 12 Nov: Task 14–16) dan aturan potong 13 Nov puk
 1. Komponen inti dengan data contoh: `ReadinessGauge`, `CoverageBar`, `Stepper`, `PaguControl`, `PriorityRow`.
 2. Kesiapan (hero), lalu Catat Alat.
 3. Prioritas dengan keputusan, lalu Usulan dan Dokumen cetak A4.
-4. Masuk, sambungkan API nyata begitu tersedia, hapus `mocks/` dan `Placeholder`.
+4. Masuk dengan sesi nyata dan sambungkan API sudah selesai; `mocks/` dan `Placeholder` sudah dihapus.
 5. Poles: keadaan galat, aksesibilitas, daftar periksa Design Brief §12.
 6. P1 bila waktu ada: tempel pesan (FR-19), label kestabilan di `PriorityRow`.
 
@@ -168,8 +161,8 @@ Ditunda. TRD v2 menetapkan "tanpa dependensi tambahan" dan peta SVG tanpa pustak
 
 ## 11. Sebelum code freeze
 
-- [ ] Hapus `src/mocks/` dan `components/ui/Placeholder.tsx`; semua layar membaca data nyata.
-- [ ] Ganti akun demo di `(akun)/layout.tsx` dengan akun dari sesi.
+- [x] Hapus `src/mocks/` dan `components/ui/Placeholder.tsx`; semua layar membaca data nyata lewat `server/*`.
+- [x] Akun demo di `(akun)/layout.tsx` memakai sesi nyata dari `getSesiAkun`.
 - [ ] Daftar periksa Design Brief v2 §12.
 
 ## 12. Beranda (pengantar)

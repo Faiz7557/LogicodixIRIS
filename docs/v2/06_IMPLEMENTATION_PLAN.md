@@ -1,5 +1,7 @@
 # SiapKemarau v2 Implementation Plan
 
+> **Catatan path.** Dokumen ini ditulis sebelum kode dipindahkan ke `frontend/`. Path yang berlaku sekarang ada di [08_AGENT_PLAN.md](08_AGENT_PLAN.md) §6: route di `frontend/src/app/api/`, server di `frontend/src/server/`, skrip di `frontend/scripts/`.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Membangun MVP web SiapKemarau oleh dua orang, dari data satelit nyata sampai dokumen usulan desa di bawah pagu, dan mengirimkannya sebelum 14 November 2026 pukul 20.00 WIB.

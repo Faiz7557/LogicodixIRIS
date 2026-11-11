@@ -4,86 +4,166 @@
 
 SiapKemarau membantu desa rawan karhutla mengetahui seberapa terpapar mereka di tahun kering ekstrem, alat padam apa yang benar-benar berfungsi, dan apa yang harus didanai lebih dulu, sebelum musim kering tiba.
 
+Berbasis data publik dan belum diuji pengguna.
+
 Kategori: **Web** · LOGICODIX 2026
 
-> README ini masih kerangka. Isi wajib submission (tim, fitur, arsitektur, akun demo, dokumentasi AI, atribusi) dilengkapi pada Task 23, lihat [docs/v2/06_IMPLEMENTATION_PLAN.md](docs/v2/06_IMPLEMENTATION_PLAN.md).
+Bagian submission (tim, video, surat orisinalitas, atribusi lengkap) dilengkapi pada Task 23 di [docs/v2/06_IMPLEMENTATION_PLAN.md](docs/v2/06_IMPLEMENTATION_PLAN.md).
+
+## Status per 11 November 2026
+
+| Bagian | Status |
+|---|---|
+| API dan lapisan server Next.js | Hidup: auth sesi, otorisasi per desa, inventaris, paket, harga, kesiapan, prioritas, keputusan, usulan, parse pesan |
+| Basis data aplikasi | `db/schema.sql` lengkap. Lokal memakai `data/dev.db` berisi data uji |
+| Pipeline Python | Pengunduh FIRMS dan modul hitung tersedia. Ekspor DB (`export.py`, `run_all.py`) belum ada |
+| Narasi usulan | Masih template. Jalur AI yang hidup hanya parse pesan inventaris |
+| Deploy | Belum dikerjakan |
+
+Data uji tidak boleh tampil sebagai hasil. Angka desa nyata baru ada setelah pipeline menulis `data/siapkemarau.db`.
+
+## Arsitektur
+
+```text
+pipeline/*.py          komputasi offline: FIRMS, wilayah, paparan, backtest
+db/schema.sql          otoritas skema SQLite/libSQL
+data/manual/*.csv      katalog, paket minimum, harga acuan, sumber, catatan data
+data/dev.db            data uji lokal (dibuat scripts/dev-db.ts, diabaikan git)
+data/siapkemarau.db    target keluaran pipeline (belum dihasilkan)
+
+frontend/src/app/**    halaman Next.js App Router dan route handler tipis
+frontend/src/server/   logika bisnis, auth, audit, query berparameter
+frontend/src/lib/      tipe, format, pemanggil API, fungsi murni
+frontend/src/lib/engine/  mesin kesiapan dan prioritas tanpa I/O
+```
+
+Aplikasi membaca DB lewat `@libsql/client`: `file:` di lokal, `libsql://` di deploy. Tidak ada server terpisah; route handler memanggil `frontend/src/server/*` langsung.
 
 ## Menjalankan di lokal
 
-Aplikasi web ada di folder `frontend/`.
+Butuh Node.js 20 atau lebih baru. Pipeline butuh `uv` bila ingin dijalankan.
 
 ```bash
 cd frontend
 npm ci
-cp .env.example .env
-npm run dev        # http://localhost:3000
-npm test           # tes Vitest
+cp .env.example .env        # isi DEMO_PASSWORD
+npx tsx scripts/dev-db.ts   # membuat data/dev.db berisi 25 desa uji
+npx tsx scripts/seed-accounts.ts --desa TINGGI
+npm run dev                 # http://localhost:3000
+```
+
+Masuk dengan `demo-mpa` (ketua MPA) atau `demo-sekdes` (sekdes) memakai `DEMO_PASSWORD` yang baru diisi. Keduanya hanya ada di komputer masing-masing; `data/dev.db` dan `frontend/.env` diabaikan git.
+
+Perintah frontend:
+
+```bash
+npm run dev
+npm test              # Vitest
+npm run typecheck     # next typegen && tsc --noEmit
+npm run lint
 npm run build && npm start
 ```
 
-Butuh Node.js 20 atau lebih baru.
+## Konfigurasi lingkungan
 
-## Pipeline data
+Salin `frontend/.env.example` ke `frontend/.env`. Jangan commit `.env`.
 
-Pipeline Python ada di `pipeline/`. Dependency dikelola `uv` lewat `pyproject.toml` dan `uv.lock`. Pasang `uv` bila belum ada (`curl -LsSf https://astral.sh/uv/install.sh | sh`), lalu:
-
-```bash
-uv sync
-uv run python pipeline/fetch_firms.py   # butuh FIRMS_MAP_KEY
-uv run python pipeline/run_all.py
-uv run pytest pipeline/tests -q
-```
-
-`uv sync` membuat `.venv/` dengan Python 3.13. Untuk memakai `python` biasa, aktifkan venv dulu:
-
-```bash
-source .venv/bin/activate        # Windows: .venv\Scripts\activate
-python pipeline/run_all.py
-deactivate
-```
+| Variabel | Wajib | Keterangan |
+|---|---|---|
+| `DATABASE_URL` | Tidak | Bawaan `file:../data/siapkemarau.db`. Lokal memakai `file:../data/dev.db` |
+| `DATABASE_AUTH_TOKEN` | Deploy | Kosong di lokal, diisi untuk libSQL jarak jauh |
+| `ANTHROPIC_API_KEY` | Tidak | Jalur pertama parse pesan inventaris |
+| `ANTHROPIC_MODEL` | Tidak | Bawaan `claude-opus-5-5` |
+| `NINE_ROUTER_BASE_URL` | Tidak | Endpoint OpenAI-compatible untuk jalur kedua parse |
+| `NINE_ROUTER_API_KEY` | Tidak | Tanpa kunci ini dan tanpa Anthropic, parse memakai parser deterministik |
+| `NINE_ROUTER_MODEL` | Tidak | Bawaan `ag/gemini-3.8-flash-low` |
+| `NINE_ROUTER_PATH` | Tidak | Bawaan `/v1/chat/completions` |
+| `TRUST_PROXY` | Tidak | `1` hanya bila platform benar-benar mengisi `x-forwarded-for` |
+| `DEMO_PASSWORD` | Seed | Password akun `demo-mpa` dan `demo-sekdes` |
+| `FIRMS_MAP_KEY` | Pipeline | Hanya dibaca `pipeline/fetch_firms.py` dari `.env` akar repo |
 
 ## API
 
-Semua respons JSON. Galat memakai `{ "error": { "kode": "...", "pesan": "..." } }`.
+Semua respons JSON. Galat memakai `{ "error": { "kode": "...", "pesan": "..." } }`. Status yang dipakai: `200`, `201` + `Location`, `204`, `400`, `401`, `403`, `404`, `409`, `422`, `429` + `Retry-After`, `503` saat tabel pipeline belum ada.
 
 | Metode | Path | Akses | Sukses |
 |---|---|---|---|
-| GET | `/api/desa?q=` | Publik, dibatasi | 200 `{ hasil }`, maks. 20 |
+| GET | `/api/desa?q=` | Publik, 30/menit per IP | 200 `{ hasil }`, maks. 20, minimal 2 karakter |
 | GET | `/api/desa/[kode]` | Publik | 200 `DesaCard` |
-| GET | `/api/backtest` | Publik | 200 metrik dan gerbang |
-| GET | `/api/data` | Publik | 200 sumber, batasan, parameter |
-| POST | `/api/auth/masuk` | Publik, dibatasi | 200 `{ akun }` + cookie sesi |
-| POST | `/api/auth/keluar` | Akun | 204 |
+| GET | `/api/backtest` | Publik | 200 metrik, grup, gerbang, 20 teratas |
+| GET | `/api/data` | Publik | 200 sumber, sensor, catatan data, meta, paket, harga |
+| POST | `/api/auth/masuk` | Publik, 10/15 menit per username+IP | 200 `{ akun }` + cookie sesi |
+| POST | `/api/auth/keluar` | Publik | 204, cookie dihapus |
 | GET | `/api/auth/saya` | Akun | 200 `{ akun }` |
 | GET, PUT | `/api/desa/[kode]/inventaris` | `mpa`, `desa` | 200 `{ rows, terakhir }`, 200 `{ disimpanPada }` |
-| POST | `/api/desa/[kode]/inventaris/parse` | `mpa`, `desa` | 200 `{ hasil, sumber }` |
-| GET, PUT | `/api/desa/[kode]/paket` | GET keduanya, PUT `desa` | 200 `{ hasil }`, 204 |
-| GET, PUT | `/api/desa/[kode]/harga` | GET keduanya, PUT `desa` | 200 `{ hasil }`, 204 |
+| POST | `/api/desa/[kode]/inventaris/parse` | `mpa`, `desa`, 10/jam per akun | 200 `{ hasil, sumber }` |
+| GET, PUT | `/api/desa/[kode]/paket` | GET `mpa`/`desa`, PUT `desa` | 200 `{ hasil }`, 204 |
+| GET, PUT | `/api/desa/[kode]/harga` | GET `mpa`/`desa`, PUT `desa` | 200 `{ hasil }`, 204 |
 | GET | `/api/desa/[kode]/kesiapan` | `mpa`, `desa` | 200 `ReadinessResult` |
-| GET | `/api/desa/[kode]/prioritas` | `desa` | 200 `PriorityResult` |
-| PUT | `/api/desa/[kode]/rencana` | `desa` | 204 |
-| PUT | `/api/desa/[kode]/keputusan` | `desa` | 204 |
-| GET, POST | `/api/desa/[kode]/usulan` | `desa` | 200 `{ hasil, meta }`, 201 `{ id }` + `Location` |
-| GET | `/api/desa/[kode]/usulan/[id]` | `desa` | 200 `Usulan` |
+| GET | `/api/desa/[kode]/prioritas` | `desa` | 200 `PriorityResult` + keputusan |
+| PUT | `/api/desa/[kode]/rencana` | `desa` | 204, pagu 0 sampai Rp100.000.000 |
+| PUT | `/api/desa/[kode]/keputusan` | `desa` | 204, satu baris prioritas |
+| GET, POST | `/api/desa/[kode]/usulan` | `desa` | 200 `{ hasil, meta }` (`?limit=1..50&cursor=`), 201 `{ id }` + `Location` |
+| GET | `/api/desa/[kode]/usulan/[id]` | `desa` | 200 `Usulan` dengan fakta beku |
 
-Status galat utama: `400` body tidak sah, `401` tanpa sesi, `403` desa/peran/Origin salah, `404` tidak ada, `409` konflik state, `422` data tidak sah secara domain, `429` rate limit, `503` data pipeline belum ada. Pencarian desa dibatasi 30 permintaan per menit per IP. `inventaris/parse` memakai Claude bila `ANTHROPIC_API_KEY` tersedia, lalu 9router bila `NINE_ROUTER_API_KEY` tersedia, dan jatuh ke parser deterministik bila keduanya tidak ada.
+Aturan yang berlaku di semua route ber-`[kode]`:
 
-Konfigurasi 9router ada di `frontend/.env.example`: `NINE_ROUTER_BASE_URL`, `NINE_ROUTER_API_KEY`, `NINE_ROUTER_MODEL`, dan `NINE_ROUTER_PATH`. Set `TRUST_PROXY=1` hanya bila platform benar-benar mengisi `x-forwarded-for`; selain itu rate limit memakai satu bucket `lokal`.
+- Metode tulis wajib lolos `assertOrigin` (Origin harus sama dengan Host).
+- `requireDesaAccess` menolak akun desa lain atau peran yang tidak cocok.
+- Semua SQL berparameter; nilai desa ditimpa lalu dicatat ke `audit_log`.
+- Mutasi menyimpan `updated_by` dan `updated_at`.
+
+`inventaris/parse` mencoba Claude, lalu 9router, lalu parser deterministik. Semua keluaran AI divalidasi zod terhadap kode katalog dan angka tidak negatif. Hasil tidak pernah disimpan otomatis.
+
+## Pipeline data
+
+Dependency Python dikelola `uv` lewat `pyproject.toml` dan `uv.lock` (Python 3.13).
+
+```bash
+uv sync
+uv run python pipeline/fetch_firms.py   # butuh FIRMS_MAP_KEY di .env akar
+uv run pytest pipeline/tests -q
+```
+
+Modul yang ada:
+
+| Berkas | Isi |
+|---|---|
+| `pipeline/params.py` | Parameter dan label dari TRD |
+| `pipeline/fetch_firms.py` | Unduh CSV VIIRS S-NPP SP dan NRT dari FIRMS |
+| `pipeline/wilayah.py` | Tabel desa, luas, fraksi gambut |
+| `pipeline/firms.py` | Agregasi deteksi per desa dan tahun |
+| `pipeline/paparan.py` | Paparan per desa dan kecamatan |
+| `pipeline/backtest.py` | Time Machine, tiga fold, gerbang |
+
+`export.py` dan `run_all.py` belum ada. Karena itu `data/siapkemarau.db` belum terbentuk dan aplikasi lokal memakai `data/dev.db` berisi data uji. `scripts/dev-db.ts` membaca `db/schema.sql` dan `data/manual/*.csv`, bukan menyalin angka dari dokumen.
+
+Untuk memakai `python` biasa, aktifkan venv dulu:
+
+```bash
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
+python pipeline/fetch_firms.py
+deactivate
+```
 
 ## Struktur repositori
 
-| Folder | Isi |
+| Path | Isi |
 |---|---|
-| `frontend/` | Aplikasi web Next.js: halaman, komponen, tipe, dan konfigurasi (`package.json`, `.env.example`) |
-| `frontend/src/app/` | Halaman Next.js (App Router) |
-| `frontend/src/components/` | Komponen antarmuka |
-| `frontend/src/lib/` | Tipe, format, dan pemanggil API |
-| `docs/` | Dokumen v2 di docs/v2/: Jobdesk, PRD, TRD, App Flow, Design Brief, skema, rencana implementasi, audit, plan agen |
-| `reports/`, `research_notes/` | Riset pemilihan masalah |
-| `papers/` | Registry bukti ilmiah dan regulasi (transkrip `.md`; PDF tidak disertakan) |
-
-Panduan frontend: [docs/FRONTEND.md](docs/FRONTEND.md).
+| `frontend/` | Aplikasi Next.js 16 App Router |
+| `frontend/src/app/api/` | Route handler tipis: zod, auth, `server/*`, `Response.json` |
+| `frontend/src/server/` | Auth, DB, query, inventaris, paket/harga, kesiapan, prioritas, usulan, narasi, parse |
+| `frontend/src/lib/engine/` | Fungsi murni kesiapan dan prioritas |
+| `frontend/scripts/` | `dev-db.ts`, `seed-accounts.ts` |
+| `db/schema.sql` | DDL lengkap, termasuk tabel sesi, rate limit, audit, usulan |
+| `pipeline/` | Komputasi offline dan tes pytest |
+| `data/manual/` | CSV acuan yang ikut repo |
+| `docs/v2/` | Jobdesk, PRD, TRD, App Flow, Design Brief, skema, rencana, audit, plan agen |
+| `docs/FRONTEND.md` | Panduan UI/UX dan keadaan layar |
+| `reports/`, `research_notes/`, `papers/` | Riset pemilihan masalah dan transkrip bukti |
 
 ## Penggunaan AI
 
-Kode ditulis dengan bantuan AI coding assistant (Claude Code, model Claude Opus 5.5). Rincian lengkap menyusul di Task 23.
+Kode ditulis dengan bantuan AI coding assistant (Claude Code, model Claude Opus 5.5). Model yang dapat dipakai aplikasi: `ANTHROPIC_MODEL` (bawaan `claude-opus-5-5`) untuk parse inventaris, dan `NINE_ROUTER_MODEL` sebagai jalur cadangan. Narasi usulan belum memanggil model; `generateNarrative` masih mengembalikan template.
+
+P0 berjalan tanpa internet dan tanpa kunci API. Tanpa kunci, parse pesan memakai parser deterministik dan narasi memakai template.

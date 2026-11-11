@@ -192,8 +192,8 @@ LogicodixIRIS/
     src/test/{testDb,fixtures}.ts
     src/app/api/...                    route handler tipis: validasi, otorisasi, panggil server/*
     src/components/ui/{Panel,PageHead}.tsx   T24
-    src/mocks/                         dihapus di T42
-    src/lib/dataSource.ts              dihapus di T42
+    src/mocks/                         sudah dihapus di T42
+    src/lib/dataSource.ts              jembatan tipis Server Component ke server/*, dipertahankan
 ```
 
 Aturan route handler: tidak ada logika bisnis di `route.ts`. Isinya `handle(async (req, ctx) => { requireDesaAccess; parse zod; panggil server/*; Response.json })`.
@@ -268,7 +268,7 @@ Agen tidak bisa mengerjakan ini. M1 dan M2 menentukan jalur kritis.
 - [ ] **Step 2:** Ganti semua rujukan `v2/v2/` menjadi `docs/v2/` dan `docs/0N_*.md` menjadi `docs/v2/0N_*.md` pada berkas terlacak. Run `git grep -n "v2/v2"`. Expected: tidak ada hasil.
 - [ ] **Step 3:** Di `frontend/package.json` ubah skrip menjadi `"typecheck": "next typegen && tsc --noEmit"`. Pastikan dulu perintah `typegen` ada di `frontend/node_modules/next/dist/docs/`.
 - [ ] **Step 4:** Hapus `frontend/.next` dan `frontend/next-env.d.ts`, lalu run `npm run typecheck`. Expected: exit 0.
-- [ ] **Step 5:** Buat `.env.example` di akar berisi satu baris `FIRMS_MAP_KEY=` dengan komentar "hanya dipakai pipeline". Di `frontend/.env.example` ubah `DATABASE_URL=file:../data/siapkemarau.db`. Tambah `/data/dev.db*` ke `.gitignore` akar.
+- [ ] **Step 5:** Buat `.env.example` di akar berisi satu baris `FIRMS_MAP_KEY=` dengan komentar "hanya dipakai pipeline". Di `frontend/.env.example` set `DATABASE_URL=file:../data/dev.db` untuk data uji lokal (keluaran pipeline memakai `file:../data/siapkemarau.db`). Tambah `/data/dev.db*` ke `.gitignore` akar.
 - [ ] **Step 6:** Serahkan ke orkestrator untuk commit `chore: move v2 docs under docs and fix clean-clone typecheck`.
 - [ ] **Step 7:** Di `frontend/`: `npm i @libsql/client zod @anthropic-ai/sdk` dan `npm i -D tsx`. Run `npm test && npm run build`. Expected: 77 tes lulus, build lulus.
 - [ ] **Step 8:** Commit `chore: add database, validation and ai dependencies`.
@@ -636,11 +636,11 @@ Tambahan T41a: `KartuContoh` menampilkan Kartu Paparan desa jangkar nyata (`meta
 
 ### Task T42: Hapus mock — Haiku high
 
-**Files:** Delete `frontend/src/mocks/`, `frontend/src/lib/dataSource.ts`, `frontend/src/components/ui/Placeholder.tsx`. Create `frontend/src/test/fixtures.ts`. Modify `frontend/src/lib/{kesiapan,prioritas,inventaris}.test.ts`.
+**Files:** Delete `frontend/src/mocks/`, `frontend/src/components/ui/Placeholder.tsx`. Keep `frontend/src/lib/dataSource.ts` as the thin Server Component bridge. Create `frontend/src/test/fixtures.ts`. Modify `frontend/src/lib/{kesiapan,prioritas,inventaris}.test.ts`.
 
 - [ ] **Step 1:** Pindahkan konstanta yang masih dipakai tes (`mockCatalog`, `mockHarga`, `mockReadiness`, `mockPergubKalteng`) dari `mocks/demo.ts` ke `test/fixtures.ts`. Ubah impor di tiga berkas tes. Tes yang memanggil mesin tiruan diarahkan ke `@/lib/engine/priority`.
-- [ ] **Step 2:** Hapus `src/mocks/`, `lib/dataSource.ts`, `Placeholder.tsx`.
-- [ ] **Step 3:** Run `grep -rn "@/mocks\|dataSource\|mock-peran" src`. Expected: tidak ada hasil selain tes larangan di `server/auth.test.ts`.
+- [ ] **Step 2:** Hapus `src/mocks/` dan `Placeholder.tsx`. `lib/dataSource.ts` tetap, isinya hanya meneruskan `server/*`.
+- [ ] **Step 3:** Run `grep -rn "@/mocks\|mock-peran" src`. Expected: tidak ada hasil selain tes larangan di `server/auth.test.ts`.
 - [ ] **Step 4:** Run `npm test && npm run build`. Expected: lulus.
 - [ ] **Step 5:** Commit `refactor: remove mock data layer`.
 
