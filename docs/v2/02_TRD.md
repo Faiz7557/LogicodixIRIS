@@ -224,19 +224,20 @@ export function renderTemplate(facts: Record<string, string>, kanal: Kanal): str
 export async function generateNarrative(facts: Record<string, string>, kanal: Kanal): Promise<{ teks: string; sumber: "ai" | "template"; model: string | null }>;
 ```
 
-**Tempel pesan (FR-19, P1).** `parseInventoryText` mengubah teks menjadi isian formulir. Bila `ANTHROPIC_API_KEY` tersedia, server meminta JSON ke Claude. Bila tidak ada, server memakai 9router (endpoint OpenAI-compatible) dengan `NINE_ROUTER_API_KEY`; keduanya divalidasi zod. Tanpa kunci atau saat keduanya gagal, parser deterministik membaca nama katalog dan angka pada baris yang sama.
+**Tempel pesan (FR-19, P1).** `parseInventoryText` mengubah teks menjadi isian formulir. Bila `ANTHROPIC_API_KEY` tersedia, server meminta JSON ke Claude dengan `ANTHROPIC_MODEL`. Bila Claude gagal atau kuncinya kosong, server memakai OpenAI (`OPENAI_API_KEY`, model `OPENAI_MODEL_CLASSIFIER`). Bila itu juga gagal, server memakai 9router (endpoint OpenAI-compatible) dengan `NINE_ROUTER_API_KEY`; semua keluaran divalidasi zod. Tanpa kunci atau saat ketiganya gagal, parser deterministik membaca nama katalog dan angka pada baris yang sama.
 
 | Hal | Ketentuan |
 |---|---|
 | Masukan | Maksimal 2.000 karakter. Nomor telepon dihapus dengan regex sebelum diproses |
 | Keluaran | JSON divalidasi zod terhadap kode katalog, angka tidak negatif, berfungsi tidak melebihi total |
-| Sumber | `ai` bila Claude lolos validasi; `9router` bila router lolos validasi; `deterministik` saat fallback |
+| Sumber | `ai` bila Claude lolos validasi; `openai` bila OpenAI lolos validasi; `9router` bila router lolos validasi; `deterministik` saat fallback |
+| OpenAI | `OPENAI_API_KEY`, `OPENAI_MODEL_CLASSIFIER` (default `gpt-6-luna`), endpoint `https://api.openai.com/v1/chat/completions` |
 | 9router | `NINE_ROUTER_BASE_URL`, `NINE_ROUTER_API_KEY`, `NINE_ROUTER_MODEL`, `NINE_ROUTER_PATH` (default `/v1/chat/completions`) |
 | Penyimpanan | Tidak pernah otomatis. Hasil hanya mengisi formulir |
 | Keamanan | Teks diperlakukan sebagai data. Keluaran di luar skema ditolak |
 | Batas | 10 permintaan per akun per jam |
 
-**Status 11 November 2026.** Jalur AI yang hidup adalah FR-19 (`inventaris/parse`): Claude, lalu 9router, lalu parser deterministik. `generateNarrative` masih mengembalikan template dan belum memanggil model.
+**Status 11 November 2026.** Jalur AI yang hidup adalah FR-19 (`inventaris/parse`): Claude, lalu OpenAI, lalu 9router, lalu parser deterministik. `generateNarrative` masih mengembalikan template dan belum memanggil model.
 
 ## 8. API
 
@@ -291,6 +292,8 @@ DATABASE_URL=file:../data/dev.db          # lokal data uji; pipeline: file:../da
 DATABASE_AUTH_TOKEN=
 ANTHROPIC_API_KEY=
 ANTHROPIC_MODEL=claude-opus-5-5
+OPENAI_API_KEY=
+OPENAI_MODEL_CLASSIFIER=gpt-6-luna
 NINE_ROUTER_BASE_URL=https://ret92mb.abc-tunnel.us
 NINE_ROUTER_API_KEY=
 NINE_ROUTER_MODEL=ag/gemini-3.8-flash-low

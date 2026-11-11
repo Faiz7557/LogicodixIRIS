@@ -4,10 +4,11 @@ import { MAKS_TEKS, parseInventoryText, parsedInventorySchema, stripPhones } fro
 import type { CatalogItem } from "@/lib/types";
 
 const MODEL = process.env.ANTHROPIC_MODEL ?? "claude-opus-5-5";
+const OPENAI_ENDPOINT = "https://api.openai.com/v1/chat/completions";
 
 export interface HasilParse {
   hasil: InventoryInput[];
-  sumber: "ai" | "9router" | "deterministik";
+  sumber: "ai" | "openai" | "9router" | "deterministik";
 }
 
 function validasi(rows: unknown, catalog: CatalogItem[]): InventoryInput[] {
@@ -56,14 +57,14 @@ function endpointNineRouter(): string {
   return `${base}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
-function teksDariJawaban(data: unknown): string {
-  if (typeof data !== "object" || data === null) throw new Error("Respons 9router bukan objek.");
+function teksDariJawaban(data: unknown, label: string): string {
+  if (typeof data !== "object" || data === null) throw new Error(`Respons ${label} bukan objek.`);
   const choices = "choices" in data ? data.choices : undefined;
-  if (!Array.isArray(choices) || choices.length === 0) throw new Error("Respons 9router tanpa choices.");
+  if (!Array.isArray(choices) || choices.length === 0) throw new Error(`Respons ${label} tanpa choices.`);
   const pertama = choices[0];
-  if (typeof pertama !== "object" || pertama === null) throw new Error("Choice 9router tidak sah.");
+  if (typeof pertama !== "object" || pertama === null) throw new Error(`Choice ${label} tidak sah.`);
   const message = "message" in pertama ? pertama.message : undefined;
-  if (typeof message !== "object" || message === null) throw new Error("Respons 9router tanpa message.");
+  if (typeof message !== "object" || message === null) throw new Error(`Respons ${label} tanpa message.`);
   const content = "content" in message ? message.content : undefined;
   if (typeof content === "string") return content;
   if (Array.isArray(content)) {
@@ -71,33 +72,60 @@ function teksDariJawaban(data: unknown): string {
       .map((bagian) => (typeof bagian === "object" && bagian !== null && "text" in bagian && typeof bagian.text === "string" ? bagian.text : ""))
       .join("");
   }
-  throw new Error("Respons 9router tanpa teks.");
+  throw new Error(`Respons ${label} tanpa teks.`);
 }
 
-async function dariNineRouter(teks: string, catalog: CatalogItem[]): Promise<InventoryInput[]> {
-  const kunci = process.env.NINE_ROUTER_API_KEY;
-  if (!kunci) throw new Error("NINE_ROUTER_API_KEY kosong.");
+interface ChatCompletions {
+  endpoint: string;
+  kunci: string;
+  model: string;
+  label: string;
+  /** Parameter khusus provider: OpenAI menolak temperature/max_tokens pada model reasoning. */
+  tambahan: Record<string, unknown>;
+}
 
-  const res = await fetch(endpointNineRouter(), {
+async function dariChatCompletions(teks: string, catalog: CatalogItem[], target: ChatCompletions): Promise<InventoryInput[]> {
+  const res = await fetch(target.endpoint, {
     method: "POST",
-    headers: { "content-type": "application/json", authorization: `Bearer ${kunci}` },
+    headers: { "content-type": "application/json", authorization: `Bearer ${target.kunci}` },
     body: JSON.stringify({
-      model: process.env.NINE_ROUTER_MODEL ?? "ag/gemini-3.8-flash-low",
+      model: target.model,
       messages: [
         { role: "system", content: "Kamu mengubah pesan menjadi JSON isian inventaris. Patuhi skema." },
         { role: "user", content: prompt(teks, catalog) },
       ],
-      temperature: 0,
-      max_tokens: 1024,
       stream: false,
+      ...target.tambahan,
     }),
     signal: AbortSignal.timeout(15_000),
   });
-  if (!res.ok) throw new Error(`9router ${res.status}.`);
-  return validasi(JSON.parse(buangPagar(teksDariJawaban(await res.json()))), catalog);
+  if (!res.ok) throw new Error(`${target.label} ${res.status}.`);
+  return validasi(JSON.parse(buangPagar(teksDariJawaban(await res.json(), target.label))), catalog);
 }
 
-/** Anthropic dulu, lalu 9router, lalu parser deterministik. Semua keluaran AI divalidasi. */
+function dariOpenAI(teks: string, catalog: CatalogItem[]): Promise<InventoryInput[]> {
+  return dariChatCompletions(teks, catalog, {
+    endpoint: OPENAI_ENDPOINT,
+    kunci: process.env.OPENAI_API_KEY ?? "",
+    model: process.env.OPENAI_MODEL_CLASSIFIER || "gpt-6-luna",
+    label: "OpenAI",
+    tambahan: { max_completion_tokens: 1024 },
+  });
+}
+
+function dariNineRouter(teks: string, catalog: CatalogItem[]): Promise<InventoryInput[]> {
+  const kunci = process.env.NINE_ROUTER_API_KEY;
+  if (!kunci) throw new Error("NINE_ROUTER_API_KEY kosong.");
+  return dariChatCompletions(teks, catalog, {
+    endpoint: endpointNineRouter(),
+    kunci,
+    model: process.env.NINE_ROUTER_MODEL ?? "ag/gemini-3.8-flash-low",
+    label: "9router",
+    tambahan: { temperature: 0, max_tokens: 1024 },
+  });
+}
+
+/** Anthropic dulu, lalu OpenAI, lalu 9router, lalu parser deterministik. Semua keluaran AI divalidasi. */
 export async function parseInventoryTextDenganAi(teks: string, catalog: CatalogItem[]): Promise<HasilParse> {
   if (teks.length > MAKS_TEKS) throw new Error(`Teks maksimal ${MAKS_TEKS.toLocaleString("id-ID")} karakter.`);
   const bersih = stripPhones(teks);
@@ -109,6 +137,13 @@ export async function parseInventoryTextDenganAi(teks: string, catalog: CatalogI
   if (process.env.ANTHROPIC_API_KEY) {
     try {
       return { hasil: await dariAnthropic(bersih, catalog), sumber: "ai" };
+    } catch {
+      // Lanjut ke OpenAI.
+    }
+  }
+  if (process.env.OPENAI_API_KEY) {
+    try {
+      return { hasil: await dariOpenAI(bersih, catalog), sumber: "openai" };
     } catch {
       // Lanjut ke 9router.
     }
