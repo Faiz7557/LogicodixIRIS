@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import { KerangkaAkun } from "@/components/layout/KerangkaAkun";
 import { TimeMachineView } from "@/components/timemachine/TimeMachineView";
+import { ErrorState } from "@/components/ui/PageState";
 import { getSesiAkun } from "@/server/auth";
 import { getBacktest } from "@/server/queries";
 
@@ -24,7 +26,10 @@ function Memuat() {
 }
 
 async function Isi() {
-  const [akun, data] = await Promise.all([getSesiAkun(), getBacktest()]);
+  await connection();
+  const hasil = await Promise.all([getSesiAkun(), getBacktest()]).catch(() => null);
+  if (!hasil) return <ErrorState message="Data belum tersedia. Jalankan pipeline lebih dulu." />;
+  const [akun, data] = hasil;
   if (!akun) return <TimeMachineView data={data} />;
   return (
     <KerangkaAkun kode={Promise.resolve(akun.desaKode)}>

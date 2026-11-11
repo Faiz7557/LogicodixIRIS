@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import { DataView } from "@/components/data/DataView";
 import { KerangkaAkun } from "@/components/layout/KerangkaAkun";
+import { ErrorState } from "@/components/ui/PageState";
 import { getSesiAkun } from "@/server/auth";
 import { getDataPage } from "@/server/queries";
 
@@ -20,7 +22,10 @@ export default function DataPage() {
 }
 
 async function Isi() {
-  const [akun, data] = await Promise.all([getSesiAkun(), getDataPage()]);
+  await connection();
+  const hasil = await Promise.all([getSesiAkun(), getDataPage()]).catch(() => null);
+  if (!hasil) return <ErrorState message="Data belum tersedia. Jalankan pipeline lebih dulu." />;
+  const [akun, data] = hasil;
   if (!akun) return <DataView data={data} />;
   return (
     <KerangkaAkun kode={Promise.resolve(akun.desaKode)}>

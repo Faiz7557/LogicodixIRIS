@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { connection } from "next/server";
 import { Kontur } from "@/components/beranda/Kontur";
 import { Sorotan } from "@/components/beranda/Sorotan";
 import { SearchBox } from "@/components/paparan/SearchBox";
@@ -13,9 +14,12 @@ import { bolehTagline } from "@/lib/kalimat";
  * Tagline hanya tampil bila gerbang data memutuskan `pertahankan`; angka "tampak aman" disembunyikan bila `buang`.
  * Teks wajib: "Berbasis data publik, belum diuji pengguna." (Design Brief v2 §12).
  */
+export const instant = false;
+
 export default async function BerandaPage() {
-  const gerbang = await getGerbang();
-  const tampakAman = gerbang === "buang" ? null : await countTampakAman();
+  await connection();
+  const gerbang = await getGerbang().catch(() => "buang" as const);
+  const tampakAman = gerbang === "buang" ? null : await countTampakAman().catch(() => null);
   const kelasJudul = "text-balance text-3xl font-semibold leading-tight tracking-tight sm:text-4xl";
 
   return (
