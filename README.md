@@ -66,7 +66,9 @@ Semua respons JSON. Galat memakai `{ "error": { "kode": "...", "pesan": "..." } 
 | GET, POST | `/api/desa/[kode]/usulan` | `desa` | 200 `{ hasil, meta }`, 201 `{ id }` + `Location` |
 | GET | `/api/desa/[kode]/usulan/[id]` | `desa` | 200 `Usulan` |
 
-Status galat utama: `400` body tidak sah, `401` tanpa sesi, `403` desa/peran/Origin salah, `404` tidak ada, `409` konflik state, `422` data tidak sah secara domain, `429` rate limit, `503` data pipeline belum ada. Pencarian desa dibatasi 30 permintaan per menit per IP. `inventaris/parse` memakai AI bila `ANTHROPIC_API_KEY` tersedia dan jatuh ke parser deterministik bila tidak.
+Status galat utama: `400` body tidak sah, `401` tanpa sesi, `403` desa/peran/Origin salah, `404` tidak ada, `409` konflik state, `422` data tidak sah secara domain, `429` rate limit, `503` data pipeline belum ada. Pencarian desa dibatasi 30 permintaan per menit per IP. `inventaris/parse` memakai Claude bila `ANTHROPIC_API_KEY` tersedia, lalu 9router bila `NINE_ROUTER_API_KEY` tersedia, dan jatuh ke parser deterministik bila keduanya tidak ada.
+
+Konfigurasi 9router ada di `frontend/.env.example`: `NINE_ROUTER_BASE_URL`, `NINE_ROUTER_API_KEY`, `NINE_ROUTER_MODEL`, dan `NINE_ROUTER_PATH`. Set `TRUST_PROXY=1` hanya bila platform benar-benar mengisi `x-forwarded-for`; selain itu rate limit memakai satu bucket `lokal`.
 
 ## Struktur repositori
 

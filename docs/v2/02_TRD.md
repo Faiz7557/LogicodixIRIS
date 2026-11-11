@@ -224,13 +224,14 @@ export function renderTemplate(facts: Record<string, string>, kanal: Kanal): str
 export async function generateNarrative(facts: Record<string, string>, kanal: Kanal): Promise<{ teks: string; sumber: "ai" | "template"; model: string | null }>;
 ```
 
-**Tempel pesan (FR-19, P1).** `parseInventoryText` mengubah teks menjadi isian formulir. Bila `ANTHROPIC_API_KEY` tersedia, server meminta JSON ke Claude lalu memvalidasinya dengan zod; tanpa kunci atau saat AI gagal, parser deterministik membaca nama katalog dan angka pada baris yang sama.
+**Tempel pesan (FR-19, P1).** `parseInventoryText` mengubah teks menjadi isian formulir. Bila `ANTHROPIC_API_KEY` tersedia, server meminta JSON ke Claude. Bila tidak ada, server memakai 9router (endpoint OpenAI-compatible) dengan `NINE_ROUTER_API_KEY`; keduanya divalidasi zod. Tanpa kunci atau saat keduanya gagal, parser deterministik membaca nama katalog dan angka pada baris yang sama.
 
 | Hal | Ketentuan |
 |---|---|
 | Masukan | Maksimal 2.000 karakter. Nomor telepon dihapus dengan regex sebelum diproses |
 | Keluaran | JSON divalidasi zod terhadap kode katalog, angka tidak negatif, berfungsi tidak melebihi total |
-| Sumber | `ai` bila keluaran Claude lolos validasi; `deterministik` saat fallback |
+| Sumber | `ai` bila Claude lolos validasi; `9router` bila router lolos validasi; `deterministik` saat fallback |
+| 9router | `NINE_ROUTER_BASE_URL`, `NINE_ROUTER_API_KEY`, `NINE_ROUTER_MODEL`, `NINE_ROUTER_PATH` (default `/v1/chat/completions`) |
 | Penyimpanan | Tidak pernah otomatis. Hasil hanya mengisi formulir |
 | Keamanan | Teks diperlakukan sebagai data. Keluaran di luar skema ditolak |
 | Batas | 10 permintaan per akun per jam |
@@ -274,6 +275,7 @@ Semua respons JSON. Galat: `{ "error": { "kode": string, "pesan": string } }`.
 | Injection SQL | Semua kueri berparameter |
 | XSS | Tanpa `dangerouslySetInnerHTML` |
 | Tebak password | Maks. 10 percobaan per 15 menit per username dan IP |
+| Spoofing IP rate limit | Header proxy hanya dipercaya bila `TRUST_PROXY=1`; tanpa itu semua klien memakai bucket `lokal` |
 | Prompt injection | Catatan tidak dikirim ke AI narasi. FR-19 dikunci skema dan tinjauan manusia |
 | Kebocoran kredensial | `.env` di `.gitignore`, `.env.example` tanpa nilai |
 | Akun demo | `is_demo` menampilkan banner, hanya satu desa |
@@ -285,6 +287,11 @@ DATABASE_URL=file:data/siapkemarau.db
 DATABASE_AUTH_TOKEN=
 ANTHROPIC_API_KEY=
 ANTHROPIC_MODEL=claude-opus-5-5
+NINE_ROUTER_BASE_URL=https://ret92mb.abc-tunnel.us
+NINE_ROUTER_API_KEY=
+NINE_ROUTER_MODEL=gemini-3.8-flash-low
+NINE_ROUTER_PATH=/v1/chat/completions
+TRUST_PROXY=0
 DEMO_PASSWORD=
 FIRMS_MAP_KEY=
 ```
