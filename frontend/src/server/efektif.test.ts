@@ -35,6 +35,16 @@ describe("paket dan harga efektif", () => {
     expect(harga(await getHargaEfektif("TINGGI"), "pompa_jinjing", "beli").sumber).toContain("Penawaran toko");
   });
 
+  it("harga desa terbaca walau item tidak punya harga acuan", async () => {
+    expect(harga(await getHargaEfektif("TINGGI"), "sumur_bor", "beli")).toBeUndefined();
+    await setHarga("TINGGI", 1, "sumur_bor", "beli", 330_000, "Penawaran toko");
+    const baris = harga(await getHargaEfektif("TINGGI"), "sumur_bor", "beli");
+    expect(baris).toMatchObject({ hargaRp: 330_000 });
+    expect(baris.sumber).toContain("Penawaran toko");
+    // Aksi lain tanpa acuan dan tanpa isian desa tetap tidak muncul.
+    expect(harga(await getHargaEfektif("TINGGI"), "sumur_bor", "perbaiki")).toBeUndefined();
+  });
+
   it("harga bukan bilangan bulat ditolak", async () => {
     await expect(setHarga("TINGGI", 1, "pompa_jinjing", "beli", 1.5, "Toko")).rejects.toMatchObject({ status: 422 });
   });
