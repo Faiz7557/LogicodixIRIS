@@ -107,7 +107,7 @@ function dariOpenAI(teks: string, catalog: CatalogItem[]): Promise<InventoryInpu
   return dariChatCompletions(teks, catalog, {
     endpoint: OPENAI_ENDPOINT,
     kunci: process.env.OPENAI_API_KEY ?? "",
-    model: process.env.OPENAI_MODEL_CLASSIFIER ?? "gpt-6-luna",
+    model: process.env.OPENAI_MODEL_CLASSIFIER || "gpt-6-luna",
     label: "OpenAI",
     tambahan: { max_completion_tokens: 1024 },
   });
