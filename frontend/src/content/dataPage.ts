@@ -64,7 +64,7 @@ export const AKIBAT_UJI =
 
 export const AI = [
   { label: "Model", isi: "Claude (claude-opus-5-5), OpenAI (gpt-6-luna), atau 9router (gemini-3.8-flash-low) bila kunci API tersedia." },
-  { label: "Dipakai untuk", isi: "Menyusun kalimat narasi dokumen usulan, dan membantu mengisi formulir alat dari pesan yang ditempel. Tanpa kunci API, isian alat memakai parser deterministik." },
+  { label: "Dipakai untuk", isi: "Membantu mengisi formulir alat dari pesan yang ditempel. Narasi dokumen usulan masih memakai templat. Tanpa kunci API, isian alat memakai parser deterministik." },
   {
     label: "Batas",
     isi: "AI tidak pernah menulis angka atau nama. Teks yang melanggar aturan ditolak dan diganti templat. Catatan bebas pengguna tidak dikirim ke AI.",

@@ -46,7 +46,7 @@ Prasyarat:
 | Alat | Versi | Cara pasang |
 |---|---|---|
 | Git | terbaru | <https://git-scm.com/downloads> |
-| Node.js dan npm | Node.js 20.9 atau lebih baru | <https://nodejs.org/en/download>. `npm` ikut terpasang bersama Node.js; dokumentasi npm ada di <https://docs.npmjs.com/downloading-and-installing-node-js-and-npm> |
+| Node.js dan npm | Node.js 22.12 atau lebih baru | <https://nodejs.org/en/download>. `npm` ikut terpasang bersama Node.js; dokumentasi npm ada di <https://docs.npmjs.com/downloading-and-installing-node-js-and-npm>. Vitest 5 mensyaratkan Node `^22.12` untuk `make test` |
 | uv | terbaru | <https://docs.astral.sh/uv/getting-started/installation/> |
 | make | opsional | Biasanya sudah ada di Linux/macOS. Di Windows jalankan lewat WSL |
 
