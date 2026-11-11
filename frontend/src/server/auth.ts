@@ -65,8 +65,9 @@ async function akunDariToken(token: string | undefined): Promise<Akun | null> {
   return r.rows[0] ? toAkun(r.rows[0]) : null;
 }
 
-/** IP klien untuk rate limit. Di belakang proxy, header ini diisi platform. */
+/** IP klien untuk rate limit. Header proxy hanya dipercaya bila TRUST_PROXY=1. */
 export function ipDari(req: Request): string {
+  if (process.env.TRUST_PROXY !== "1") return "lokal";
   return req.headers.get("x-forwarded-for")?.split(",")[0].trim() || req.headers.get("x-real-ip") || "lokal";
 }
 
@@ -110,6 +111,8 @@ export function assertOrigin(req: Request): void {
 export async function hitRateLimit(kunci: string, batas: number, menit: number): Promise<boolean> {
   const ms = menit * 60_000;
   const jendela = new Date(Math.floor(Date.now() / ms) * ms).toISOString();
+  const cutoff = new Date(Date.now() - 24 * 60 * 60_000).toISOString();
+  await db().execute({ sql: "DELETE FROM rate_limit WHERE jendela < ?", args: [cutoff] });
   const r = await db().execute({
     sql: `INSERT INTO rate_limit (kunci, jendela, jumlah) VALUES (?,?,1)
           ON CONFLICT (kunci, jendela) DO UPDATE SET jumlah = jumlah + 1

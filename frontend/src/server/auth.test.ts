@@ -3,7 +3,7 @@ import { POST as masuk } from "@/app/api/auth/masuk/route";
 import { useTestDb } from "@/test/testDb";
 import { writeAudit } from "./audit";
 import {
-  COOKIE_SESI, assertOrigin, createSession, getAkun, hashPassword, hitRateLimit, requireDesaAccess, verifyPassword,
+  COOKIE_SESI, assertOrigin, createSession, getAkun, hashPassword, hitRateLimit, ipDari, requireDesaAccess, verifyPassword,
 } from "./auth";
 import { db } from "./db";
 
@@ -48,6 +48,27 @@ describe("auth", () => {
   it("origin asing ditolak", () => {
     const req = new Request(URL_UJI, { method: "POST", headers: { origin: "https://jahat.example" } });
     expect(() => assertOrigin(req)).toThrow();
+  });
+
+  it("ipDari hanya memakai header proxy saat TRUST_PROXY=1", () => {
+    const req = new Request(URL_UJI, { headers: { "x-forwarded-for": "203.0.113.9, 10.0.0.1" } });
+    const lama = process.env.TRUST_PROXY;
+    delete process.env.TRUST_PROXY;
+    expect(ipDari(req)).toBe("lokal");
+    process.env.TRUST_PROXY = "1";
+    expect(ipDari(req)).toBe("203.0.113.9");
+    if (lama) process.env.TRUST_PROXY = lama;
+    else delete process.env.TRUST_PROXY;
+  });
+
+  it("membersihkan jendela rate limit lama", async () => {
+    await db().execute({
+      sql: "INSERT INTO rate_limit (kunci, jendela, jumlah) VALUES (?,?,1)",
+      args: ["lama", "2000-01-01T00:00:00.000Z"],
+    });
+    await hitRateLimit("baru", 10, 15);
+    const r = await db().execute("SELECT COUNT(*) AS n FROM rate_limit WHERE kunci = 'lama'");
+    expect(Number(r.rows[0].n)).toBe(0);
   });
 
   it("cookie mock-peran tidak memberi akses", async () => {
