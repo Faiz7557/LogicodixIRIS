@@ -7,6 +7,7 @@ import { CatatDenganPratinjau } from "./CatatDenganPratinjau";
 import { KataCakupan } from "./CoverageBar";
 import { GambarItem } from "./GambarItem";
 import { KotakModel3D } from "./model3d/KotakModel3D";
+import { PUNYA_MODEL_3D } from "./model3d/daftarModel";
 import { ReadinessGauge } from "./ReadinessGauge";
 
 /** Status satu item dari cakupannya, dengan ambang yang sama dengan mesin (TRD §6). */
@@ -16,8 +17,6 @@ function statusItem(coverage: number): Status {
   return "sebagian";
 }
 
-// Item yang sudah punya model 3D prosedural (lihat model3d/). Item lain menampilkan ilustrasi sementara.
-const PUNYA_MODEL_3D = new Set(["pompa_jinjing"]);
 
 // Keterangan khusus tiap item, ditulis sebagai fakta paket, bukan klaim dampak.
 const CATATAN_ITEM: Record<string, string> = {
