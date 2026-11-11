@@ -39,34 +39,63 @@ frontend/src/lib/engine/  mesin kesiapan dan prioritas tanpa I/O
 
 Aplikasi membaca DB lewat `@libsql/client`: `file:` di lokal, `libsql://` di deploy. Tidak ada server terpisah; route handler memanggil `frontend/src/server/*` langsung.
 
-## Menjalankan di lokal
+## Menjalankan dari clone baru
 
-Butuh Node.js 20 atau lebih baru. Pipeline butuh `uv` bila ingin dijalankan.
+Prasyarat:
 
-```bash
-cd frontend
-npm ci
-cp .env.example .env        # isi DEMO_PASSWORD
-npx tsx scripts/dev-db.ts   # membuat data/dev.db berisi 25 desa uji
-npx tsx scripts/seed-accounts.ts --desa TINGGI
-npm run dev                 # http://localhost:3000
-```
+| Alat | Versi | Cara pasang |
+|---|---|---|
+| Git | terbaru | <https://git-scm.com/downloads> |
+| Node.js dan npm | Node.js 20.9 atau lebih baru | <https://nodejs.org/en/download>. `npm` ikut terpasang bersama Node.js; dokumentasi npm ada di <https://docs.npmjs.com/downloading-and-installing-node-js-and-npm> |
+| uv | terbaru | <https://docs.astral.sh/uv/getting-started/installation/> |
+| make | opsional | Biasanya sudah ada di Linux/macOS. Di Windows jalankan lewat WSL |
 
-Masuk dengan `demo-mpa` (ketua MPA) atau `demo-sekdes` (sekdes) memakai `DEMO_PASSWORD` yang baru diisi. Keduanya hanya ada di komputer masing-masing; `data/dev.db` dan `frontend/.env` diabaikan git.
-
-Perintah frontend:
+Repo ini tidak memakai `requirements.txt`. Dependency Python ada di `pyproject.toml` dan `uv.lock`; `uv sync` yang membuat `.venv/` dan memasang semuanya, termasuk `pytest`. Jangan menjalankan `pip install -r requirements.txt`, filenya tidak ada.
 
 ```bash
-npm run dev
-npm test              # Vitest
-npm run typecheck     # next typegen && tsc --noEmit
-npm run lint
-npm run build && npm start
+git clone https://github.com/Faiz7557/LogicodixIRIS.git
+cd LogicodixIRIS
+make setup
 ```
+
+`make setup` menjalankan `npm ci`, `uv sync`, menyalin `frontend/.env.example` menjadi `frontend/.env` dan `.env.example` akar menjadi `.env` bila belum ada, lalu membuat `data/dev.db` berisi 25 desa uji. Setelah itu isi `DEMO_PASSWORD` di `frontend/.env`, lalu:
+
+```bash
+make seed
+make dev
+```
+
+Buka <http://localhost:3000>. Masuk dengan `demo-mpa` (ketua MPA) atau `demo-sekdes` (sekdes) memakai `DEMO_PASSWORD` yang baru diisi. `make seed DESA=KALIBANDUNG` membuat akun untuk desa lain.
+
+`make setup` dan `make db` membuat ulang `data/dev.db`, jadi data inventaris uji di dalamnya ikut hilang. `make env` tidak menimpa `.env` yang sudah ada. `make help` menampilkan semua target.
+
+### Padanan perintah Make dan perintah asli
+
+Semua perintah asli dijalankan dari akar repo.
+
+| Kebutuhan | Dengan Make | Perintah asli |
+|---|---|---|
+| Pasang dependency | `make install` | `cd frontend && npm ci` lalu `uv sync` |
+| Salin env | `make env` | `cp frontend/.env.example frontend/.env` dan `cp .env.example .env` (hanya bila belum ada) |
+| Buat DB uji | `make db` | `cd frontend && npx tsx scripts/dev-db.ts` |
+| Buat akun demo | `make seed` | `cd frontend && npx tsx scripts/seed-accounts.ts --desa TINGGI` |
+| Jalankan dev | `make dev` | `cd frontend && npm run dev` |
+| Tes | `make test` | `cd frontend && npm test` lalu `uv run pytest pipeline/tests -q` |
+| Typecheck | `make typecheck` | `cd frontend && npm run typecheck` |
+| Lint | `make lint` | `cd frontend && npm run lint` |
+| Build | `make build` | `cd frontend && npm run build` |
+| Jalankan hasil build | `make start` | `cd frontend && npm run build && npm start` |
+| Gate sebelum commit | `make gate` | `npm test`, `npm run typecheck`, `npm run lint`, `npm run build` dari `frontend/`, lalu `uv run pytest pipeline/tests -q` |
+| Unduh FIRMS | `make pipeline-fetch` | `uv run python pipeline/fetch_firms.py` |
+| Bersihkan build | `make clean` | `rm -rf frontend/.next` |
+
+`npm ci` dipakai karena `package-lock.json` sudah ada dan hasilnya deterministik. Bila menambah dependency baru, pakai `npm install <paket>` dari `frontend/`, lalu commit `package.json` dan `package-lock.json`.
+
+Pipeline membutuhkan `FIRMS_MAP_KEY` di `.env` akar repo. Isi lewat `make env` lalu edit `.env`, atau langsung tambahkan barisnya.
 
 ## Konfigurasi lingkungan
 
-Salin `frontend/.env.example` ke `frontend/.env`. Jangan commit `.env`.
+Jalankan `make env` untuk menyalin `frontend/.env.example` ke `frontend/.env` dan `.env.example` akar ke `.env` bila belum ada. Jangan commit `.env`.
 
 | Variabel | Wajib | Keterangan |
 |---|---|---|
