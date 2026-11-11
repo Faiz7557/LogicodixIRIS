@@ -1,5 +1,14 @@
 import Link from "next/link";
 import { connection } from "next/server";
+import { KotakLahan } from "@/components/beranda/KotakLahan";
+import { AngkaGulir } from "@/components/beranda/gerak/AngkaGulir";
+import { EnamTahun } from "@/components/beranda/gerak/EnamTahun";
+import { IntroLogo } from "@/components/beranda/gerak/IntroLogo";
+import { GarisKontur } from "@/components/beranda/gerak/GarisKontur";
+import { KartuSorot } from "@/components/beranda/gerak/KartuSorot";
+import { LangkahGulir } from "@/components/beranda/gerak/LangkahGulir";
+import { PenggerakGulir } from "@/components/beranda/gerak/PenggerakGulir";
+import { PenutupAjakan } from "@/components/beranda/gerak/PenutupAjakan";
 import { Kontur } from "@/components/beranda/Kontur";
 import { Sorotan } from "@/components/beranda/Sorotan";
 import { SearchBox } from "@/components/paparan/SearchBox";
@@ -24,10 +33,13 @@ export default async function BerandaPage() {
 
   return (
     <>
-      {/* ---------- Hero ---------- */}
-      <section aria-labelledby="judul" className="relative isolate overflow-hidden border-b border-line">
+      <IntroLogo />
+      <PenggerakGulir />
+      {/* ---------- Hero (isi terangkat dan memudar saat digulir keluar) ---------- */}
+      <section data-gulir="keluar" aria-labelledby="judul" className="relative isolate overflow-hidden border-b border-line">
         <Kontur />
-        <div className="mx-auto max-w-[1040px] px-4 pb-14 pt-10 text-center sm:pt-14">
+        <KotakLahan />
+        <div className="hero-angkat mx-auto max-w-[1040px] px-4 pb-20 pt-10 text-center sm:pt-14">
           <p className="mx-auto inline-flex max-w-full items-center gap-2 rounded-2xl border border-line bg-surface px-3 py-1.5 text-left text-sm font-semibold shadow-sm sm:rounded-full">
             <span aria-hidden="true" className="size-2 rounded-full bg-warn" />
             {TEKS_BELUM_DIUJI}
@@ -66,40 +78,35 @@ export default async function BerandaPage() {
 
       {/* ---------- Angka ---------- */}
       <section aria-label="Cakupan dalam angka" className="border-b border-line">
-        <dl className="mx-auto grid max-w-[1040px] grid-cols-2 gap-x-4 gap-y-6 px-4 py-8 md:grid-cols-4">
-          {STATISTIK.map((s) => (
-            <div key={s.keterangan}>
-              <dt className="sr-only">{s.keterangan}</dt>
-              <dd>
-                <span className="tabular text-4xl font-semibold tracking-tight">{s.angka}</span>
-                <span className="ml-1.5 text-sm font-semibold uppercase tracking-wide text-muted">{s.label}</span>
-                <span className="mt-1 block text-sm leading-snug text-muted" aria-hidden="true">
-                  {s.keterangan}
-                </span>
-              </dd>
-            </div>
+        <dl className="mx-auto grid max-w-[1040px] grid-cols-2 gap-x-6 gap-y-8 px-4 py-10 md:grid-cols-4">
+          {STATISTIK.map((s, i) => (
+            <AngkaGulir key={s.keterangan} angka={Number(s.angka)} label={s.label} keterangan={s.keterangan} urutan={i} />
           ))}
         </dl>
       </section>
+
+      <GarisKontur />
 
       {/* ---------- Kenapa ---------- */}
       <section aria-labelledby="kenapa" className="mx-auto max-w-[1040px] px-4 py-14">
         <div className="grid gap-8 md:grid-cols-2 md:gap-12">
           <div>
-            <p className="text-sm font-bold text-ember">‹ Kenapa kesiapan perlu dihitung</p>
-            <h2 id="kenapa" className={`${kelasJudul} mt-3`}>
+            <p data-muncul className="text-sm font-bold text-ember">‹ Kenapa kesiapan perlu dihitung</p>
+            <h2 data-muncul style={{ ["--tunda" as string]: "80ms" }} id="kenapa" className={`${kelasJudul} mt-3`}>
               Keputusan yang gagal dibuat saat tidak ada asap.
             </h2>
-            <p className="mt-4 text-muted">
+            <p data-muncul style={{ ["--tunda" as string]: "180ms" }} className="mt-4 text-muted">
               Di Desa Kalibandung, Kubu Raya, enam tahun tanpa api membuat pos karhutla tidak dianggarkan. Saat api datang pada 2026, selang hanya 100 m
               dan warga patungan membeli BBM (Mongabay, 31 Agu 2026). Dana desa juga turun karena efisiensi. Ini satu kasus, bukan gambaran semua desa.
             </p>
-            <p className="mt-3 text-muted">
+            <p data-muncul style={{ ["--tunda" as string]: "260ms" }} className="mt-3 text-muted">
               SiapKemarau tidak memadamkan api. Alat ini membantu desa menyusun prioritas belanja dari data publik, dengan asumsi yang ditulis terbuka.
             </p>
             <a
+              data-muncul
+              style={{ ["--tunda" as string]: "340ms" }}
               href="#cari"
-              className="mt-6 inline-flex min-h-12 items-center gap-2 rounded-full bg-ink px-6 font-semibold text-white"
+              className="group mt-6 inline-flex min-h-12 items-center gap-2 rounded-full bg-ink px-6 font-semibold text-white"
             >
               Periksa desa Anda
               <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -111,57 +118,53 @@ export default async function BerandaPage() {
         </div>
       </section>
 
-      {/* ---------- Cara kerja ---------- */}
-      <section aria-labelledby="cara" className="border-y border-line bg-surface">
-        <div className="mx-auto max-w-[1040px] px-4 py-14">
-          <p className="text-sm font-bold text-ember">‹ Cara kerja</p>
-          <h2 id="cara" className={`${kelasJudul} mt-3`}>
-            Lima langkah, satu dokumen.
-          </h2>
-          <ol className="mt-8 grid gap-3 md:grid-cols-5">
-            {LANGKAH.map((l, i) => (
-              <li key={l.judul} className="rounded-2xl border border-line bg-paper p-4">
-                <span aria-hidden="true" className="tabular flex size-9 items-center justify-center rounded-full bg-ink text-sm font-bold text-white">
-                  {i + 1}
-                </span>
-                <h3 className="mt-3 font-bold">{l.judul}</h3>
-                <p className="mt-1 text-sm text-muted">{l.isi}</p>
-              </li>
-            ))}
-          </ol>
-        </div>
-      </section>
+      {/* ---------- Puncak: enam tahun tanpa api (disematkan, digulir) ---------- */}
+      <EnamTahun />
 
-      {/* ---------- Siapa memakai apa ---------- */}
+      {/* ---------- Cara kerja (panel naik seperti tirai, rel kemajuan mengikuti scroll) ---------- */}
+      <div data-gulir="masuk" className="bg-paper">
+        <section aria-labelledby="cara" className="tirai border-y border-line bg-surface">
+          <div className="mx-auto max-w-[1040px] px-4 py-14">
+            <p data-muncul className="text-sm font-bold text-ember">‹ Cara kerja</p>
+            <h2 data-muncul style={{ ["--tunda" as string]: "80ms" }} id="cara" className={`${kelasJudul} mt-3`}>
+              Lima langkah, satu dokumen.
+            </h2>
+            <LangkahGulir langkah={LANGKAH} />
+          </div>
+        </section>
+      </div>
+
+      {/* ---------- Siapa memakai apa (kartu masuk dari tiga arah, sorotan mengikuti kursor) ---------- */}
       <section aria-labelledby="peran" className="mx-auto max-w-[1040px] px-4 py-14">
-        <p className="text-sm font-bold text-ember">‹ Untuk siapa</p>
-        <h2 id="peran" className={`${kelasJudul} mt-3`}>
+        <p data-muncul className="text-sm font-bold text-ember">‹ Untuk siapa</p>
+        <h2 data-muncul style={{ ["--tunda" as string]: "80ms" }} id="peran" className={`${kelasJudul} mt-3`}>
           Keputusan tetap di tangan desa.
         </h2>
         <ul className="mt-8 grid gap-3 md:grid-cols-3">
-          {PERAN.map((p) => (
-            <li key={p.peran} className="rounded-2xl border border-line bg-surface p-5">
+          {PERAN.map((p, i) => (
+            <KartuSorot key={p.peran} arah={(["kiri", "bawah", "kanan"] as const)[i % 3]} tunda={i * 120}>
               <h3 className="font-bold">{p.peran}</h3>
               <p className="mt-1 text-sm text-muted">{p.bisa}</p>
-            </li>
+            </KartuSorot>
           ))}
         </ul>
       </section>
 
-      {/* ---------- Ajakan akhir ---------- */}
-      <section aria-labelledby="mulai" className="border-t border-line bg-ink text-white">
-        <div className="mx-auto max-w-[1040px] px-4 py-12 text-center">
-          <h2 id="mulai" className="text-balance text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
+      {/* ---------- Ajakan akhir (panel melebar, bara, tombol bermagnet) ---------- */}
+      <section aria-labelledby="mulai">
+        <PenutupAjakan>
+        <div className="mx-auto max-w-[1040px] px-4 py-20 text-center sm:py-24">
+          <h2 data-muncul id="mulai" className="text-balance text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
             Mulai dari desa Anda.
           </h2>
-          <p className="mx-auto mt-3 max-w-[52ch] text-white/80">
+          <p data-muncul style={{ ["--tunda" as string]: "100ms" }} className="mx-auto mt-3 max-w-[52ch] text-white/80">
             Paparan, Time Machine, serta sumber dan batasan data bisa dilihat tanpa akun. Akun dipakai untuk mencatat alat dan menyusun usulan.
           </p>
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-            <a href="#cari" className="inline-flex min-h-12 items-center rounded-full bg-white px-6 font-semibold text-ink">
+          <div data-muncul style={{ ["--tunda" as string]: "200ms" }} className="mt-8 flex flex-wrap items-center justify-center gap-3">
+            <a data-magnet href="#cari" className="inline-flex min-h-12 transition-transform duration-300 [transition-timing-function:var(--pegas)] items-center rounded-full bg-white px-6 font-semibold text-ink">
               Cari desa
             </a>
-            <Link href="/masuk" className="inline-flex min-h-12 items-center rounded-full border border-white/60 px-6 font-semibold">
+            <Link data-magnet href="/masuk" className="inline-flex min-h-12 transition-transform duration-300 [transition-timing-function:var(--pegas)] items-center rounded-full border border-white/60 px-6 font-semibold">
               Masuk
             </Link>
             <Link href="/time-machine" className="inline-flex min-h-12 items-center px-3 font-semibold underline underline-offset-4">
@@ -175,6 +178,7 @@ export default async function BerandaPage() {
             </p>
           ) : null}
         </div>
+        </PenutupAjakan>
       </section>
     </>
   );

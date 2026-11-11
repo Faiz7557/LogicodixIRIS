@@ -1,6 +1,7 @@
 /*
  * Latar hero bergaya peta topografi, murni SVG (tanpa pustaka peta, jalan offline).
- * Dekoratif dan diam: tidak ada animasi latar (Design Brief §9). Titik-titik hanya hiasan, bukan lokasi desa.
+ * Dekoratif dan diam. Kini menjadi cadangan untuk hero 3D (KotakLahan): memudar setelah gambar 3D pertama siap,
+ * dan tetap tampil bila WebGL tidak tersedia. Titik-titik hanya hiasan, bukan lokasi desa.
  * Garis dibangkitkan deterministik agar sama di server dan browser.
  */
 function blob(cx: number, cy: number, r: number, fase: number): string {
@@ -29,7 +30,7 @@ const TITIK = [
 
 export function Kontur() {
   return (
-    <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+    <div aria-hidden="true" className="latar-kontur pointer-events-none absolute inset-0 -z-10 overflow-hidden transition-opacity duration-1000">
       <svg viewBox="0 0 840 520" preserveAspectRatio="xMidYMid slice" className="absolute inset-0 h-full w-full">
         <g fill="none" stroke="var(--line)" strokeWidth="1.2">
           {LINGKARAN.map((d, i) => (

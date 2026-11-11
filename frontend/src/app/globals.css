@@ -222,6 +222,93 @@ body {
   transform: scale(0.97);
 }
 
+/* Beranda: latar kontur SVG memudar setelah hero 3D siap. */
+[data-lahan="aktif"] .latar-kontur {
+  opacity: 0;
+}
+
+/*
+ * Beranda: muncul saat masuk layar dan transisi antarbagian (lihat PenggerakGulir).
+ * Hanya berlaku saat JS aktif (`gerak-siap`), jadi tanpa JS atau saat gerak dikurangi isi tampil biasa.
+ * Yang dianimasikan hanya transform, opacity, filter, dan clip-path.
+ */
+.gerak-siap [data-muncul] {
+  opacity: 0;
+  transform: translate3d(var(--dari-x, 0), var(--dari-y, 22px), 0) scale(var(--dari-s, 1));
+  filter: blur(6px);
+  transition:
+    opacity 700ms var(--pegas),
+    transform 900ms var(--pegas),
+    filter 700ms var(--pegas);
+  transition-delay: var(--tunda, 0ms);
+}
+.gerak-siap [data-muncul="kiri"] {
+  --dari-x: -48px;
+  --dari-y: 0;
+}
+.gerak-siap [data-muncul="kanan"] {
+  --dari-x: 48px;
+  --dari-y: 0;
+}
+.gerak-siap [data-muncul="besar"] {
+  --dari-s: 0.94;
+}
+.gerak-siap [data-muncul][data-terlihat] {
+  opacity: 1;
+  transform: none;
+  filter: none;
+}
+/* Hero terangkat dan memudar saat digulir keluar. */
+.gerak-siap .hero-angkat {
+  transform: translate3d(0, calc(var(--p, 0) * -90px), 0) scale(calc(1 - var(--p, 0) * 0.04));
+  opacity: calc(1 - var(--p, 0) * 1.3);
+}
+/* Panel naik seperti tirai: sudut membulat dan menyempit di awal, penuh saat sampai. */
+.gerak-siap .tirai {
+  clip-path: inset(calc((1 - var(--p, 1)) * 5%) calc((1 - var(--p, 1)) * 4%) 0 round calc((1 - var(--p, 1)) * 48px));
+}
+/* Puncak "Enam tahun tanpa api": bara naik dan pergantian tahun. */
+@keyframes bara-naik {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(18px, -105svh, 0) scale(0.3);
+    opacity: 0;
+  }
+}
+.bara-naik {
+  animation: bara-naik 5s linear infinite;
+}
+@keyframes ganti-tahun {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 0.35em, 0);
+    filter: blur(6px);
+  }
+}
+.ganti-tahun {
+  animation: ganti-tahun 520ms var(--pegas) both;
+}
+/* Rel kemajuan Cara kerja: tegak di HP, mendatar di layar lebar. */
+.rel-isi {
+  transform: scaleY(var(--p, 1));
+}
+@media (min-width: 768px) {
+  .rel-isi {
+    transform: scaleX(var(--p, 1));
+  }
+}
+/* Garis kontur pemisah yang tergambar mengikuti scroll. */
+.gerak-siap .garis-gambar path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: calc(1 - var(--p, 1) * 1.4);
+}
+
 @media (prefers-reduced-motion: reduce) {
   ::view-transition-group(*),
   ::view-transition-old(*),
@@ -249,5 +336,183 @@ body {
   }
   .no-print {
     display: none !important;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Intro beranda (IntroLogo): tetes jatuh → memercik jadi ubin + riak → nama terbuka → tirai terangkat.
+ * Murni CSS supaya tetap selesai tanpa JS; total ±3,2 dtk, bisa dipercepat dengan klik/tombol/scroll.
+ * ------------------------------------------------------------------------- */
+.intro {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  background: var(--paper);
+  color: var(--ink);
+  cursor: pointer;
+  clip-path: inset(0 0 0 0);
+  animation: intro-keluar 820ms cubic-bezier(0.76, 0, 0.24, 1) 2500ms forwards;
+}
+.intro.intro-cepat {
+  animation: intro-keluar 600ms cubic-bezier(0.76, 0, 0.24, 1) forwards;
+}
+@keyframes intro-keluar {
+  to {
+    clip-path: inset(0 0 100% 0);
+    visibility: hidden;
+  }
+}
+.intro-isi {
+  display: flex;
+  align-items: center;
+  animation: intro-isi-keluar 520ms var(--pegas) 2420ms forwards;
+}
+.intro-cepat .intro-isi,
+.intro-cepat .intro-sub {
+  animation: intro-isi-keluar 320ms var(--pegas) forwards;
+}
+@keyframes intro-isi-keluar {
+  to {
+    opacity: 0;
+    transform: translateY(-36px);
+  }
+}
+
+/* Logo: ubin dan tetes bertumpuk di tengah */
+.intro-logo {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  flex: none;
+}
+.intro-ubin {
+  position: absolute;
+  inset: 0;
+  border-radius: 18px;
+  background: var(--ink);
+  transform: scale(0);
+  animation: intro-ubin 620ms cubic-bezier(0.34, 1.56, 0.64, 1) 700ms forwards;
+}
+@keyframes intro-ubin {
+  to {
+    transform: scale(1);
+  }
+}
+.intro-riak {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  border: 1.5px solid var(--ember);
+  opacity: 0;
+  animation: intro-riak 1300ms cubic-bezier(0.22, 1, 0.36, 1) 700ms forwards;
+}
+.intro-riak:nth-child(2) {
+  animation-delay: 860ms;
+}
+.intro-riak:nth-child(3) {
+  animation-delay: 1020ms;
+}
+@keyframes intro-riak {
+  0% {
+    opacity: 0.7;
+    transform: scale(0.4);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(4.2, 2.6);
+  }
+}
+.intro-tetes {
+  position: relative;
+  color: var(--ember);
+  transform: translateY(-48vh) scale(0.9, 1.25);
+  animation:
+    intro-jatuh 560ms cubic-bezier(0.55, 0, 1, 0.45) 150ms forwards,
+    intro-percik 560ms var(--pegas) 710ms forwards;
+}
+@keyframes intro-jatuh {
+  to {
+    transform: translateY(0) scale(0.9, 1.25);
+  }
+}
+@keyframes intro-percik {
+  0% {
+    transform: scale(1.3, 0.7);
+    color: var(--ember);
+  }
+  40% {
+    color: #fff;
+  }
+  100% {
+    transform: scale(1);
+    color: #fff;
+  }
+}
+
+/* Nama: kolom grid melebar dari 0, huruf naik satu per satu */
+.intro-kata {
+  display: grid;
+  grid-template-columns: 0fr;
+  animation: intro-kata 820ms var(--pegas) 1150ms forwards;
+}
+@keyframes intro-kata {
+  to {
+    grid-template-columns: 1fr;
+  }
+}
+.intro-kata-dalam {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: clamp(1.9rem, 6vw, 2.75rem);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1.15;
+}
+.intro-kata-dalam > span {
+  display: inline-block;
+}
+.intro-kata-dalam > span:first-child {
+  margin-left: 14px;
+}
+.intro-kata-dalam > span {
+  opacity: 0;
+  transform: translateY(70%);
+  animation: intro-huruf 620ms var(--pegas) calc(1220ms + var(--i) * 38ms) forwards;
+}
+@keyframes intro-huruf {
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.intro-sub {
+  font-size: 0.875rem;
+  color: var(--muted);
+  opacity: 0;
+  animation:
+    intro-sub 600ms var(--pegas) 1750ms forwards,
+    intro-isi-keluar 520ms var(--pegas) 2420ms forwards;
+}
+@keyframes intro-sub {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .intro {
+    display: none;
   }
 }
