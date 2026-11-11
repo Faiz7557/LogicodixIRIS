@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { UsulanView } from "@/components/usulan/UsulanView";
 import { EmptyState, LoadingState } from "@/components/ui/PageState";
-import { getAkun, getDesaCard, getPrioritas, listUsulan } from "@/lib/dataSource";
+import { getAkun, getDesaCard, getPrioritas, listUsulanPage } from "@/lib/dataSource";
 import { bisaSusunPrioritas } from "@/lib/kesiapan";
 import { barisDisetujui, keyBaris, type KeputusanMap } from "@/lib/prioritas";
 
@@ -25,7 +25,7 @@ export default function UsulanPage({ params }: PageProps<"/desa/[kode]/usulan">)
 
 async function Isi({ params }: { params: Promise<{ kode: string }> }) {
   const { kode } = await params;
-  const [card, akun, prioritas, riwayat] = await Promise.all([getDesaCard(kode), getAkun(), getPrioritas(kode), listUsulan(kode)]);
+  const [card, akun, prioritas, riwayat] = await Promise.all([getDesaCard(kode), getAkun(), getPrioritas(kode), listUsulanPage(kode, 20)]);
   if (!card) notFound();
   if (!bisaSusunPrioritas(akun.peran)) {
     return (
@@ -47,7 +47,8 @@ async function Isi({ params }: { params: Promise<{ kode: string }> }) {
       namaDesa={card.desa.nama}
       paguRp={prioritas.paguRp}
       disetujui={barisDisetujui(prioritas.terpilih, keputusan)}
-      riwayat={riwayat}
+      riwayat={riwayat.hasil}
+      nextCursor={riwayat.meta.nextCursor}
     />
   );
 }

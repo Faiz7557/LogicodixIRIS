@@ -22,17 +22,23 @@ export function UsulanView({
   paguRp,
   disetujui,
   riwayat,
+  nextCursor,
 }: {
   kode: string;
   namaDesa: string;
   paguRp: number;
   disetujui: PriorityRow[];
   riwayat: Usulan[];
+  nextCursor: number | null;
 }) {
   const router = useRouter();
   const [kanal, setKanal] = useState<Kanal>("apbdes_perubahan");
   const [galat, setGalat] = useState("");
   const [mengirim, setMengirim] = useState(false);
+  const [daftar, setDaftar] = useState(riwayat);
+  const [cursor, setCursor] = useState(nextCursor);
+  const [memuatLagi, setMemuatLagi] = useState(false);
+  const [galatLagi, setGalatLagi] = useState("");
 
   const total = totalBiaya(disetujui);
 
@@ -45,6 +51,23 @@ export function UsulanView({
     } catch (e) {
       setGalat(e instanceof ApiError ? e.message : "Terjadi galat. Coba lagi.");
       setMengirim(false);
+    }
+  }
+
+  async function muatLagi() {
+    if (cursor === null) return;
+    setGalatLagi("");
+    setMemuatLagi(true);
+    try {
+      const r = await api<{ hasil: Usulan[]; meta: { nextCursor: number | null } }>(
+        `/api/desa/${kode}/usulan?limit=20&cursor=${cursor}`,
+      );
+      setDaftar((lama) => [...lama, ...r.hasil]);
+      setCursor(r.meta.nextCursor);
+    } catch (e) {
+      setGalatLagi(e instanceof ApiError ? e.message : "Gagal memuat usulan lama. Coba lagi.");
+    } finally {
+      setMemuatLagi(false);
     }
   }
 
@@ -118,11 +141,11 @@ export function UsulanView({
         <h2 id="riwayat" className="text-lg font-bold">
           Usulan yang pernah terbit
         </h2>
-        {riwayat.length === 0 ? (
+        {daftar.length === 0 ? (
           <p className="mt-1 text-muted">Belum ada. Usulan pertama akan muncul di sini setelah diterbitkan.</p>
         ) : (
           <ul className="mt-2 divide-y divide-line rounded-card border border-line bg-surface">
-            {riwayat.map((u) => (
+            {daftar.map((u) => (
               <li key={u.id}>
                 <Link href={`/desa/${kode}/usulan/${u.id}`} className="flex min-h-14 items-center justify-between gap-3 px-4 py-3">
                   <span>
@@ -135,6 +158,16 @@ export function UsulanView({
             ))}
           </ul>
         )}
+        {galatLagi ? (
+          <p role="alert" className="mt-2 text-sm font-semibold text-danger">
+            {galatLagi}
+          </p>
+        ) : null}
+        {cursor !== null ? (
+          <button type="button" onClick={muatLagi} disabled={memuatLagi} className="btn btn-kedua mt-3">
+            {memuatLagi ? "Memuat…" : "Muat usulan lama"}
+          </button>
+        ) : null}
       </section>
 
       <BilahAksi teks={disetujui.length > 0 ? `Tujuan: ${labelKanal(kanal)}.` : "Belum ada baris yang disetujui."} ragam="normal">

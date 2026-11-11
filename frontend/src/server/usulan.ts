@@ -122,11 +122,6 @@ export async function getUsulan(kode: string, id: number): Promise<Usulan> {
   return toUsulan(r);
 }
 
-export async function listUsulan(kode: string): Promise<Usulan[]> {
-  const rows = await q("SELECT * FROM usulan WHERE desa_kode = ? ORDER BY created_at DESC, id DESC", [kode]);
-  return rows.map(toUsulan);
-}
-
 export interface HalamanUsulan {
   hasil: Usulan[];
   meta: { limit: number; nextCursor: number | null };

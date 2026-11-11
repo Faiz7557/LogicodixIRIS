@@ -9,7 +9,7 @@ import { getInventaris } from "@/server/inventaris";
 import { getKesiapan } from "@/server/kesiapan";
 import { getPrioritas } from "@/server/prioritas";
 import { getCatalog, getDesaCard, getGerbang } from "@/server/queries";
-import { getUsulan, listUsulan } from "@/server/usulan";
+import { getUsulan, listUsulanPage } from "@/server/usulan";
 import type { Akun } from "./types";
 
 /** Akun dari sesi nyata (cookie `sk_sesi`). Tanpa sesi: null. */
@@ -24,4 +24,4 @@ export async function getAkun(): Promise<Akun> {
 
 export { getCatalog, getDesaCard, getGerbang, getHargaEfektif as getHarga, getInventaris, getKesiapan };
 export { getReferensiPergub, getTargetEfektif as getPaket };
-export { getPrioritas, getUsulan, listUsulan };
+export { getPrioritas, getUsulan, listUsulanPage };
