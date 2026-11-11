@@ -1,0 +1,405 @@
+"use client";
+
+import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { formatAngka, formatRupiah, formatSkor } from "@/lib/format";
+import type { Aksi, Keputusan, PriorityRow } from "@/lib/types";
+
+/*
+ * Grafik dasbor Prioritas. Aturan (skill dataviz):
+ * - Warna menurut tugas: aksi beli = water, perbaiki = ember (lolos validator: ΔE CVD 22,7, kontras >= 3:1);
+ *   warna status (ok/warn/danger) hanya untuk keputusan, selalu dengan ikon + kata.
+ * - Satu sumbu, tanda tipis (garis 2 px, ujung batang membulat, celah 2 px), kisi samar, teks memakai warna teks.
+ * - Tiap grafik punya legenda bila > 1 seri, tooltip saat diarahkan, dan tabel cadangan.
+ */
+
+const WARNA_AKSI: Record<Aksi, string> = { beli: "var(--water)", perbaiki: "var(--ember)" };
+const NAMA_AKSI: Record<Aksi, string> = { beli: "Beli", perbaiki: "Perbaiki" };
+const juta = (rp: number) => `${formatAngka(rp / 1_000_000, rp % 1_000_000 === 0 ? 0 : 1)} jt`;
+
+function Swatch({ warna, garis = false }: { warna: string; garis?: boolean }) {
+  return (
+    <span
+      aria-hidden="true"
+      className="inline-block size-3 shrink-0 rounded-[3px]"
+      style={garis ? { border: "1.5px solid var(--line-2)", background: "var(--surface)" } : { background: warna }}
+    />
+  );
+}
+
+/* ---------------------------------------------------------------------------------------------- */
+/* Kurva skor terhadap pagu                                                                        */
+/* ---------------------------------------------------------------------------------------------- */
+
+const M = { l: 40, r: 12, t: 18, b: 34 };
+
+export function KurvaSkorPagu({
+  titik,
+  pagu,
+  skorSekarang,
+  onPilih,
+}: {
+  /** Skor sesudah belanja untuk tiap besar pagu, urut naik. */
+  titik: { pagu: number; skor: number }[];
+  pagu: number;
+  skorSekarang: number;
+  onPilih: (pagu: number) => void;
+}) {
+  const svg = useRef<SVGSVGElement>(null);
+  const [arah, setArah] = useState<number | null>(null);
+  const idGrad = useId();
+  // Lebar viewBox = lebar nyata kotak, supaya teks sumbu tetap 11 px di HP maupun laptop.
+  const [W, setW] = useState(640);
+  const figur = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const el = figur.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([e]) => setW(Math.max(280, Math.round(e.contentRect.width))));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const H = W < 480 ? 220 : 260;
+  const maxP = titik.at(-1)?.pagu ?? 1;
+  const x = (p: number) => M.l + (p / maxP) * (W - M.l - M.r);
+  const y = (s: number) => M.t + (1 - s / 100) * (H - M.t - M.b);
+
+  const garis = titik.map((t, i) => `${i ? "L" : "M"}${x(t.pagu).toFixed(1)},${y(t.skor).toFixed(1)}`).join("");
+  const area = `${garis}L${x(maxP)},${y(0)}L${x(0)},${y(0)}Z`;
+  const kasar = W < 480 ? 2 : 1; // layar sempit: label sumbu x lebih jarang
+  const langkahX = (maxP > 60_000_000 ? 20_000_000 : maxP > 25_000_000 ? 10_000_000 : 5_000_000) * kasar;
+  const ticksX = Array.from({ length: Math.floor(maxP / langkahX) + 1 }, (_, i) => i * langkahX);
+
+  // Skor pada pagu terpilih: titik terdekat di bawahnya (kurva berundak).
+  const skorPada = (p: number) => [...titik].reverse().find((t) => t.pagu <= p)?.skor ?? titik[0]?.skor ?? 0;
+  const skorPagu = skorPada(Math.min(pagu, maxP));
+  const aktif = arah !== null ? titik[arah] : null;
+
+  function dariPointer(e: { clientX: number }) {
+    const r = svg.current!.getBoundingClientRect();
+    const px = ((e.clientX - r.left) / r.width) * W;
+    const p = ((px - M.l) / (W - M.l - M.r)) * maxP;
+    let terdekat = 0;
+    titik.forEach((t, i) => {
+      if (Math.abs(t.pagu - p) < Math.abs(titik[terdekat].pagu - p)) terdekat = i;
+    });
+    return terdekat;
+  }
+
+  return (
+    <figure ref={figur} className="relative">
+      <svg
+        ref={svg}
+        viewBox={`0 0 ${W} ${H}`}
+        className="block h-auto w-full cursor-crosshair touch-none select-none"
+        role="img"
+        aria-label={`Kurva skor kesiapan terhadap pagu. Pada pagu ${formatRupiah(pagu)} skor menjadi ${formatSkor(skorPagu)}. Tabel tersedia di bawah grafik.`}
+        onPointerMove={(e) => setArah(dariPointer(e))}
+        onPointerLeave={() => setArah(null)}
+        onClick={(e) => onPilih(titik[dariPointer(e)].pagu)}
+      >
+        <defs>
+          <linearGradient id={idGrad} x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0" stopColor="var(--ember)" stopOpacity="0.18" />
+            <stop offset="1" stopColor="var(--ember)" stopOpacity="0.02" />
+          </linearGradient>
+        </defs>
+
+        {/* kisi samar dan sumbu */}
+        {[0, 25, 50, 75, 100].map((s) => (
+          <g key={s}>
+            <line x1={M.l} x2={W - M.r} y1={y(s)} y2={y(s)} stroke="var(--line)" strokeWidth="1" />
+            <text x={M.l - 8} y={y(s)} dy="0.35em" textAnchor="end" fontSize="11" fill="var(--faint)">
+              {s}
+            </text>
+          </g>
+        ))}
+        {ticksX.map((p) => (
+          <text key={p} x={x(p)} y={H - M.b + 18} textAnchor="middle" fontSize="11" fill="var(--faint)">
+            {p === 0 ? "Rp0" : juta(p)}
+          </text>
+        ))}
+
+        {/* garis bantu skor sekarang */}
+        <line x1={M.l} x2={W - M.r} y1={y(skorSekarang)} y2={y(skorSekarang)} stroke="var(--faint)" strokeWidth="1" strokeDasharray="4 4" />
+        <text x={W - M.r} y={y(skorSekarang) + 14} textAnchor="end" fontSize="11" fill="var(--muted)">
+          Skor sekarang {formatSkor(skorSekarang)}
+        </text>
+
+        <path d={area} fill={`url(#${idGrad})`} />
+        <path d={garis} fill="none" stroke="var(--ember)" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+
+        {/* penanda pagu yang dipilih */}
+        {pagu <= maxP ? (
+          <g>
+            <line x1={x(pagu)} x2={x(pagu)} y1={M.t} y2={y(0)} stroke="var(--ink)" strokeWidth="1" strokeDasharray="2 3" />
+            <circle cx={x(pagu)} cy={y(skorPagu)} r="6" fill="var(--ember)" stroke="var(--surface)" strokeWidth="2" />
+            <text
+              x={Math.min(Math.max(x(pagu), M.l + 60), W - M.r - 60)}
+              y={Math.max(y(skorPagu) - 14, M.t + 10)}
+              textAnchor="middle"
+              fontSize="12"
+              fontWeight="600"
+              fill="var(--ink)"
+            >
+              Pagu ini: {formatSkor(skorPagu)}
+            </text>
+          </g>
+        ) : null}
+
+        {/* garis bidik saat diarahkan */}
+        {aktif ? (
+          <g pointerEvents="none">
+            <line x1={x(aktif.pagu)} x2={x(aktif.pagu)} y1={M.t} y2={y(0)} stroke="var(--line-2)" strokeWidth="1" />
+            <circle cx={x(aktif.pagu)} cy={y(aktif.skor)} r="5" fill="var(--surface)" stroke="var(--ember)" strokeWidth="2" />
+          </g>
+        ) : null}
+      </svg>
+
+      {aktif ? (
+        <div
+          role="status"
+          className="pointer-events-none absolute top-1 z-10 -translate-x-1/2 rounded-xl border border-line bg-surface px-3 py-2 text-sm shadow-card"
+          style={{ left: `${Math.min(Math.max((x(aktif.pagu) / W) * 100, 18), 82)}%` }}
+        >
+          <span className="tabular block font-semibold">{formatRupiah(aktif.pagu)}</span>
+          <span className="tabular block text-muted">
+            Skor {formatSkor(aktif.skor)}
+            {aktif.skor > skorSekarang ? ` (+${formatSkor(aktif.skor - skorSekarang)})` : ""}
+          </span>
+          <span className="block text-xs text-faint">Klik untuk memakai pagu ini</span>
+        </div>
+      ) : null}
+
+      <details className="mt-2 text-sm">
+        <summary className="inline-flex min-h-11 cursor-pointer items-center font-semibold text-water">Lihat sebagai tabel</summary>
+        <div className="mt-2 max-h-56 overflow-auto rounded-xl border border-line">
+          <table className="w-full text-sm">
+            <thead className="sticky top-0 bg-paper">
+              <tr>
+                <th scope="col" className="px-3 py-2 text-left font-semibold">
+                  Pagu
+                </th>
+                <th scope="col" className="px-3 py-2 text-right font-semibold">
+                  Skor sesudah
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {titik
+                .filter((_, i) => i % 4 === 0 || i === titik.length - 1)
+                .map((t) => (
+                  <tr key={t.pagu} className="border-t border-line">
+                    <td className="tabular px-3 py-1.5">{formatRupiah(t.pagu)}</td>
+                    <td className="tabular px-3 py-1.5 text-right">{formatSkor(t.skor)}</td>
+                  </tr>
+                ))}
+            </tbody>
+          </table>
+        </div>
+      </details>
+    </figure>
+  );
+}
+
+/* ---------------------------------------------------------------------------------------------- */
+/* Batang pemakaian pagu                                                                            */
+/* ---------------------------------------------------------------------------------------------- */
+
+export function BatangPagu({
+  pagu,
+  terpilih,
+  nama,
+}: {
+  pagu: number;
+  terpilih: PriorityRow[];
+  nama: (kode: string) => string;
+}) {
+  const [arah, setArah] = useState<number | null>(null);
+  const total = terpilih.reduce((a, b) => a + b.biayaRp, 0);
+  const sisa = Math.max(pagu - total, 0);
+  const persen = pagu > 0 ? Math.round((total / pagu) * 100) : 0;
+  const aksiAda = (["beli", "perbaiki"] as Aksi[]).filter((a) => terpilih.some((b) => b.aksi === a));
+  const aktif = arah !== null ? terpilih[arah] : null;
+
+  return (
+    <div>
+      <p className="text-sm">
+        <span className="tabular font-semibold">{formatRupiah(total)}</span> <span className="text-muted">terpakai dari {formatRupiah(pagu)}</span>{" "}
+        <span className="tabular font-semibold">({persen}%)</span>
+      </p>
+      <div
+        role="img"
+        aria-label={`Pemakaian pagu: ${terpilih.map((b) => `${NAMA_AKSI[b.aksi]} ${nama(b.itemKode)} ${formatRupiah(b.biayaRp)}`).join(", ") || "belum ada belanja"}; sisa ${formatRupiah(sisa)}.`}
+        className="mt-2 flex h-6 w-full gap-[2px] overflow-hidden rounded-[6px]"
+        onPointerLeave={() => setArah(null)}
+      >
+        {terpilih.map((b, i) => (
+          <div
+            key={`${b.itemKode}-${b.aksi}`}
+            className="h-full transition-opacity"
+            style={{
+              width: `${(b.biayaRp / Math.max(pagu, total)) * 100}%`,
+              background: WARNA_AKSI[b.aksi],
+              opacity: arah === null || arah === i ? 1 : 0.45,
+            }}
+            onPointerEnter={() => setArah(i)}
+          />
+        ))}
+        {sisa > 0 ? <div className="h-full flex-1 rounded-[4px] border-[1.5px] border-line-2 bg-surface" style={{ minWidth: 4 }} /> : null}
+      </div>
+      <p aria-live="polite" className="mt-1 min-h-5 text-sm text-muted">
+        {aktif ? (
+          <>
+            <span className="font-semibold text-ink">
+              {NAMA_AKSI[aktif.aksi]} {nama(aktif.itemKode).toLowerCase()}
+            </span>{" "}
+            {formatAngka(aktif.qty)} × · <span className="tabular">{formatRupiah(aktif.biayaRp)}</span>
+          </>
+        ) : terpilih.length > 0 ? (
+          "Arahkan ke batang untuk melihat rinciannya."
+        ) : (
+          "Belum ada belanja yang muat di pagu ini."
+        )}
+      </p>
+      <ul className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted">
+        {aksiAda.map((a) => (
+          <li key={a} className="flex items-center gap-1.5">
+            <Swatch warna={WARNA_AKSI[a]} /> {NAMA_AKSI[a]}
+          </li>
+        ))}
+        <li className="flex items-center gap-1.5">
+          <Swatch warna="" garis /> Sisa <span className="tabular">{formatRupiah(sisa)}</span>
+        </li>
+      </ul>
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------------------------------------- */
+/* Cakupan per item: sekarang -> sesudah belanja (dumbbell)                                        */
+/* ---------------------------------------------------------------------------------------------- */
+
+export interface BarisCakupan {
+  kode: string;
+  nama: string;
+  satuan: string;
+  target: number;
+  sebelum: number; // berfungsi sekarang
+  sesudah: number; // berfungsi sesudah belanja terpilih
+}
+
+export function CakupanSesudah({ baris }: { baris: BarisCakupan[] }) {
+  const [arah, setArah] = useState<string | null>(null);
+  const pct = (n: number, t: number) => (t > 0 ? Math.min(n / t, 1) * 100 : 0);
+  return (
+    <div>
+      <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted">
+        <li className="flex items-center gap-1.5">
+          <span aria-hidden="true" className="inline-block size-3 rounded-full border-2 border-faint bg-surface" /> Sekarang
+        </li>
+        <li className="flex items-center gap-1.5">
+          <span aria-hidden="true" className="inline-block size-3 rounded-full" style={{ background: "var(--water)" }} /> Sesudah belanja
+        </li>
+      </ul>
+      <ul className="mt-3 space-y-3">
+        {baris.map((b) => {
+          const a = pct(b.sebelum, b.target);
+          const z = pct(b.sesudah, b.target);
+          const naik = Math.round(z) > Math.round(a);
+          return (
+            <li
+              key={b.kode}
+              className={`rounded-xl px-2 py-1.5 transition-colors ${arah === b.kode ? "bg-paper" : ""}`}
+              onPointerEnter={() => setArah(b.kode)}
+              onPointerLeave={() => setArah(null)}
+            >
+              <div className="flex items-baseline justify-between gap-3 text-sm">
+                <span className="font-semibold">{b.nama}</span>
+                <span className="tabular text-muted">
+                  {naik ? (
+                    <>
+                      {Math.round(a)}% → <span className="font-semibold text-ink">{Math.round(z)}%</span>
+                    </>
+                  ) : (
+                    <>{Math.round(a)}%, tidak berubah</>
+                  )}
+                </span>
+              </div>
+              <div
+                role="img"
+                aria-label={`${b.nama}: ${formatAngka(b.sebelum)} dari ${formatAngka(b.target)} ${b.satuan} berfungsi sekarang, ${formatAngka(b.sesudah)} sesudah belanja.`}
+                className="relative mt-1.5 h-4"
+              >
+                <div className="absolute inset-x-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-line" />
+                {naik ? (
+                  <div
+                    className="absolute top-1/2 h-1.5 -translate-y-1/2 rounded-full"
+                    style={{ left: `${a}%`, width: `${z - a}%`, background: "var(--water)", opacity: 0.45 }}
+                  />
+                ) : null}
+                <span
+                  className="absolute top-1/2 size-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-faint bg-surface"
+                  style={{ left: `${a}%` }}
+                />
+                {naik ? (
+                  <span
+                    className="absolute top-1/2 size-4 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-surface"
+                    style={{ left: `${z}%`, background: "var(--water)" }}
+                  />
+                ) : null}
+              </div>
+              {arah === b.kode ? (
+                <p className="tabular mt-1 text-xs text-muted">
+                  {formatAngka(b.sebelum)} → {formatAngka(b.sesudah)} dari paket minimum {formatAngka(b.target)} {b.satuan}
+                </p>
+              ) : null}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------------------------------------- */
+/* Ringkasan keputusan desa                                                                         */
+/* ---------------------------------------------------------------------------------------------- */
+
+const STATUS: { kunci: Keputusan | "belum"; label: string; warna: string; ikon: React.ReactNode }[] = [
+  { kunci: "setuju", label: "Disetujui", warna: "var(--ok)", ikon: <path d="M5 12l5 5 9-10" /> },
+  { kunci: "tunda", label: "Ditunda", warna: "var(--warn)", ikon: <path d="M12 7v5l3 2M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z" /> },
+  { kunci: "tolak", label: "Ditolak", warna: "var(--danger)", ikon: <path d="M6 6l12 12M18 6L6 18" /> },
+  { kunci: "belum", label: "Belum diputus", warna: "var(--line-2)", ikon: <path d="M12 8v5M12 16h.01" /> },
+];
+
+export function RingkasKeputusan({ jumlah }: { jumlah: Record<Keputusan | "belum", number> }) {
+  const total = Object.values(jumlah).reduce((a, b) => a + b, 0);
+  const isi = useMemo(() => STATUS.filter((s) => jumlah[s.kunci] > 0), [jumlah]);
+  return (
+    <div>
+      <div
+        role="img"
+        aria-label={STATUS.map((s) => `${s.label} ${jumlah[s.kunci]}`).join(", ")}
+        className="flex h-3 w-full gap-[2px] overflow-hidden rounded-full bg-line"
+      >
+        {isi.map((s) => (
+          <div key={s.kunci} style={{ width: `${(jumlah[s.kunci] / Math.max(total, 1)) * 100}%`, background: s.warna }} />
+        ))}
+      </div>
+      <ul className="mt-3 grid grid-cols-2 gap-2">
+        {STATUS.map((s) => (
+          <li key={s.kunci} className="flex items-center gap-2 rounded-xl bg-surface-2 px-3 py-2">
+            <span aria-hidden="true" className="flex size-7 shrink-0 items-center justify-center rounded-full" style={{ background: s.warna }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={s.kunci === "belum" ? "var(--ink)" : "#fff"} strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+                {s.ikon}
+              </svg>
+            </span>
+            <span className="min-w-0">
+              <span className="tabular block text-lg font-semibold leading-tight">{jumlah[s.kunci]}</span>
+              <span className="block truncate text-xs text-muted">{s.label}</span>
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}

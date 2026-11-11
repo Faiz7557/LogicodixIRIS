@@ -5,8 +5,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BilahAksi, kelasAksiUtama } from "@/components/ui/BilahAksi";
 import { EmptyState } from "@/components/ui/PageState";
 import { ApiError, api } from "@/lib/api-client";
-import { formatRupiah, formatSkor } from "@/lib/format";
+import { rankPriorities } from "@/lib/engine/priority";
+import { formatAngka, formatRupiah, formatSkor } from "@/lib/format";
 import {
+  PAGU_SLIDER_MAKS,
   barisDisetujui,
   kalimatPrioritas,
   keadaanPagu,
@@ -15,7 +17,8 @@ import {
   totalBiaya,
   type KeputusanMap,
 } from "@/lib/prioritas";
-import type { Aksi, CatalogItem, HargaRow, Keputusan, KeputusanRow, PaketRow, PrioritasPayload } from "@/lib/types";
+import type { Aksi, CatalogItem, HargaRow, Keputusan, KeputusanRow, PaketRow, PrioritasPayload, ReadinessResult } from "@/lib/types";
+import { BatangPagu, CakupanSesudah, KurvaSkorPagu, RingkasKeputusan, type BarisCakupan } from "./GrafikPrioritas";
 import { AksiLabel, PriorityRow } from "./PriorityRow";
 import { PaguControl } from "./PaguControl";
 import { PanelPaketHarga, type Edit } from "./PanelPaketHarga";
@@ -50,7 +53,7 @@ export function PrioritasView({
   namaDesa,
   catalog,
   awal,
-  skorSekarang,
+  kesiapan,
   paket: paketAwal,
   harga: hargaAwal,
 }: {
@@ -58,11 +61,13 @@ export function PrioritasView({
   namaDesa: string;
   catalog: CatalogItem[];
   awal: PrioritasPayload;
-  skorSekarang: number;
+  kesiapan: ReadinessResult;
   paket: PaketRow[];
   harga: HargaRow[];
 }) {
   const [hasil, setHasil] = useState<PrioritasPayload>(awal);
+  const [readiness, setReadiness] = useState<ReadinessResult>(kesiapan);
+  const skorSekarang = readiness.skor;
   const [paket, setPaket] = useState<PaketRow[]>(paketAwal);
   const [harga, setHarga] = useState<HargaRow[]>(hargaAwal);
   const [pagu, setPagu] = useState(awal.paguRp);
@@ -126,6 +131,31 @@ export function PrioritasView({
   const disetujui = barisDisetujui(hasil.terpilih, keputusan);
   const sisa = Math.max(0, pagu - hasil.terpakaiRp);
   const selisih = Math.round((hasil.skorSesudah - skorSekarang) * 10) / 10;
+
+  // Kurva skor terhadap pagu: mesin urutan yang sama (fungsi murni) dihitung di sekitar 60 titik,
+  // sampai sedikit di atas biaya semua kebutuhan. Katalog dibatasi ke item paket, sama seperti di server.
+  const titikKurva = useMemo(() => {
+    const boleh = new Set(paket.map((p) => p.itemKode));
+    const masukan = { catalog: catalog.filter((c) => boleh.has(c.kode)), readiness, prices: harga };
+    const skorPada = (paguRp: number) => rankPriorities({ ...masukan, paguRp });
+    const semua = skorPada(1e13).terpakaiRp;
+    const atas = Math.min(Math.max(semua * 1.15, pagu * 1.15, 10_000_000), Math.max(PAGU_SLIDER_MAKS, pagu * 1.15));
+    const langkah = Math.max(250_000, Math.ceil(atas / 60 / 250_000) * 250_000);
+    const n = Math.ceil(atas / langkah);
+    return Array.from({ length: n + 1 }, (_, i) => ({ pagu: i * langkah, skor: skorPada(i * langkah).skorSesudah }));
+  }, [catalog, paket, readiness, harga, pagu]);
+
+  // Cakupan tiap item sesudah belanja terpilih (beli dan perbaiki sama-sama menambah alat yang berfungsi).
+  const cakupan: BarisCakupan[] = readiness.items
+    .filter((i) => i.target > 0)
+    .map((i) => ({
+      kode: i.itemKode,
+      nama: nama(i.itemKode),
+      satuan: satuan(i.itemKode),
+      target: i.target,
+      sebelum: i.berfungsi,
+      sesudah: i.berfungsi + hasil.terpilih.filter((b) => b.itemKode === i.itemKode).reduce((a, b) => a + b.qty, 0),
+    }));
 
   /** Tulis putusan lokal lebih dulu supaya tombol terasa langsung menanggapi. */
   const ubahLokal = useCallback((itemKode: string, aksi: Aksi, ubah: { keputusan?: Keputusan; catatan: string | null }) => {
@@ -216,13 +246,15 @@ export function PrioritasView({
 
   /** Setelah target atau harga berubah, urutan bisa berubah: ambil ulang paket, harga, dan prioritas. */
   const segarkan = useCallback(async () => {
-    const [p, h, pr] = await Promise.all([
+    const [p, h, pr, k] = await Promise.all([
       api<{ hasil: PaketRow[] }>(`/api/desa/${kode}/paket`),
       api<{ hasil: HargaRow[] }>(`/api/desa/${kode}/harga`),
       api<PrioritasPayload>(`/api/desa/${kode}/prioritas`),
+      api<ReadinessResult>(`/api/desa/${kode}/kesiapan`),
     ]);
     setPaket(p.hasil);
     setHarga(h.hasil);
+    setReadiness(k);
     terapkan(pr);
   }, [kode, terapkan]);
 
@@ -261,11 +293,11 @@ export function PrioritasView({
   }
 
   return (
-    <div className="mx-auto max-w-[720px] px-4 py-6 pb-32 md:pb-6">
+    <div className="mx-auto max-w-[1120px] px-4 py-6 pb-32 md:px-8 md:py-8 md:pb-8">
       <header>
-        <h1 className="text-2xl font-bold">Prioritas</h1>
-        <p className="text-sm text-muted">{namaDesa}</p>
-        <p aria-live="polite" className="mt-3 text-xl font-semibold leading-snug">
+        <p className="text-sm font-semibold text-ember">Prioritas belanja · {namaDesa}</p>
+        <h1 className="mt-1 text-balance text-3xl font-semibold leading-tight tracking-tight md:text-4xl">Apa yang perlu dibeli dulu?</h1>
+        <p aria-live="polite" className="mt-3 max-w-[70ch] text-lg font-semibold leading-snug">
           {kalimat}
         </p>
         <p aria-live="polite" className="mt-2 min-h-5 text-sm font-semibold text-muted">
@@ -279,29 +311,91 @@ export function PrioritasView({
         </p>
       ) : null}
 
-      <div className="mt-5">
+      {/* Baris atas: pagu di kiri, angka utama dan pemakaian pagu di kanan. */}
+      <div className="mt-6 grid gap-4 lg:grid-cols-[340px_minmax(0,1fr)]">
         <PaguControl pagu={pagu} onChange={setPagu} />
+
+        <div aria-busy={menghitung} className={`flex flex-col gap-4 transition-opacity duration-300 ${menghitung ? "opacity-60" : ""}`}>
+          <dl className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+            <KartuKpi
+              gelap
+              label="Skor kesiapan"
+              nilai={formatSkor(hasil.skorSesudah)}
+              tambahan={
+                selisih > 0 ? `dari ${formatSkor(skorSekarang)}, naik ${formatSkor(selisih)} poin` : `sama dengan sekarang (${formatSkor(skorSekarang)})`
+              }
+              naik={selisih > 0}
+            />
+            <KartuKpi
+              label="Terpakai"
+              nilai={formatRupiah(hasil.terpakaiRp)}
+              tambahan={`${pagu > 0 ? Math.round((hasil.terpakaiRp / pagu) * 100) : 0}% dari pagu`}
+            />
+            <KartuKpi label="Sisa pagu" nilai={formatRupiah(sisa)} tambahan={sisa > 0 ? "belum terpakai" : "pagu habis terpakai"} />
+            <KartuKpi
+              label="Belanja terpilih"
+              nilai={formatAngka(hasil.terpilih.length)}
+              tambahan={`${ringkas.setuju} disetujui · ${hasil.tidakTerdanai.length} belum terdanai`}
+            />
+          </dl>
+          <section aria-labelledby="pakai-pagu" className="rounded-panel border border-line bg-surface p-5 shadow-card">
+            <h2 id="pakai-pagu" className="font-bold">
+              Ke mana pagu dipakai?
+            </h2>
+            <div className="mt-2">
+              <BatangPagu pagu={pagu} terpilih={hasil.terpilih} nama={nama} />
+            </div>
+          </section>
+        </div>
       </div>
 
-      <section aria-label="Ringkasan" aria-busy={menghitung} className="mt-4 rounded-card border border-line bg-surface px-4 py-4">
-        <p className="text-sm font-semibold text-muted">Skor kesiapan</p>
-        <p className="tabular mt-1 flex flex-wrap items-baseline gap-x-3 font-bold" aria-label={`Skor dari ${formatSkor(skorSekarang)} menjadi ${formatSkor(hasil.skorSesudah)}`}>
-          <span className="text-3xl text-muted">{formatSkor(skorSekarang)}</span>
-          <span aria-hidden="true" className="text-2xl text-muted">→</span>
-          <span className={`text-5xl transition-opacity duration-300 ${menghitung ? "opacity-40" : ""}`}>{formatSkor(hasil.skorSesudah)}</span>
-          {selisih > 0 ? <span className="text-base font-semibold text-ok">+{formatSkor(selisih)} poin</span> : null}
+      {/* Grafik utama: skor sesudah belanja untuk tiap besar pagu. */}
+      <section aria-labelledby="kurva" className="mt-4 rounded-panel border border-line bg-surface p-5 shadow-card md:p-6">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 id="kurva" className="text-lg font-bold">
+            Berapa skor yang didapat dari tiap besar pagu?
+          </h2>
+          <ul className="flex flex-wrap gap-x-4 text-sm text-muted">
+            <li className="flex items-center gap-1.5">
+              <span aria-hidden="true" className="inline-block h-0.5 w-4 rounded-full" style={{ background: "var(--ember)" }} /> Skor sesudah belanja
+            </li>
+            <li className="flex items-center gap-1.5">
+              <span aria-hidden="true" className="inline-block w-4 border-t border-dashed border-faint" /> Skor sekarang
+            </li>
+          </ul>
+        </div>
+        <p className="text-sm text-muted">
+          Tiap titik adalah susunan belanja terbaik untuk pagu itu. Kurva yang mendatar berarti tambahan dana tidak lagi menaikkan skor. Klik kurva untuk
+          mencoba pagu lain.
+          {hasil.tanpaHarga.length > 0
+            ? ` ${hasil.tanpaHarga.map(nama).join(", ")} belum punya harga, jadi kurva berhenti di bawah 100 sampai harganya diisi.`
+            : ""}
         </p>
-        <dl className="mt-3 grid grid-cols-2 gap-3 text-sm">
-          <div>
-            <dt className="text-muted">Terpakai</dt>
-            <dd className="tabular text-lg font-bold">{formatRupiah(hasil.terpakaiRp)}</dd>
-          </div>
-          <div>
-            <dt className="text-muted">Sisa pagu</dt>
-            <dd className="tabular text-lg font-bold">{formatRupiah(sisa)}</dd>
-          </div>
-        </dl>
+        <div className="mt-3">
+          <KurvaSkorPagu titik={titikKurva} pagu={pagu} skorSekarang={skorSekarang} onPilih={setPagu} />
+        </div>
       </section>
+
+      <div className="mt-4 grid gap-4 md:grid-cols-[minmax(0,1fr)_340px]">
+        <section aria-labelledby="cakupan" className="rounded-panel border border-line bg-surface p-5 shadow-card md:p-6">
+          <h2 id="cakupan" className="text-lg font-bold">
+            Cakupan paket minimum, sekarang dan sesudah belanja
+          </h2>
+          <p className="text-sm text-muted">Berapa persen paket minimum yang terpenuhi bila belanja terpilih dilaksanakan.</p>
+          <div className="mt-3">
+            <CakupanSesudah baris={cakupan} />
+          </div>
+        </section>
+        <section aria-labelledby="keputusan" className="rounded-panel border border-line bg-surface p-5 shadow-card md:p-6">
+          <h2 id="keputusan" className="text-lg font-bold">
+            Keputusan desa
+          </h2>
+          <p className="text-sm text-muted">Dari {hasil.terpilih.length} belanja terpilih.</p>
+          <div className="mt-3">
+            <RingkasKeputusan jumlah={{ setuju: ringkas.setuju, tunda: ringkas.tunda, tolak: ringkas.tolak, belum: ringkas.belum }} />
+          </div>
+        </section>
+      </div>
 
       <section aria-labelledby="terpilih" className="mt-8">
         <h2 id="terpilih" className="text-lg font-bold">
@@ -408,6 +502,30 @@ export function PrioritasView({
           </span>
         )}
       </BilahAksi>
+    </div>
+  );
+}
+
+/** Kotak angka dasbor. `gelap` untuk angka utama (pola kartu gelap di halaman rincian item). */
+function KartuKpi({ label, nilai, tambahan, gelap = false, naik = false }: { label: string; nilai: string; tambahan: string; gelap?: boolean; naik?: boolean }) {
+  return (
+    <div
+      className={`flex flex-col-reverse justify-end gap-1 rounded-panel p-4 ${
+        gelap ? "bg-gradient-to-br from-[#1f2a36] via-[#2b3440] to-[#4a3a2e] text-white" : "border border-line bg-surface shadow-card"
+      }`}
+    >
+      <dd>
+        <span className={`tabular block font-semibold leading-tight tracking-[-0.02em] ${nilai.length > 10 ? "text-xl" : "text-3xl"}`}>{nilai}</span>
+        <span className={`mt-1 flex items-center gap-1 text-xs ${gelap ? "text-white/75" : "text-muted"}`}>
+          {naik ? (
+            <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 19V5M6 11l6-6 6 6" />
+            </svg>
+          ) : null}
+          {tambahan}
+        </span>
+      </dd>
+      <dt className={`text-sm font-semibold ${gelap ? "text-white/90" : "text-muted"}`}>{label}</dt>
     </div>
   );
 }
