@@ -82,7 +82,7 @@ async function dariNineRouter(teks: string, catalog: CatalogItem[]): Promise<Inv
     method: "POST",
     headers: { "content-type": "application/json", authorization: `Bearer ${kunci}` },
     body: JSON.stringify({
-      model: process.env.NINE_ROUTER_MODEL ?? "gemini-3.8-flash-low",
+      model: process.env.NINE_ROUTER_MODEL ?? "ag/gemini-3.8-flash-low",
       messages: [
         { role: "system", content: "Kamu mengubah pesan menjadi JSON isian inventaris. Patuhi skema." },
         { role: "user", content: prompt(teks, catalog) },

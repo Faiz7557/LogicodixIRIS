@@ -34,13 +34,16 @@ describe("parseInventaris", () => {
 
   it("jatuh ke parser deterministik tanpa kunci AI", async () => {
     const kunci = process.env.ANTHROPIC_API_KEY;
+    const router = process.env.NINE_ROUTER_API_KEY;
     delete process.env.ANTHROPIC_API_KEY;
+    delete process.env.NINE_ROUTER_API_KEY;
     try {
       const r = await parseInventoryTextDenganAi("Pompa jinjing 2", mockCatalog);
       expect(r.sumber).toBe("deterministik");
       expect(r.hasil).toEqual([{ itemKode: "pompa_jinjing", total: 2, berfungsi: 2 }]);
     } finally {
       if (kunci) process.env.ANTHROPIC_API_KEY = kunci;
+      if (router) process.env.NINE_ROUTER_API_KEY = router;
     }
   });
 });

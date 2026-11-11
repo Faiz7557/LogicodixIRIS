@@ -12,10 +12,12 @@ vi.mock("@anthropic-ai/sdk", () => ({
 import { parseInventoryTextDenganAi } from "./parseInventaris";
 
 const kunci = process.env.ANTHROPIC_API_KEY;
+const routerKunci = process.env.NINE_ROUTER_API_KEY;
 
 describe("parseInventaris AI", () => {
   beforeEach(() => {
     process.env.ANTHROPIC_API_KEY = "uji";
+    delete process.env.NINE_ROUTER_API_KEY;
     create.mockReset();
   });
 
@@ -83,5 +85,7 @@ describe("parseInventaris AI", () => {
   afterAll(() => {
     if (kunci) process.env.ANTHROPIC_API_KEY = kunci;
     else delete process.env.ANTHROPIC_API_KEY;
+    if (routerKunci) process.env.NINE_ROUTER_API_KEY = routerKunci;
+    else delete process.env.NINE_ROUTER_API_KEY;
   });
 });
