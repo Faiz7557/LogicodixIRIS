@@ -58,12 +58,15 @@ export function RincianItem({
 }) {
   const { satuan } = item;
   const kurang = Math.max(hasil.target - hasil.berfungsi, 0);
+  const lebih = Math.max(hasil.berfungsi - hasil.target, 0);
   const persen = Math.round(Math.min(Math.max(hasil.coverage, 0), 1) * 100);
   const beli = harga.find((h) => h.itemKode === item.kode && h.aksi === "beli");
   const perbaiki = harga.find((h) => h.itemKode === item.kode && h.aksi === "perbaiki");
   const biayaBeli = beli ? kurang * beli.hargaRp : null;
   const biayaPerbaiki = perbaiki ? hasil.rusak * perbaiki.hargaRp : null;
   const n = (x: number) => `${formatAngka(x)} ${satuan}`;
+  // Dana operasi bukan alat: "tersedia", bukan "berfungsi".
+  const kataAda = item.punyaRusak ? "berfungsi" : "tersedia";
 
   return (
     <div className="mx-auto max-w-[1120px] px-4 py-6 md:px-8 md:py-8">
@@ -92,11 +95,11 @@ export function RincianItem({
         ) : kurang > 0 ? (
           <>
             <span className="font-semibold text-ember">Kurang {n(kurang)}</span> untuk memenuhi paket minimum {n(hasil.target)}. Saat ini{" "}
-            {n(hasil.berfungsi)} berfungsi{item.punyaRusak ? ` dan ${n(hasil.rusak)} rusak` : ""}.
+            {n(hasil.berfungsi)} {kataAda}{item.punyaRusak ? ` dan ${n(hasil.rusak)} rusak` : ""}.
           </>
         ) : (
           <>
-            <span className="font-semibold text-ok">Paket minimum terpenuhi:</span> {n(hasil.berfungsi)} berfungsi dari {n(hasil.target)}.
+            <span className="font-semibold text-ok">Paket minimum terpenuhi:</span> {n(hasil.berfungsi)} {kataAda} dari {n(hasil.target)}.
           </>
         )}
       </p>
@@ -108,10 +111,12 @@ export function RincianItem({
           className="relative flex min-h-[320px] flex-col overflow-hidden rounded-panel border border-line bg-gradient-to-b from-[#f3f1ec] to-[#e4e0d6] lg:min-h-[460px]"
         >
           <h2 id="model-judul" className="sr-only">
-            Model 3D {item.nama}
+            {item.punyaRusak ? `Model 3D ${item.nama}` : `Ringkasan ${item.nama.toLowerCase()}`}
           </h2>
           {PUNYA_MODEL_3D.has(item.kode) ? (
             <KotakModel3D kode={item.kode} nama={item.nama.toLowerCase()} />
+          ) : !item.punyaRusak ? (
+            <KotakDana hasil={hasil} satuan={satuan} harga={beli} />
           ) : (
             <>
               <div className="flex flex-1 flex-col items-center justify-center gap-4 p-6 text-center">
@@ -144,17 +149,22 @@ export function RincianItem({
               <ReadinessGauge skor={persen} status={statusItem(hasil.coverage)} label={{ teks: `${persen}%`, sr: " dari paket minimum" }} />
             </div>
             <p className="mt-2 text-center text-sm text-muted">
-              {formatAngka(hasil.berfungsi)} dari {n(hasil.target)} berfungsi
+              {formatAngka(hasil.berfungsi)} dari {n(hasil.target)} {kataAda}
             </p>
           </Panel>
 
           <Panel className="overflow-hidden">
             <div className="flex items-center justify-between gap-3 px-5 py-4">
-              <h2 className="font-bold">Kondisi alat</h2>
+              <h2 className="font-bold">{item.punyaRusak ? "Kondisi alat" : "Kondisi dana"}</h2>
               {kurang > 0 ? <span className="text-sm font-semibold text-ember">{n(kurang)} kurang</span> : null}
             </div>
             <ul className="divide-y divide-line border-t border-line">
-              <BarisKondisi ragam="ok" judul="Berfungsi" isi={`Ada ${n(hasil.berfungsi)} siap dipakai`} kanan="Siap" />
+              <BarisKondisi
+                ragam="ok"
+                judul={item.punyaRusak ? "Berfungsi" : "Tersedia"}
+                isi={item.punyaRusak ? `Ada ${n(hasil.berfungsi)} siap dipakai` : `Dana untuk ${n(hasil.berfungsi)} operasi`}
+                kanan="Siap"
+              />
               {item.punyaRusak ? (
                 <BarisKondisi
                   ragam={hasil.rusak > 0 ? "danger" : "netral"}
@@ -187,21 +197,34 @@ export function RincianItem({
             satuan={satuan}
             label="Kurang dari paket minimum"
           />
-          <KartuAngka
-            ikon={<IconKunci />}
-            nilai={item.punyaRusak ? formatAngka(hasil.rusak) : "–"}
-            satuan={item.punyaRusak ? satuan : ""}
-            label="Perlu diperbaiki"
-            catatan={
-              !item.punyaRusak
-                ? "Item ini tidak punya kondisi rusak."
-                : hasil.rusak === 0
+          {item.punyaRusak ? (
+            <KartuAngka
+              ikon={<IconKunci />}
+              nilai={formatAngka(hasil.rusak)}
+              satuan={satuan}
+              label="Perlu diperbaiki"
+              catatan={
+                hasil.rusak === 0
                   ? "Tidak ada yang rusak."
                   : biayaPerbaiki !== null
                     ? `Perkiraan biaya perbaikan ${formatRupiah(biayaPerbaiki)} (${formatAngka(hasil.rusak)} × ${formatRupiah(perbaiki!.hargaRp)}).`
                     : "Belum ada harga perbaikan bersumber."
-            }
-          />
+              }
+            />
+          ) : (
+            // Dana tidak bisa rusak: kartu ini menunjukkan cadangan di atas paket minimum.
+            <KartuAngka
+              ikon={<IconCadangan />}
+              nilai={formatAngka(lebih)}
+              satuan={satuan}
+              label="Lebih dari paket minimum"
+              catatan={
+                lebih > 0
+                  ? `Cadangan bila kemarau lebih panjang${beli ? `, setara ${formatRupiah(lebih * beli.hargaRp)}` : ""}.`
+                  : "Belum ada cadangan di atas paket minimum."
+              }
+            />
+          )}
           <KartuAngka
             ikon={<IconRupiah />}
             nilai={biayaBeli !== null ? formatRupiah(biayaBeli) : "–"}
@@ -238,7 +261,7 @@ export function RincianItem({
         <h2 id="catat" className="text-xl font-bold">
           Catat {item.nama.toLowerCase()}
         </h2>
-        <p className="mt-1 text-sm text-muted">Perbarui jumlah yang ada dan yang masih berfungsi. Item lain tidak ikut berubah. Prediksi di samping ikut bergerak saat angka diubah.</p>
+        <p className="mt-1 text-sm text-muted">{item.punyaRusak ? "Perbarui jumlah yang ada dan yang masih berfungsi." : `Perbarui berapa ${satuan} operasi yang sudah ada dananya.`} Item lain tidak ikut berubah. Prediksi di samping ikut bergerak saat angka diubah.</p>
         <div className="mt-4">
           <CatatDenganPratinjau
             kode={kode}
@@ -272,6 +295,69 @@ export function RincianItem({
           <path d="M5 12h14M13 6l6 6-6 6" />
         </svg>
       </Link>
+    </div>
+  );
+}
+
+/**
+ * Pengganti kotak model 3D untuk item yang bukan alat (dana operasi): satu kotak per minggu target,
+ * terisi bila dananya sudah ada, lalu padanan rupiah dari harga acuan per minggu.
+ * Kotak kosong bergaris putus-putus supaya "kurang" terbaca tanpa bergantung warna.
+ */
+function KotakDana({ hasil, satuan, harga }: { hasil: ReadinessItem; satuan: string; harga?: HargaRow }) {
+  const ada = Math.max(hasil.berfungsi, 0);
+  const kurang = Math.max(hasil.target - ada, 0);
+  const sel = Math.max(hasil.target, ada);
+  const MAKS_SEL = 26; // setengah tahun; lebih dari itu cukup angka saja
+  const rp = (x: number) => (harga ? formatRupiah(x * harga.hargaRp) : null);
+
+  return (
+    <div className="flex flex-1 flex-col gap-6 p-6 md:p-8">
+      <div>
+        <p className="text-sm font-semibold text-muted">Minggu operasi yang sudah ada dananya</p>
+        <p className="tabular mt-1 flex flex-wrap items-baseline gap-x-2">
+          <span className="text-5xl font-semibold leading-none tracking-tight">{formatAngka(ada)}</span>
+          <span className="text-lg text-muted">
+            dari {formatAngka(hasil.target)} {satuan}
+          </span>
+        </p>
+      </div>
+
+      {sel > 0 && sel <= MAKS_SEL ? (
+        <ol aria-label={`${formatAngka(ada)} dari ${formatAngka(hasil.target)} ${satuan} sudah ada dananya`} className="flex flex-wrap gap-2">
+          {Array.from({ length: sel }, (_, i) => {
+            const terisi = i < ada;
+            return (
+              <li
+                key={i}
+                aria-hidden="true"
+                className={`flex h-14 w-16 flex-col items-center justify-center rounded-xl text-xs font-semibold ${
+                  terisi ? "bg-water text-white shadow-sm" : "border-2 border-dashed border-line-2 bg-white/50 text-muted"
+                }`}
+              >
+                <span>Minggu</span>
+                <span className="tabular text-base leading-none">{i + 1}</span>
+              </li>
+            );
+          })}
+        </ol>
+      ) : null}
+
+      <dl className="mt-auto grid gap-3 sm:grid-cols-2">
+        <div className="rounded-2xl bg-white/70 p-4">
+          <dt className="text-sm text-muted">Setara dana yang tersedia</dt>
+          <dd className="tabular mt-1 text-xl font-semibold">{rp(ada) ?? "–"}</dd>
+        </div>
+        <div className="rounded-2xl bg-white/70 p-4">
+          <dt className="text-sm text-muted">Dana yang masih dibutuhkan</dt>
+          <dd className={`tabular mt-1 text-xl font-semibold ${kurang > 0 ? "text-ember" : ""}`}>{kurang > 0 ? (rp(kurang) ?? "–") : "Tidak ada"}</dd>
+        </div>
+      </dl>
+      <p className="-mt-3 text-sm text-muted">
+        {harga
+          ? `Dihitung dari harga acuan ${formatRupiah(harga.hargaRp)} per ${satuan} (${harga.sumber}).`
+          : `Harga acuan per ${satuan} belum diisi, jadi padanan rupiah belum bisa dihitung.`}
+      </p>
     </div>
   );
 }
@@ -355,6 +441,14 @@ function IconKalender() {
   );
 }
 
+function IconCadangan() {
+  return (
+    <svg {...ikon}>
+      <path d="M4 7l8-4 8 4-8 4z" />
+      <path d="M4 12l8 4 8-4M4 17l8 4 8-4" />
+    </svg>
+  );
+}
 function IconKunci() {
   return (
     <svg {...ikon}>

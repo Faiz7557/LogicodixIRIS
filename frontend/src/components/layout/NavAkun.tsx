@@ -8,7 +8,15 @@ import { formatSkor } from "@/lib/format";
 import type { Peran, Status } from "@/lib/types";
 import { TombolKeluar } from "./TombolKeluar";
 
-type Item = { href: (kode: string) => string; label: string; peran: Peran[]; icon: React.ReactNode; aktifSampai?: "persis" };
+type Item = {
+  href: (kode: string) => string;
+  label: string;
+  peran: Peran[];
+  icon: React.ReactNode;
+  aktifSampai?: "persis";
+  /** Kode item paket: menu ini memakai lencana kurang/terpenuhi dan hilang bila desa tidak punya item itu. */
+  item?: string;
+};
 type Kelompok = { tanya: string; items: Item[] };
 
 // Pengelompokan menurut pertanyaan yang ingin dijawab pengguna (pola dari referensi Sparekit).
@@ -18,8 +26,11 @@ const kelompok: Kelompok[] = [
     items: [{ href: (k) => `/desa/${k}/kesiapan`, label: "Kesiapan", peran: ["mpa", "desa"], icon: <IconGauge />, aktifSampai: "persis" }],
   },
   {
-    tanya: "Apa yang kita punya?",
-    items: [{ href: (k) => `/desa/${k}/inventaris`, label: "Catat alat", peran: ["mpa", "desa"], icon: <IconList /> }],
+    // Dana operasi bukan alat: dipisah dari daftar alat di bawah Kesiapan.
+    tanya: "Berapa yang kita punya?",
+    items: [
+      { href: (k) => `/desa/${k}/kesiapan/dana_operasi`, label: "Dana operasi", peran: ["mpa", "desa"], icon: <IconDana />, aktifSampai: "persis", item: "dana_operasi" },
+    ],
   },
   {
     tanya: "Apa yang perlu dibeli?",
@@ -39,7 +50,9 @@ const kelompok: Kelompok[] = [
 ];
 
 // Menu bawah di HP hanya memuat layar kerja akun, bukan tautan bukti.
-const KERJA = ["kesiapan", "inventaris", "prioritas", "usulan"];
+const KERJA = ["kesiapan", "dana_operasi", "prioritas", "usulan"];
+
+type ItemNav = { kode: string; nama: string; kurang: number; belumDiisi: boolean; alat: boolean };
 
 export type RingkasanNav = {
   kode: string;
@@ -50,14 +63,14 @@ export type RingkasanNav = {
   /** null = belum ada alat yang dicatat. */
   skor: number | null;
   status: Status;
-  /** Item paket minimum desa ini, untuk sub-menu di bawah Kesiapan. */
-  items: { kode: string; nama: string; kurang: number; belumDiisi: boolean }[];
+  /** Item paket minimum desa ini. Yang bukan alat (dana operasi) tampil di grupnya sendiri, bukan di bawah Kesiapan. */
+  items: ItemNav[];
 };
 
 /**
  * Navigasi halaman berakun (App Flow §1).
  * Laptop: sidebar bergrup pertanyaan + kartu akun + kartu skor. HP: menempel di bawah.
- * Akun `mpa` hanya melihat Kesiapan dan Catat alat (plus tautan bukti publik).
+ * Akun `mpa` hanya melihat Kesiapan dan Dana operasi (plus tautan bukti publik).
  */
 export function NavAkun({ r }: { r: RingkasanNav }) {
   const pathname = usePathname();
@@ -65,9 +78,9 @@ export function NavAkun({ r }: { r: RingkasanNav }) {
     const href = i.href(r.kode);
     return i.aktifSampai === "persis" ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
   };
-  const bawah = kelompok
-    .flatMap((g) => g.items)
-    .filter((i) => i.peran.includes(r.peran) && KERJA.some((s) => i.href(r.kode).endsWith(`/${s}`)));
+  const punya = (i: Item) => i.peran.includes(r.peran) && (!i.item || r.items.some((x) => x.kode === i.item));
+  const alat = r.items.filter((x) => x.alat);
+  const bawah = kelompok.flatMap((g) => g.items).filter((i) => punya(i) && KERJA.some((s) => i.href(r.kode).endsWith(`/${s}`)));
 
   return (
     <>
@@ -78,7 +91,7 @@ export function NavAkun({ r }: { r: RingkasanNav }) {
         >
           <div className="space-y-4">
             {kelompok.map((g) => {
-              const tampil = g.items.filter((i) => i.peran.includes(r.peran));
+              const tampil = g.items.filter(punya);
               if (tampil.length === 0) return null;
               return (
                 <section key={g.tanya} aria-label={g.tanya}>
@@ -96,9 +109,10 @@ export function NavAkun({ r }: { r: RingkasanNav }) {
                             }`}
                           >
                             <span className={on ? "text-ember" : ""}>{i.icon}</span>
-                            {i.label}
+                            <span className="min-w-0 flex-1 truncate">{i.label}</span>
+                            {i.item ? <LencanaItem it={r.items.find((x) => x.kode === i.item)!} /> : null}
                           </Link>
-                          {i.label === "Kesiapan" && r.items.length ? <SubItem r={r} pathname={pathname} /> : null}
+                          {i.label === "Kesiapan" && alat.length ? <SubItem kode={r.kode} items={alat} pathname={pathname} /> : null}
                         </li>
                       );
                     })}
@@ -173,11 +187,11 @@ export function NavAkun({ r }: { r: RingkasanNav }) {
  * Sub-menu item di bawah Kesiapan (pola daftar mesin Sparekit): gambar kecil, nama, lencana jumlah kurang.
  * Lencana bertuliskan angka dan diberi teks pembaca layar; item terpenuhi bertanda centang.
  */
-function SubItem({ r, pathname }: { r: RingkasanNav; pathname: string }) {
+function SubItem({ kode, items, pathname }: { kode: string; items: ItemNav[]; pathname: string }) {
   return (
-    <ul aria-label="Item kesiapan" className="ml-5 mt-0.5 space-y-0.5 border-l border-line pl-2">
-      {r.items.map((it) => {
-        const href = `/desa/${r.kode}/kesiapan/${it.kode}`;
+    <ul aria-label="Alat kesiapan" className="ml-5 mt-0.5 space-y-0.5 border-l border-line pl-2">
+      {items.map((it) => {
+        const href = `/desa/${kode}/kesiapan/${it.kode}`;
         const on = pathname === href;
         return (
           <li key={it.kode}>
@@ -190,28 +204,33 @@ function SubItem({ r, pathname }: { r: RingkasanNav; pathname: string }) {
             >
               <GambarItem kode={it.kode} className="size-8 rounded-lg" />
               <span className="min-w-0 flex-1 truncate">{it.nama}</span>
-              {it.belumDiisi ? (
-                <span className="shrink-0 rounded-md bg-paper px-1.5 text-sm text-muted">
-                  –<span className="sr-only">, belum dicatat</span>
-                </span>
-              ) : it.kurang > 0 ? (
-                <span className="tabular shrink-0 rounded-md bg-ember-soft px-1.5 text-sm font-semibold text-ember">
-                  {it.kurang}
-                  <span className="sr-only"> kurang</span>
-                </span>
-              ) : (
-                <span className="shrink-0 text-ok">
-                  <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M5 12l5 5 9-10" />
-                  </svg>
-                  <span className="sr-only">terpenuhi</span>
-                </span>
-              )}
+              <LencanaItem it={it} />
             </Link>
           </li>
         );
       })}
     </ul>
+  );
+}
+
+/** Lencana jumlah kurang: angka dengan teks pembaca layar, centang bila terpenuhi, tanda pisah bila belum dicatat. */
+function LencanaItem({ it }: { it: ItemNav }) {
+  return it.belumDiisi ? (
+    <span className="shrink-0 rounded-md bg-paper px-1.5 text-sm text-muted">
+      –<span className="sr-only">, belum dicatat</span>
+    </span>
+  ) : it.kurang > 0 ? (
+    <span className="tabular shrink-0 rounded-md bg-ember-soft px-1.5 text-sm font-semibold text-ember">
+      {it.kurang}
+      <span className="sr-only"> kurang</span>
+    </span>
+  ) : (
+    <span className="shrink-0 text-ok">
+      <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M5 12l5 5 9-10" />
+      </svg>
+      <span className="sr-only">terpenuhi</span>
+    </span>
   );
 }
 
@@ -236,11 +255,12 @@ function IconGauge() {
     </svg>
   );
 }
-function IconList() {
+function IconDana() {
   return (
     <svg {...ikon}>
-      <path d="M9 6h11M9 12h11M9 18h11" />
-      <path d="M4 6h.01M4 12h.01M4 18h.01" />
+      <rect x="3" y="6" width="18" height="12" rx="2" />
+      <circle cx="12" cy="12" r="2.5" />
+      <path d="M6.5 9.5h.01M17.5 14.5h.01" />
     </svg>
   );
 }
