@@ -86,7 +86,7 @@ export function CatatDenganPratinjau({
   const kurang = Math.max(baris.target - baris.berfungsi, 0);
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_300px]">
+    <div className="flex flex-col gap-4">
       <div className="min-w-0">
         <FormInventaris
           kode={kode}
@@ -99,8 +99,9 @@ export function CatatDenganPratinjau({
         />
       </div>
 
-      <aside aria-label="Pratinjau hasil isian" className="flex flex-col gap-4 lg:sticky lg:top-4 lg:self-start">
-        <Panel className="p-5">
+      {/* Prediksi di bawah form, berdampingan di layar lebar; baris "Sebelumnya" menempel di dasar tiap panel supaya sejajar. */}
+      <aside aria-label="Pratinjau hasil isian" className="grid gap-4 md:grid-cols-2">
+        <Panel className="flex flex-col p-5">
           <h3 className="font-bold leading-snug">
             {pakaiTotal ? `Prediksi ${item.nama.toLowerCase()} berfungsi` : `Prediksi cakupan ${item.nama.toLowerCase()}`}
           </h3>
@@ -123,24 +124,28 @@ export function CatatDenganPratinjau({
               {kurang > 0 ? <span className="font-semibold text-ember">kurang {n(kurang)}</span> : <span className="font-semibold text-ok">terpenuhi</span>}
             </p>
           ) : null}
-          <Perubahan sebelum={totalAwal === 0 && pakaiTotal ? "–" : `${persenAwal}%`} selisih={persen - persenAwal} satuan="poin persen" />
+          <div className="mt-auto">
+            <Perubahan sebelum={totalAwal === 0 && pakaiTotal ? "–" : `${persenAwal}%`} selisih={persen - persenAwal} satuan="poin persen" />
+          </div>
         </Panel>
 
-        <Panel className="p-5">
+        <Panel className="flex flex-col p-5">
           <h3 className="font-bold leading-snug">Prediksi skor kesiapan desa</h3>
           <div className="mx-auto mt-3 w-full max-w-[220px]">
             <ReadinessGauge transisi skor={skor} status={status} />
           </div>
-          <Perubahan sebelum={formatSkor(skorAwal)} selisih={Math.round((skor - skorAwal) * 10) / 10} satuan="poin" desimal />
           {status !== statusAwal ? (
             <p className="mt-2 flex flex-wrap items-center justify-center gap-1.5 text-sm">
               Status berubah: <StatusBadge status={statusAwal} /> <span aria-hidden="true">→</span>
               <span className="sr-only">menjadi</span> <StatusBadge status={status} />
             </p>
           ) : null}
+          <div className="mt-auto">
+            <Perubahan sebelum={formatSkor(skorAwal)} selisih={Math.round((skor - skorAwal) * 10) / 10} satuan="poin" desimal />
+          </div>
         </Panel>
 
-        <p className="text-sm text-muted">Pratinjau dari isian di samping. Angka resmi baru berubah setelah kamu menekan Simpan.</p>
+        <p className="text-sm text-muted md:col-span-2">Pratinjau dari isian di atas. Angka resmi baru berubah setelah kamu menekan Simpan.</p>
       </aside>
     </div>
   );

@@ -261,7 +261,7 @@ export function RincianItem({
         <h2 id="catat" className="text-xl font-bold">
           Catat {item.nama.toLowerCase()}
         </h2>
-        <p className="mt-1 text-sm text-muted">{item.punyaRusak ? "Perbarui jumlah yang ada dan yang masih berfungsi." : `Perbarui berapa ${satuan} operasi yang sudah ada dananya.`} Item lain tidak ikut berubah. Prediksi di samping ikut bergerak saat angka diubah.</p>
+        <p className="mt-1 text-sm text-muted">{item.punyaRusak ? "Perbarui jumlah yang ada dan yang masih berfungsi." : `Perbarui berapa ${satuan} operasi yang sudah ada dananya.`} Item lain tidak ikut berubah. Prediksi di bawahnya ikut bergerak saat angka diubah.</p>
         <div className="mt-4">
           <CatatDenganPratinjau
             kode={kode}
