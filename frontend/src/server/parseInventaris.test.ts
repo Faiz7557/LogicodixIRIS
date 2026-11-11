@@ -1,4 +1,4 @@
-import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mockCatalog } from "@/test/fixtures";
 
 const { create } = vi.hoisted(() => ({ create: vi.fn() }));
@@ -42,6 +42,42 @@ describe("parseInventaris AI", () => {
     create.mockRejectedValue(new Error("jaringan"));
     const r = await parseInventoryTextDenganAi("Pompa jinjing 2", mockCatalog);
     expect(r.sumber).toBe("deterministik");
+  });
+
+  it("memakai 9router bila Anthropic tidak tersedia", async () => {
+    const anthropic = process.env.ANTHROPIC_API_KEY;
+    const routerKunci = process.env.NINE_ROUTER_API_KEY;
+    const routerBase = process.env.NINE_ROUTER_BASE_URL;
+    delete process.env.ANTHROPIC_API_KEY;
+    process.env.NINE_ROUTER_API_KEY = "uji";
+    process.env.NINE_ROUTER_BASE_URL = "https://router.test";
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ choices: [{ message: { content: '[{"itemKode":"pompa_jinjing","total":2,"berfungsi":1}]' } }] }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    try {
+      const r = await parseInventoryTextDenganAi("Pompa jinjing 2, 1 berfungsi", mockCatalog);
+      expect(r).toEqual({
+        hasil: [{ itemKode: "pompa_jinjing", total: 2, berfungsi: 1 }],
+        sumber: "9router",
+      });
+      expect(fetchMock).toHaveBeenCalledWith("https://router.test/v1/chat/completions", expect.objectContaining({ method: "POST" }));
+    } finally {
+      if (anthropic) process.env.ANTHROPIC_API_KEY = anthropic;
+      if (routerKunci) process.env.NINE_ROUTER_API_KEY = routerKunci;
+      else delete process.env.NINE_ROUTER_API_KEY;
+      if (routerBase) process.env.NINE_ROUTER_BASE_URL = routerBase;
+      else delete process.env.NINE_ROUTER_BASE_URL;
+      vi.unstubAllGlobals();
+    }
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   afterAll(() => {
