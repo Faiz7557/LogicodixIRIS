@@ -167,6 +167,61 @@ body {
   animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
+/*
+ * Dasbor Bukti satelit. Kurva gerak meniru pegas teredam kritis (tanpa pantulan):
+ * cepat di awal, mendarat halus. Transisi CSS memulai ulang dari nilai yang sedang tampil,
+ * jadi mengganti filter di tengah animasi tidak meloncat.
+ */
+:root {
+  --pegas: cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes masuk {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.99);
+  }
+}
+.masuk {
+  animation: masuk 520ms var(--pegas) both;
+}
+@keyframes tumbuh {
+  from {
+    transform: scaleY(0);
+  }
+}
+.tumbuh {
+  transform-origin: bottom;
+  animation: tumbuh 700ms var(--pegas) both;
+}
+@keyframes isi-maju {
+  from {
+    transform: scaleX(0);
+  }
+}
+.isi-maju {
+  transform-origin: left;
+  animation: isi-maju linear both;
+}
+/* Arsiran diagonal pada batang (pola referensi), warna dari token. */
+.arsir-ember {
+  background: repeating-linear-gradient(135deg, var(--ember) 0 5px, color-mix(in oklab, var(--ember) 72%, white) 5px 8px);
+}
+.arsir-air {
+  background: repeating-linear-gradient(135deg, var(--water) 0 5px, color-mix(in oklab, var(--water) 72%, white) 5px 8px);
+}
+.arsir-ok {
+  background: repeating-linear-gradient(135deg, var(--ok) 0 5px, color-mix(in oklab, var(--ok) 72%, white) 5px 8px);
+}
+.arsir-abu {
+  background: repeating-linear-gradient(135deg, var(--line-2) 0 5px, color-mix(in oklab, var(--line-2) 55%, white) 5px 8px);
+}
+.tekan {
+  transition: transform 120ms ease-out;
+}
+.tekan:active {
+  transform: scale(0.97);
+}
+
 @media (prefers-reduced-motion: reduce) {
   ::view-transition-group(*),
   ::view-transition-old(*),
