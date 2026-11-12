@@ -99,7 +99,7 @@ Semua jumlah dan bobot adalah **asumsi tim**, bukan standar yang mengikat desa.
 
 | Kode | Item | Satuan | Target | Bobot | Jangkar sekunder |
 |---|---|---|---:|---:|---|
-| `dana_operasi` | Dana operasi | minggu | 1 | 15 | Rp5 juta per minggu untuk 7-10 ha, satu kesaksian (Nurhidayah 2023) |
+| `dana_operasi` | Biaya operasi pemadaman | minggu | 1 | 15 | Rp5 juta per minggu untuk 7-10 ha, satu kesaksian (Nurhidayah 2023) |
 | `pompa_jinjing` | Pompa jinjing berfungsi | unit | 1 | 20 | Pergub Kalteng memuat 3 per regu |
 | `selang_keluar` | Selang keluar | buah | 10 | 20 | Kalibandung gagal dengan 100 m. Pergub Kalteng memuat 50 buah per regu |
 | `sumur_bor` | Sumur bor berfungsi | titik | 5 | 20 | Talio Hulu 8 dari 50 berfungsi. Hanya untuk desa bergambut |

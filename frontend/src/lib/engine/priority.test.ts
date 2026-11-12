@@ -5,7 +5,7 @@ import { rankPriorities } from "./priority";
 
 // Katalog dan harga: Backend Schema §6, PRD §8.
 const cat: CatalogItem[] = [
-  { kode: "dana_operasi", nama: "Dana operasi", satuan: "minggu", bobot: 15, kritis: true, bisaDibeli: true, punyaRusak: false, hanyaGambut: false },
+  { kode: "dana_operasi", nama: "Biaya operasi pemadaman", satuan: "minggu", bobot: 15, kritis: true, bisaDibeli: true, punyaRusak: false, hanyaGambut: false },
   { kode: "pompa_jinjing", nama: "Pompa jinjing", satuan: "unit", bobot: 20, kritis: true, bisaDibeli: true, punyaRusak: true, hanyaGambut: false },
   { kode: "selang_keluar", nama: "Selang keluar", satuan: "buah", bobot: 20, kritis: true, bisaDibeli: true, punyaRusak: true, hanyaGambut: false },
 ];

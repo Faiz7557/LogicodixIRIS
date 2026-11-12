@@ -245,12 +245,12 @@ export function KartuSkor({
           { label: "perlu biaya", nilai: rupiahRingkas(totalBiaya) },
         ]}
       />
-      {bisaPrioritas ? <TautanBawah href={`/desa/${kode}/prioritas`}>Atur pagu</TautanBawah> : <TautanBawah href={`/desa/${kode}`}>Lihat bukti paparan</TautanBawah>}
+      {bisaPrioritas ? <TautanBawah href={`/desa/${kode}/prioritas/pagu`}>Isi pagu</TautanBawah> : <TautanBawah href={`/desa/${kode}`}>Lihat bukti paparan</TautanBawah>}
     </section>
   );
 }
 
-/** Dana operasi (pengganti grafik bulanan Sparekit): satu kotak per minggu. Seluruh kartu menuju halaman Dana operasi. */
+/** Dana operasi (pengganti grafik bulanan Sparekit): satu kotak per minggu. Seluruh kartu menuju halaman Biaya operasi. */
 export function KartuDana({ kode, it, hargaRows }: { kode: string; it: ItemView | undefined; hargaRows: HargaRow[] }) {
   if (!it) return null;
   const ada = it.belumDiisi ? 0 : Math.max(it.berfungsi, 0);
@@ -267,7 +267,7 @@ export function KartuDana({ kode, it, hargaRows }: { kode: string; it: ItemView 
     >
       <Kepala
         id="dana-kartu"
-        judul="Dana operasi"
+        judul="Biaya operasi pemadaman"
         kanan={
           <Lencana ragam={it.belumDiisi ? "netral" : kurang > 0 ? "kurang" : "ok"}>
             {it.belumDiisi ? "Belum dicatat" : kurang > 0 ? `Kurang ${formatAngka(kurang)} ${it.satuan}` : "Terpenuhi"}
@@ -301,7 +301,7 @@ export function KartuDana({ kode, it, hargaRows }: { kode: string; it: ItemView 
           { label: "masih dibutuhkan", nilai: kurang === 0 ? "Tidak ada" : h !== null ? rupiahRingkas(kurang * h) : "–", ragam: kurang > 0 ? "kurang" : undefined },
         ]}
       />
-      <TautanBawah>Lihat dana operasi</TautanBawah>
+      <TautanBawah>Lihat biaya operasi</TautanBawah>
     </Link>
   );
 }

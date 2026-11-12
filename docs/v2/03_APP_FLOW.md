@@ -144,7 +144,7 @@ Selang tampil sebagai `3 / 10 buah`, dengan keterangan kecil `≈60 m pada asums
 
 | Keadaan | Tampilan |
 |---|---|
-| Pagu 0 | "Masukkan pagu untuk melihat urutan." |
+| Pagu 0 | "Isi pagu untuk melihat urutan." |
 | Pagu di bawah harga termurah | "Pagu belum cukup untuk satu item. Item termurah: {item}, {harga}." |
 | Semua harga kosong | "Belum ada harga. Isi harga dari penawaran setempat." |
 

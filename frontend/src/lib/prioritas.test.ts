@@ -32,7 +32,7 @@ describe("parsePagu", () => {
 
 describe("keadaan dan kalimat", () => {
   it("pagu nol: teks persis App Flow", () => {
-    expect(kalimatPrioritas(0, 65.3, hitung(0), mockHarga, mockCatalog)).toBe("Masukkan pagu untuk melihat urutan.");
+    expect(kalimatPrioritas(0, 65.3, hitung(0), mockHarga, mockCatalog)).toBe("Isi pagu untuk melihat urutan.");
   });
   it("pagu di bawah harga termurah menyebut item dan harganya", () => {
     expect(keadaanPagu(1000, hitung(1000), mockHarga)).toBe("kurang");

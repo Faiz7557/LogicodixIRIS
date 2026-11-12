@@ -31,7 +31,12 @@ export const LABEL_TIER: Record<Tier, string> = {
 };
 
 /** Laju kecamatan dalam kalimat. Tidak pernah per desa (PRD FR-03). */
+/** "Kecamatan X": nama dari data kadang sudah memuat kata "Kecamatan", jadi jangan diulang. */
+export function sebutKecamatan(namaKec: string): string {
+  return /^kecamatan\s/i.test(namaKec) ? namaKec : `Kecamatan ${namaKec}`;
+}
+
 export function kalimatKecamatan(k: { pMean: number; rateMin: number; rateMax: number }, namaKec: string): string {
   const p = (x: number) => `${formatAngka(Math.round(x * 100))}%`;
-  return `Di Kecamatan ${namaKec}, rata-rata ${p(k.pMean)} desa terdeteksi satelit pada tahun kering ekstrem (terendah ${p(k.rateMin)}, tertinggi ${p(k.rateMax)} antar tahun).`;
+  return `Di ${sebutKecamatan(namaKec)}, rata-rata ${p(k.pMean)} desa terdeteksi satelit pada tahun kering ekstrem (terendah ${p(k.rateMin)}, tertinggi ${p(k.rateMax)} antar tahun).`;
 }

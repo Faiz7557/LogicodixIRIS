@@ -46,15 +46,19 @@ export async function getTargetEfektif(kode: string): Promise<PaketRow[]> {
 
 export async function getHargaEfektif(kode: string): Promise<HargaRow[]> {
   await desaInfo(kode);
+  // Mulai dari tiap item katalog dan aksi, bukan dari harga acuan: item tanpa harga acuan
+  // (misalnya sumur bor) tetap terbaca bila desa sudah mengisi harganya sendiri.
   const rows = await q(
-    `SELECT h.item_kode, h.aksi,
+    `SELECT k.kode AS item_kode, a.aksi,
             COALESCE(hd.harga_rp, h.harga_rp) AS harga_rp,
             CASE WHEN hd.harga_rp IS NULL THEN h.sumber ELSE 'Diisi desa: ' || hd.sumber END AS sumber,
             COALESCE(hd.updated_at, h.tanggal) AS tanggal
-     FROM harga_item h
-     JOIN katalog_item k ON k.kode = h.item_kode
-     LEFT JOIN harga_desa hd ON hd.item_kode = h.item_kode AND hd.aksi = h.aksi AND hd.desa_kode = ?
-     ORDER BY k.urutan, h.aksi`,
+     FROM katalog_item k
+     CROSS JOIN (SELECT 'beli' AS aksi UNION ALL SELECT 'perbaiki') a
+     LEFT JOIN harga_item h ON h.item_kode = k.kode AND h.aksi = a.aksi
+     LEFT JOIN harga_desa hd ON hd.item_kode = k.kode AND hd.aksi = a.aksi AND hd.desa_kode = ?
+     WHERE h.harga_rp IS NOT NULL OR hd.harga_rp IS NOT NULL
+     ORDER BY k.urutan, a.aksi`,
     [kode],
   );
   return rows.map((r) => ({
