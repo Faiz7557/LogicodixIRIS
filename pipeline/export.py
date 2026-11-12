@@ -13,7 +13,7 @@ MANUAL = ROOT / "data" / "manual"
 # Urutan mengikuti kunci asing: induk lebih dulu.
 TABLE_ORDER = [
     "meta", "sumber_data", "dq_issue", "katalog_item", "paket_minimum",
-    "referensi_pergub", "harga_item", "deteksi_ringkas", "desa", "desa_tahun",
+    "referensi_pergub", "harga_item", "deteksi_ringkas", "desa", "desa_gambut", "desa_tahun",
     "desa_paparan", "kecamatan_paparan", "backtest_metric", "backtest_grup",
 ]
 

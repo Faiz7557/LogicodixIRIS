@@ -88,6 +88,26 @@ CREATE TABLE desa (
 CREATE INDEX idx_desa_nama ON desa(nama COLLATE NOCASE);
 CREATE INDEX idx_desa_kec ON desa(kec_kode);
 
+-- Desa bergambut seluruh Kalimantan (keluaran pipeline/gambut_kalimantan.py).
+-- Terpisah dari `desa` karena paparan dan backtest hanya dihitung untuk Kalbar dan Kalteng.
+CREATE TABLE desa_gambut (
+  kode TEXT PRIMARY KEY,
+  nama TEXT NOT NULL,
+  kec_kode TEXT NOT NULL,
+  kec_nama TEXT NOT NULL,
+  kab_kode TEXT NOT NULL,
+  kab_nama TEXT NOT NULL,
+  prov_kode TEXT NOT NULL,
+  prov_nama TEXT NOT NULL,
+  lat REAL NOT NULL,
+  lon REAL NOT NULL,
+  luas_ha REAL NOT NULL,
+  peat_ha REAL NOT NULL,
+  peat_frac REAL NOT NULL CHECK (peat_frac BETWEEN 0 AND 1),
+  geom_json TEXT NOT NULL
+);
+CREATE INDEX idx_desa_gambut_prov ON desa_gambut(prov_kode);
+
 CREATE TABLE desa_tahun (
   kode TEXT NOT NULL REFERENCES desa(kode),
   tahun INTEGER NOT NULL,

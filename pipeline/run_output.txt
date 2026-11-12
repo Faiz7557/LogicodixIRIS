@@ -10,6 +10,13 @@ N          SP        1088038
 Tanggal terakhir SP: 2026-07-31
 Tanggal terakhir NRT: 2026-11-02
 Celah SP->NRT: 2026-07-31 sampai 2026-08-01
+Desa bergambut 5 provinsi: 1220; luas gambut 4.92 juta ha
+prov_nama
+Kalimantan Barat      546
+Kalimantan Selatan     80
+Kalimantan Tengah     501
+Kalimantan Timur       51
+Kalimantan Utara       42
 Desa: 3706
 prov_nama
 Kalimantan Barat     2132
@@ -220,4 +227,4 @@ Riwayat Kali Bandung (Sungai Raya, Kubu Raya; HDX 6112070019) - Kalibandung:
 6112070019   2024      7         4         1
 6112070019   2025      7         6         1
 6112070019   2026    365        42         1
-DB: /home/primarizki/project/LogicodixIRIS/data/siapkemarau.db (11.2 MB)
+DB: /home/primarizki/project/LogicodixIRIS/data/siapkemarau.db (14.1 MB)

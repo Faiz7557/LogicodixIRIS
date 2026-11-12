@@ -1,7 +1,7 @@
 import type { InArgs, Row } from "@libsql/client";
 import type { MetricRow } from "@/lib/backtest";
 import type {
-  CatalogItem, DesaCard, DesaHit, HargaRow, KeputusanGerbang, PaketRow, Tier,
+  CatalogItem, DesaCard, DesaGambut, DesaHit, HargaRow, KeputusanGerbang, PaketRow, Tier,
 } from "@/lib/types";
 import { db } from "./db";
 import { HttpError } from "./http";
@@ -156,6 +156,23 @@ export async function getBacktest(): Promise<Backtest> {
     })),
     dataAkhir2026,
   };
+}
+
+export async function getDesaGambut(): Promise<DesaGambut[]> {
+  const rows = await q(
+    `SELECT kode, nama, kec_kode, kec_nama, kab_kode, kab_nama, prov_kode, prov_nama,
+            lat, lon, luas_ha, peat_ha, peat_frac, geom_json
+       FROM desa_gambut ORDER BY prov_kode, kab_kode, kec_kode, nama`,
+  );
+  return rows.map((r) => ({
+    kode: str(r.kode), nama: str(r.nama),
+    kecKode: str(r.kec_kode), kecNama: str(r.kec_nama),
+    kabKode: str(r.kab_kode), kabNama: str(r.kab_nama),
+    provKode: str(r.prov_kode), provNama: str(r.prov_nama),
+    lat: Number(r.lat), lon: Number(r.lon),
+    luasHa: Number(r.luas_ha), peatHa: Number(r.peat_ha), peatFrac: Number(r.peat_frac),
+    geomJson: str(r.geom_json),
+  }));
 }
 
 export async function getDataPage(): Promise<DataPage> {

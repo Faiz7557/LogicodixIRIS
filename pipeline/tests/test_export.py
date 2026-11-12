@@ -40,3 +40,33 @@ def test_build_db_replaces_old_file(tmp_path):
     n = c.execute("select count(*) from desa").fetchone()[0]
     c.close()
     assert n == 1
+
+
+def test_gambut_layer_merges_geometry(tmp_path):
+    from pipeline.run_all import _gambut_layer
+
+    (tmp_path / "gambut_kalimantan").mkdir()
+    pd.DataFrame([{
+        "kode": "D1", "nama": "Desa Gambut", "kec_kode": "K1", "kec_nama": "Kec",
+        "kab_kode": "61", "kab_nama": "Kab", "prov_kode": "61", "prov_nama": "Kalimantan Barat",
+        "lat": 0.0, "lon": 0.0, "luas_ha": 10.0, "peat_ha": 4.0, "peat_frac": 0.4,
+    }]).to_csv(tmp_path / "gambut_kalimantan" / "desa_gambut.csv", index=False)
+    geo = {"type": "FeatureCollection", "features": [{
+        "type": "Feature", "properties": {"kode": "D1"},
+        "geometry": {"type": "Point", "coordinates": [1.0, 2.0]},
+    }]}
+    (tmp_path / "gambut_kalimantan" / "desa_gambut.geojson").write_text(json.dumps(geo))
+    df = _gambut_layer(tmp_path)
+    assert json.loads(df.loc[0, "geom_json"])["coordinates"] == [1.0, 2.0]
+
+
+def test_gambut_layer_rejects_unsynced_rows(tmp_path):
+    from pipeline.run_all import _gambut_layer
+
+    (tmp_path / "gambut_kalimantan").mkdir()
+    pd.DataFrame([{"kode": "D1"}]).to_csv(tmp_path / "gambut_kalimantan" / "desa_gambut.csv", index=False)
+    (tmp_path / "gambut_kalimantan" / "desa_gambut.geojson").write_text(
+        json.dumps({"type": "FeatureCollection", "features": []}))
+    import pytest
+    with pytest.raises(ValueError):
+        _gambut_layer(tmp_path)

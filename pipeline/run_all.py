@@ -57,6 +57,26 @@ def _raw_detections() -> tuple[list[str], pd.DataFrame, pd.DataFrame]:
     return paths, sebelum, det
 
 
+def _gambut_layer(raw: Path = RAW) -> pd.DataFrame:
+    """Desa bergambut seluruh Kalimantan: CSV + geometri dari GeoJSON teammate."""
+    csv_path = raw / "gambut_kalimantan" / "desa_gambut.csv"
+    geo_path = raw / "gambut_kalimantan" / "desa_gambut.geojson"
+    if not (csv_path.exists() and geo_path.exists()):
+        try:
+            from pipeline.gambut_kalimantan import main as hitung_gambut
+        except ImportError:
+            from gambut_kalimantan import main as hitung_gambut
+        hitung_gambut()
+    df = pd.read_csv(csv_path, dtype={"kode": str})
+    geo = json.loads(geo_path.read_text(encoding="utf-8"))
+    geom = {str(f["properties"]["kode"]): json.dumps(f["geometry"], separators=(",", ":"))
+            for f in geo["features"]}
+    df["geom_json"] = df["kode"].map(geom)
+    if df["geom_json"].isna().any():
+        raise ValueError("desa_gambut.csv dan desa_gambut.geojson tidak sinkron")
+    return df
+
+
 def _desa_layer() -> gpd.GeoDataFrame:
     shp = sorted((RAW / "hdx").rglob("*admin4*.shp"))
     if not shp:
@@ -143,6 +163,11 @@ def main() -> None:
     nrt_min = det.loc[det.sumber == "NRT", "tanggal"].min()
     tulis(f"Celah SP->NRT: {sp_max} sampai {nrt_min}")
 
+    gambut = _gambut_layer()
+    tulis(f"Desa bergambut 5 provinsi: {len(gambut)}; "
+          f"luas gambut {gambut.peat_ha.sum() / 1e6:.2f} juta ha")
+    tulis(gambut.groupby("prov_nama")["kode"].size().to_string())
+
     desa = _desa_layer()
     tulis(f"Desa: {len(desa)}")
     tulis(desa.groupby("prov_nama")["kode"].nunique().to_string())
@@ -193,6 +218,7 @@ def main() -> None:
         "meta": meta_frame(PARAMS, extra),
         "deteksi_ringkas": sensor_summary(det),
         "desa": desa.drop(columns="geometry"),
+        "desa_gambut": gambut,
         "desa_tahun": dy,
         "desa_paparan": semua,
         "kecamatan_paparan": kec,

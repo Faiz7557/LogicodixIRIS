@@ -176,6 +176,7 @@ Modul yang ada:
 | `pipeline/paparan.py` | Paparan per desa dan kecamatan |
 | `pipeline/backtest.py` | Time Machine, tiga fold, gerbang |
 | `pipeline/fetch_inputs.py` | Unduh batas desa HDX dan poligon gambut WRI/GFW |
+| `pipeline/gambut_kalimantan.py` | Desa bergambut seluruh Kalimantan (CSV + GeoJSON) |
 | `pipeline/export.py` | Tulis tabel ke SQLite dari `db/schema.sql` |
 | `pipeline/run_all.py` | Jalankan seluruh pipeline dan tulis angka kontrol |
 

@@ -123,6 +123,24 @@ export interface DesaHit {
   provNama: string;
 }
 
+// Desa bergambut seluruh Kalimantan (GET /api/gambut); terpisah dari DesaCard yang hanya 61/62.
+export interface DesaGambut {
+  kode: string;
+  nama: string;
+  kecKode: string;
+  kecNama: string;
+  kabKode: string;
+  kabNama: string;
+  provKode: string;
+  provNama: string;
+  lat: number;
+  lon: number;
+  luasHa: number;
+  peatHa: number;
+  peatFrac: number;
+  geomJson: string;
+}
+
 export interface DesaTahun {
   tahun: number;
   nDet: number;

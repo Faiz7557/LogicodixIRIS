@@ -249,6 +249,7 @@ Semua respons JSON. Galat: `{ "error": { "kode": string, "pesan": string } }`.
 | GET | `/api/desa/[kode]` | Publik | Desa, strip tahun, paparan live, kecamatan |
 | GET | `/api/backtest` | Publik | Metrik, grup, gerbang |
 | GET | `/api/data` | Publik | Sumber, masalah data, meta, paket, harga |
+| GET | `/api/gambut` | Publik | Desa bergambut seluruh Kalimantan (atribut + geometri) |
 | POST | `/api/auth/masuk` | Publik, dibatasi | Membuat sesi |
 | POST | `/api/auth/keluar` | Akun | Menghapus sesi |
 | GET | `/api/auth/saya` | Akun | Akun aktif |
