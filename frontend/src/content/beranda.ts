@@ -6,14 +6,14 @@ export const STATISTIK = [
   { angka: "15", label: "tahun", keterangan: "riwayat deteksi satelit, 2012–2026" },
   { angka: "4", label: "tahun", keterangan: "kering ekstrem dinilai: 2015, 2019, 2023, 2026" },
   { angka: "2", label: "provinsi", keterangan: "cakupan: Kalimantan Barat dan Kalimantan Tengah" },
-  { angka: "4", label: "item", keterangan: "belanja inti: dana operasi, pompa, selang, sumur bor" },
+  { angka: "4", label: "item", keterangan: "belanja inti: biaya operasi pemadaman, pompa, selang, sumur bor" },
 ] as const;
 
 export const LANGKAH = [
   { judul: "Lihat paparan", isi: "Berapa tahun kering ekstrem desa terdeteksi satelit sejak 2012." },
   { judul: "Catat alat", isi: "Ketua MPA mengisi jumlah alat yang ada dan yang masih berfungsi, lewat HP." },
   { judul: "Lihat kesiapan", isi: "Skor terhadap paket minimum satu musim, dan mata rantai yang paling lemah." },
-  { judul: "Susun prioritas", isi: "Masukkan pagu. Urutan belanja muncul dengan alasan tiap baris. Desa yang memutuskan." },
+  { judul: "Susun prioritas", isi: "Isi pagu. Urutan belanja muncul dengan alasan tiap baris. Desa yang memutuskan." },
   { judul: "Terbitkan usulan", isi: "Satu dokumen siap cetak untuk APBDes, BPBD, Daops, atau CSR." },
 ] as const;
 

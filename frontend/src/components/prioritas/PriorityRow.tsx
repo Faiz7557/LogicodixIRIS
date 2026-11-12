@@ -69,7 +69,7 @@ export function KartuBelanja({
             baris.aksi === "beli" ? "bg-water-soft text-water" : "bg-ok-soft text-ok"
           }`}
         >
-          {namaAksi(baris.aksi)} {formatAngka(baris.qty)} {satuan}
+          {namaAksi(baris.aksi, baris.itemKode)} {formatAngka(baris.qty)} {satuan}
         </span>
         <span className="tabular text-xs text-muted">
           <span className="sr-only">Urutan </span>#{nomor}
@@ -116,7 +116,7 @@ export function KartuBelanja({
         </div>
       ) : null}
 
-      <div role="group" aria-label={`Keputusan untuk ${namaAksi(baris.aksi)} ${namaItem}`} className="mt-3 flex items-center gap-2">
+      <div role="group" aria-label={`Keputusan untuk ${namaAksi(baris.aksi, baris.itemKode).toLowerCase()} ${namaItem}`} className="mt-3 flex items-center gap-2">
         {keputusan !== "setuju" ? (
           <button
             type="button"
@@ -155,14 +155,14 @@ export function KartuBelanja({
   );
 }
 
-export function AksiLabel({ aksi }: { aksi: Aksi }) {
+export function AksiLabel({ aksi, itemKode }: { aksi: Aksi; itemKode?: string }) {
   return (
     <span
       className={`mr-1 inline-block rounded-full border px-2 py-0.5 text-xs font-bold uppercase tracking-wide ${
         aksi === "beli" ? "border-water/50 text-water" : "border-ok/50 text-ok"
       }`}
     >
-      {namaAksi(aksi)}
+      {namaAksi(aksi, itemKode)}
     </span>
   );
 }

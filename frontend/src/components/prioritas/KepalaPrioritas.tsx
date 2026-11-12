@@ -1,13 +1,13 @@
 import Link from "next/link";
 
 const LANGKAH = [
-  { judul: "Simulasi pagu", pendek: "Simulasi", href: (k: string) => `/desa/${k}/prioritas/simulasi` },
+  { judul: "Pagu", pendek: "Pagu", href: (k: string) => `/desa/${k}/prioritas/pagu` },
   { judul: "Putuskan saran", pendek: "Keputusan", href: (k: string) => `/desa/${k}/prioritas` },
   { judul: "Terbitkan usulan", pendek: "Usulan", href: (k: string) => `/desa/${k}/usulan` },
 ] as const;
 
 /**
- * Kepala layar Simulasi dan Keputusan: penunjuk tiga langkah (pola Sparekit), judul,
+ * Kepala layar Pagu dan Keputusan: penunjuk tiga langkah (pola Sparekit), judul,
  * kalimat ringkas yang ikut berubah, dan galat. Tiap langkah memuat satu kalimat keadaan terkini.
  */
 export function KepalaPrioritas({

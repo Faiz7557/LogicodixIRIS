@@ -10,7 +10,7 @@ import { getPrioritas } from "@/server/prioritas";
 import { getCatalog } from "@/server/queries";
 
 /**
- * Pemuat bersama dua layar Prioritas (Saran dan keputusan, Simulasi pagu).
+ * Pemuat bersama dua layar Prioritas (Pagu, Keputusan).
  * Urutan, skor, pagu, dan keputusan dihitung server; layar hanya menyusun tampilan.
  */
 export async function MuatPrioritas({ params, tampil }: { params: Promise<{ kode: string }>; tampil: (data: DataPrioritas) => ReactNode }) {

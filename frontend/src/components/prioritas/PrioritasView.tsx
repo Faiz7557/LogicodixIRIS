@@ -16,7 +16,7 @@ import { usePrioritas, type DataPrioritas } from "./usePrioritas";
 /**
  * Langkah 2, Keputusan (App Flow v2 §3.8): papan saran belanja dari sistem untuk pagu yang tersimpan
  * di paling atas, lalu item yang belum punya harga, ringkasan pagu dan keputusan, serta pengaturan paket
- * minimum dan harga. Pagu diatur di langkah 1, Simulasi.
+ * minimum dan harga. Pagu diisi di langkah 1.
  */
 export function PrioritasView(data: DataPrioritas) {
   const { kode, namaDesa, catalog } = data;
@@ -69,7 +69,7 @@ export function PrioritasView(data: DataPrioritas) {
           <div className="mt-3">
             <EmptyState
               title={p.keadaan === "kurang" ? "Belum ada belanja yang muat." : p.keadaan === "tanpaHarga" ? "Belum ada harga." : "Belum ada urutan."}
-              action={{ href: `/desa/${kode}/prioritas/simulasi`, label: "Atur pagu" }}
+              action={{ href: `/desa/${kode}/prioritas/pagu`, label: "Isi pagu" }}
             >
               {p.kalimat}
             </EmptyState>
@@ -97,7 +97,7 @@ export function PrioritasView(data: DataPrioritas) {
         </section>
       ) : null}
 
-      {/* Ringkasan: pagu yang dipakai (diatur di Simulasi) dan keputusan desa sejauh ini. */}
+      {/* Ringkasan: pagu yang dipakai (diisi di langkah 1) dan keputusan desa sejauh ini. */}
       <div className="mt-6 grid gap-4 md:grid-cols-2">
         <section aria-labelledby="ringkas-pagu" className="flex flex-col rounded-panel border border-line bg-surface p-5 shadow-card">
           <h2 id="ringkas-pagu" className="font-bold">
@@ -121,10 +121,10 @@ export function PrioritasView(data: DataPrioritas) {
             </div>
           </dl>
           <Link
-            href={`/desa/${kode}/prioritas/simulasi`}
+            href={`/desa/${kode}/prioritas/pagu`}
             className="group mt-auto inline-flex min-h-11 items-center gap-1.5 self-start pt-3 text-sm font-semibold text-ember"
           >
-            Ubah pagu di langkah 1, Simulasi
+            Ubah pagu di langkah 1
             <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-hover:translate-x-0.5">
               <path d="M5 12h14M13 6l6 6-6 6" />
             </svg>
@@ -151,7 +151,7 @@ export function PrioritasView(data: DataPrioritas) {
               <li key={keyBaris(b)} className="px-4 py-3">
                 <div className="flex items-baseline justify-between gap-3">
                   <span className="font-semibold">
-                    <AksiLabel aksi={b.aksi} /> {p.nama(b.itemKode)}
+                    <AksiLabel aksi={b.aksi} itemKode={b.itemKode} /> {p.nama(b.itemKode)}
                   </span>
                   <span className="tabular text-sm">{formatRupiah(b.biayaRp)}</span>
                 </div>

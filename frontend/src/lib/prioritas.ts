@@ -6,10 +6,7 @@ import { formatRupiah, formatSkor } from "./format";
 import type { Aksi, CatalogItem, Keputusan, PriceRow, PriorityResult, PriorityRow } from "./types";
 
 export const PAGU_DEFAULT = 15_000_000;
-export const PAGU_SLIDER_MAKS = 100_000_000;
-export const PAGU_SLIDER_LANGKAH = 500_000;
 export const PAGU_MAKS = 1_000_000_000;
-export const PAGU_PRESET = [15_000_000, 30_000_000, 50_000_000] as const;
 
 export type KeputusanMap = Record<string, { keputusan: Keputusan; catatan?: string }>;
 
@@ -22,8 +19,12 @@ export function parsePagu(mentah: string): number {
   return Math.min(Number(angka), PAGU_MAKS);
 }
 
-export function namaAksi(aksi: Aksi): string {
-  return aksi === "beli" ? "Beli" : "Perbaiki";
+/** Item yang bukan barang: dananya disediakan, bukan dibeli (supaya tidak terbaca "membeli dana"). */
+const BUKAN_BARANG = new Set(["dana_operasi"]);
+
+export function namaAksi(aksi: Aksi, itemKode?: string): string {
+  if (aksi === "beli") return itemKode && BUKAN_BARANG.has(itemKode) ? "Sediakan" : "Beli";
+  return "Perbaiki";
 }
 
 export function itemTermurah(harga: PriceRow[], catalog: CatalogItem[]): { nama: string; hargaRp: number; aksi: Aksi } | null {
@@ -48,7 +49,7 @@ export function kalimatPrioritas(paguRp: number, skorSekarang: number, hasil: Pr
     case "tanpaHarga":
       return "Belum ada harga. Isi harga dari penawaran setempat.";
     case "nol":
-      return "Masukkan pagu untuk melihat urutan.";
+      return "Isi pagu untuk melihat urutan.";
     case "kurang": {
       const t = itemTermurah(harga, catalog);
       return t

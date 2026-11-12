@@ -139,7 +139,7 @@ export function KesiapanView({
         <div className="mt-8">
           {bisaSusunPrioritas(peran) ? (
             <Link
-              href={`/desa/${kode}/prioritas/simulasi`}
+              href={`/desa/${kode}/prioritas/pagu`}
               className="flex min-h-12 items-center justify-center gap-2 rounded-full bg-ember px-6 text-base font-semibold text-white md:inline-flex"
             >
               Susun prioritas

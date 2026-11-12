@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { formatAngka, formatRupiah, formatSkor } from "@/lib/format";
+import { namaAksi } from "@/lib/prioritas";
 import type { Aksi, Keputusan, PriorityRow } from "@/lib/types";
 
 /*
@@ -13,7 +14,6 @@ import type { Aksi, Keputusan, PriorityRow } from "@/lib/types";
  */
 
 const WARNA_AKSI: Record<Aksi, string> = { beli: "var(--water)", perbaiki: "var(--ember)" };
-const NAMA_AKSI: Record<Aksi, string> = { beli: "Beli", perbaiki: "Perbaiki" };
 const juta = (rp: number) => `${formatAngka(rp / 1_000_000, rp % 1_000_000 === 0 ? 0 : 1)} jt`;
 
 function Swatch({ warna, garis = false }: { warna: string; garis?: boolean }) {
@@ -36,13 +36,21 @@ export function KurvaSkorPagu({
   titik,
   pagu,
   skorSekarang,
+  kebutuhan,
+  coba,
   onPilih,
 }: {
+  /** Besar dana yang sedang dicoba (pagu + tambahan dari luar pagu). Ditandai bila lebih dari pagu. */
+  coba?: number;
   /** Skor sesudah belanja untuk tiap besar pagu, urut naik. */
   titik: { pagu: number; skor: number }[];
+  /** Pagu yang ditandai (pagu desa). */
   pagu: number;
   skorSekarang: number;
-  onPilih: (pagu: number) => void;
+  /** Biaya semua kebutuhan; bila lebih dari pagu, rentang di antaranya ditandai sebagai kekurangan. */
+  kebutuhan?: number;
+  /** Bila ada, klik kurva memilih pagu. Tanpa ini kurva hanya bisa dibaca. */
+  onPilih?: (pagu: number) => void;
 }) {
   const svg = useRef<SVGSVGElement>(null);
   const [arah, setArah] = useState<number | null>(null);
@@ -72,6 +80,12 @@ export function KurvaSkorPagu({
   const skorPada = (p: number) => [...titik].reverse().find((t) => t.pagu <= p)?.skor ?? titik[0]?.skor ?? 0;
   const skorPagu = skorPada(Math.min(pagu, maxP));
   const aktif = arah !== null ? titik[arah] : null;
+  const adaKurang = kebutuhan !== undefined && kebutuhan > pagu && pagu <= maxP;
+  const ujungKurang = adaKurang ? Math.min(kebutuhan!, maxP) : 0;
+  const adaCoba = coba !== undefined && coba > pagu && pagu <= maxP;
+  const ujungCoba = adaCoba ? Math.min(coba!, maxP) : pagu;
+  const skorCoba = skorPada(ujungCoba);
+  const geser = "transform 450ms var(--pegas), width 450ms var(--pegas)";
 
   function dariPointer(e: { clientX: number }) {
     const r = svg.current!.getBoundingClientRect();
@@ -89,12 +103,14 @@ export function KurvaSkorPagu({
       <svg
         ref={svg}
         viewBox={`0 0 ${W} ${H}`}
-        className="block h-auto w-full cursor-crosshair touch-none select-none"
+        className={`block h-auto w-full touch-none select-none ${onPilih ? "cursor-crosshair" : "cursor-default"}`}
         role="img"
-        aria-label={`Kurva skor kesiapan terhadap pagu. Pada pagu ${formatRupiah(pagu)} skor menjadi ${formatSkor(skorPagu)}. Tabel tersedia di bawah grafik.`}
+        aria-label={`Kurva skor kesiapan terhadap besar dana. Pada pagu ${formatRupiah(pagu)} skor menjadi ${formatSkor(skorPagu)}${
+          adaKurang ? `; bila seluruh kebutuhan ${formatRupiah(kebutuhan!)} terdanai, skor menjadi ${formatSkor(skorPada(ujungKurang))}` : ""
+        }. Tabel tersedia di bawah grafik.`}
         onPointerMove={(e) => setArah(dariPointer(e))}
         onPointerLeave={() => setArah(null)}
-        onClick={(e) => onPilih(titik[dariPointer(e)].pagu)}
+        onClick={onPilih ? (e) => onPilih(titik[dariPointer(e)].pagu) : undefined}
       >
         <defs>
           <linearGradient id={idGrad} x1="0" x2="0" y1="0" y2="1">
@@ -124,8 +140,36 @@ export function KurvaSkorPagu({
           Skor sekarang {formatSkor(skorSekarang)}
         </text>
 
-        <path d={area} fill={`url(#${idGrad})`} />
-        <path d={garis} fill="none" stroke="var(--ember)" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+        {/* rentang kekurangan: dana yang perlu dicari di luar pagu */}
+        {adaKurang ? (
+          <g>
+            <rect x={x(pagu)} y={M.t} width={Math.max(0, x(ujungKurang) - x(pagu))} height={y(0) - M.t} fill="var(--water)" opacity="0.07" />
+            <line x1={x(ujungKurang)} x2={x(ujungKurang)} y1={M.t} y2={y(0)} stroke="var(--water)" strokeWidth="1" strokeDasharray="2 3" />
+            <text
+              opacity={adaCoba && ujungCoba >= ujungKurang ? 0 : 1}
+              style={{ transition: "opacity 300ms ease-out" }}
+              x={Math.min(x(ujungKurang), W - M.r) - 4}
+              y={y(skorPada(ujungKurang)) + 28}
+              textAnchor="end"
+              fontSize="11"
+              fontWeight="600"
+              fill="var(--water)"
+              stroke="var(--surface)"
+              strokeWidth="3"
+              paintOrder="stroke"
+            >
+              Kebutuhan penuh: {formatSkor(skorPada(ujungKurang))}
+            </text>
+          </g>
+        ) : null}
+
+        {/* bagian kekurangan yang tertutup dana tambahan yang sedang dicoba */}
+        {adaKurang ? (
+          <rect x={x(pagu)} y={M.t} height={y(0) - M.t} fill="var(--water)" opacity="0.16" style={{ width: Math.max(0, x(ujungCoba) - x(pagu)), transition: geser }} />
+        ) : null}
+
+        <path d={area} fill={`url(#${idGrad})`} className="muncul-pelan" />
+        <path d={garis} pathLength={1} fill="none" stroke="var(--ember)" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" className="gambar-garis" />
 
         {/* penanda pagu yang dipilih */}
         {pagu <= maxP ? (
@@ -140,8 +184,33 @@ export function KurvaSkorPagu({
               fontWeight="600"
               fill="var(--ink)"
             >
-              Pagu ini: {formatSkor(skorPagu)}
+              Pagu: {formatSkor(skorPagu)}
             </text>
+          </g>
+        ) : null}
+
+        {/* penanda dana yang sedang dicoba: bergeser halus mengikuti penggeser */}
+        {adaCoba ? (
+          <g pointerEvents="none">
+            <g style={{ transform: `translateX(${x(ujungCoba)}px)`, transition: geser }}>
+              <line x1={0} x2={0} y1={M.t} y2={y(0)} stroke="var(--water)" strokeWidth="1.5" strokeDasharray="2 3" />
+            </g>
+            <g style={{ transform: `translate(${x(ujungCoba)}px, ${y(skorCoba)}px)`, transition: geser }}>
+              <circle r="6" fill="var(--water)" stroke="var(--surface)" strokeWidth="2" className="denyut" />
+              <text
+                x={x(ujungCoba) > W - 150 ? -12 : 12}
+                y={22}
+                textAnchor={x(ujungCoba) > W - 150 ? "end" : "start"}
+                fontSize="12"
+                fontWeight="600"
+                fill="var(--water)"
+                stroke="var(--surface)"
+                strokeWidth="3"
+                paintOrder="stroke"
+              >
+                Dengan tambahan: {formatSkor(skorCoba)}
+              </text>
+            </g>
           </g>
         ) : null}
 
@@ -165,7 +234,11 @@ export function KurvaSkorPagu({
             Skor {formatSkor(aktif.skor)}
             {aktif.skor > skorSekarang ? ` (+${formatSkor(aktif.skor - skorSekarang)})` : ""}
           </span>
-          <span className="block text-xs text-faint">Klik untuk memakai pagu ini</span>
+          {aktif.pagu > pagu ? (
+            <span className="tabular block text-xs text-faint">
+              Perlu {formatRupiah(aktif.pagu - pagu)} di luar pagu{onPilih ? ". Klik untuk mencoba." : ""}
+            </span>
+          ) : null}
         </div>
       ) : null}
 
@@ -219,6 +292,11 @@ export function BatangPagu({
   const persen = pagu > 0 ? Math.round((total / pagu) * 100) : 0;
   const aksiAda = (["beli", "perbaiki"] as Aksi[]).filter((a) => terpilih.some((b) => b.aksi === a));
   const aktif = arah !== null ? terpilih[arah] : null;
+  // Legenda ikut nama aksi tiap baris: biaya operasi "disediakan", barang "dibeli".
+  const labelLegenda = (a: Aksi) => {
+    const ragam = new Set(terpilih.filter((b) => b.aksi === a).map((b) => namaAksi(b.aksi, b.itemKode)));
+    return ragam.size > 1 ? "Beli atau sediakan" : ([...ragam][0] ?? namaAksi(a));
+  };
 
   return (
     <div>
@@ -228,15 +306,17 @@ export function BatangPagu({
       </p>
       <div
         role="img"
-        aria-label={`Pemakaian pagu: ${terpilih.map((b) => `${NAMA_AKSI[b.aksi]} ${nama(b.itemKode)} ${formatRupiah(b.biayaRp)}`).join(", ") || "belum ada belanja"}; sisa ${formatRupiah(sisa)}.`}
+        aria-label={`Pemakaian pagu: ${terpilih.map((b) => `${namaAksi(b.aksi, b.itemKode)} ${nama(b.itemKode)} ${formatRupiah(b.biayaRp)}`).join(", ") || "belum ada belanja"}; sisa ${formatRupiah(sisa)}.`}
         className="mt-2 flex h-6 w-full gap-[2px] overflow-hidden rounded-[6px]"
         onPointerLeave={() => setArah(null)}
       >
         {terpilih.map((b, i) => (
           <div
             key={`${b.itemKode}-${b.aksi}`}
-            className="h-full transition-opacity"
+            className="isi-maju h-full transition-[opacity,width] duration-500 [transition-timing-function:var(--pegas)]"
             style={{
+              animationDuration: "700ms",
+              animationDelay: `${i * 60}ms`,
               width: `${(b.biayaRp / Math.max(pagu, total)) * 100}%`,
               background: WARNA_AKSI[b.aksi],
               opacity: arah === null || arah === i ? 1 : 0.45,
@@ -250,7 +330,7 @@ export function BatangPagu({
         {aktif ? (
           <>
             <span className="font-semibold text-ink">
-              {NAMA_AKSI[aktif.aksi]} {nama(aktif.itemKode).toLowerCase()}
+              {namaAksi(aktif.aksi, aktif.itemKode)} {nama(aktif.itemKode).toLowerCase()}
             </span>{" "}
             {formatAngka(aktif.qty)} × · <span className="tabular">{formatRupiah(aktif.biayaRp)}</span>
           </>
@@ -263,7 +343,7 @@ export function BatangPagu({
       <ul className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted">
         {aksiAda.map((a) => (
           <li key={a} className="flex items-center gap-1.5">
-            <Swatch warna={WARNA_AKSI[a]} /> {NAMA_AKSI[a]}
+            <Swatch warna={WARNA_AKSI[a]} /> {labelLegenda(a)}
           </li>
         ))}
         <li className="flex items-center gap-1.5">
@@ -285,11 +365,16 @@ export interface BarisCakupan {
   target: number;
   sebelum: number; // berfungsi sekarang
   sesudah: number; // berfungsi sesudah belanja terpilih
+  /** Berfungsi bila dana tambahan yang sedang dicoba ikut dibelanjakan (hanya di layar Pagu). */
+  denganTambahan?: number;
 }
 
-export function CakupanSesudah({ baris }: { baris: BarisCakupan[] }) {
+const GERAK = "left 500ms var(--pegas), width 500ms var(--pegas), opacity 300ms ease-out";
+
+export function CakupanSesudah({ baris, labelSesudah = "Sesudah belanja" }: { baris: BarisCakupan[]; labelSesudah?: string }) {
   const [arah, setArah] = useState<string | null>(null);
   const pct = (n: number, t: number) => (t > 0 ? Math.min(n / t, 1) * 100 : 0);
+  const adaTambahan = baris.some((b) => b.denganTambahan !== undefined && b.denganTambahan > b.sesudah);
   return (
     <div>
       <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted">
@@ -297,27 +382,41 @@ export function CakupanSesudah({ baris }: { baris: BarisCakupan[] }) {
           <span aria-hidden="true" className="inline-block size-3 rounded-full border-2 border-faint bg-surface" /> Sekarang
         </li>
         <li className="flex items-center gap-1.5">
-          <span aria-hidden="true" className="inline-block size-3 rounded-full" style={{ background: "var(--water)" }} /> Sesudah belanja
+          <span aria-hidden="true" className="inline-block size-3 rounded-full" style={{ background: "var(--water)" }} /> {labelSesudah}
         </li>
+        {adaTambahan ? (
+          <li className="muncul flex items-center gap-1.5">
+            <span aria-hidden="true" className="inline-block size-3 rounded-full" style={{ background: "var(--ember)" }} /> Dengan dana tambahan
+          </li>
+        ) : null}
       </ul>
       <ul className="mt-3 space-y-3">
-        {baris.map((b) => {
+        {baris.map((b, urut) => {
           const a = pct(b.sebelum, b.target);
           const z = pct(b.sesudah, b.target);
+          const t = b.denganTambahan !== undefined ? pct(b.denganTambahan, b.target) : z;
           const naik = Math.round(z) > Math.round(a);
+          const naikLagi = Math.round(t) > Math.round(z);
           return (
             <li
               key={b.kode}
-              className={`rounded-xl px-2 py-1.5 transition-colors ${arah === b.kode ? "bg-paper" : ""}`}
+              style={{ animationDelay: `${urut * 70}ms` }}
+              className={`masuk rounded-xl px-2 py-1.5 transition-colors ${arah === b.kode ? "bg-paper" : ""}`}
               onPointerEnter={() => setArah(b.kode)}
               onPointerLeave={() => setArah(null)}
             >
               <div className="flex items-baseline justify-between gap-3 text-sm">
                 <span className="font-semibold">{b.nama}</span>
                 <span className="tabular text-muted">
-                  {naik ? (
+                  {naik || naikLagi ? (
                     <>
                       {Math.round(a)}% → <span className="font-semibold text-ink">{Math.round(z)}%</span>
+                      {naikLagi ? (
+                        <span className="muncul font-semibold text-ember" key={Math.round(t)}>
+                          {" "}
+                          → {Math.round(t)}%
+                        </span>
+                      ) : null}
                     </>
                   ) : (
                     <>{Math.round(a)}%, tidak berubah</>
@@ -326,30 +425,38 @@ export function CakupanSesudah({ baris }: { baris: BarisCakupan[] }) {
               </div>
               <div
                 role="img"
-                aria-label={`${b.nama}: ${formatAngka(b.sebelum)} dari ${formatAngka(b.target)} ${b.satuan} berfungsi sekarang, ${formatAngka(b.sesudah)} sesudah belanja.`}
+                aria-label={`${b.nama}: ${formatAngka(b.sebelum)} dari ${formatAngka(b.target)} ${b.satuan} berfungsi sekarang, ${formatAngka(b.sesudah)} sesudah belanja${
+                  naikLagi ? `, ${formatAngka(b.denganTambahan!)} dengan dana tambahan` : ""
+                }.`}
                 className="relative mt-1.5 h-4"
               >
                 <div className="absolute inset-x-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-line" />
-                {naik ? (
-                  <div
-                    className="absolute top-1/2 h-1.5 -translate-y-1/2 rounded-full"
-                    style={{ left: `${a}%`, width: `${z - a}%`, background: "var(--water)", opacity: 0.45 }}
-                  />
-                ) : null}
+                {/* ruas sekarang -> sesudah -> dengan tambahan; lebar 0 saat tidak ada, supaya bisa bergeser masuk */}
+                <div
+                  className="absolute top-1/2 h-1.5 -translate-y-1/2 rounded-full"
+                  style={{ left: `${a}%`, width: `${naik ? z - a : 0}%`, background: "var(--water)", opacity: 0.45, transition: GERAK }}
+                />
+                <div
+                  className="absolute top-1/2 h-1.5 -translate-y-1/2 rounded-full"
+                  style={{ left: `${z}%`, width: `${naikLagi ? t - z : 0}%`, background: "var(--ember)", opacity: 0.45, transition: GERAK }}
+                />
                 <span
                   className="absolute top-1/2 size-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-faint bg-surface"
                   style={{ left: `${a}%` }}
                 />
-                {naik ? (
-                  <span
-                    className="absolute top-1/2 size-4 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-surface"
-                    style={{ left: `${z}%`, background: "var(--water)" }}
-                  />
-                ) : null}
+                <span
+                  className="absolute top-1/2 size-4 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-surface"
+                  style={{ left: `${z}%`, background: "var(--water)", opacity: naik ? 1 : 0, transition: GERAK }}
+                />
+                <span
+                  className="absolute top-1/2 size-4 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-surface"
+                  style={{ left: `${t}%`, background: "var(--ember)", opacity: naikLagi ? 1 : 0, transition: GERAK }}
+                />
               </div>
               {arah === b.kode ? (
                 <p className="tabular mt-1 text-xs text-muted">
-                  {formatAngka(b.sebelum)} → {formatAngka(b.sesudah)} dari paket minimum {formatAngka(b.target)} {b.satuan}
+                  {formatAngka(b.sebelum)} → {formatAngka(b.sesudah)}
+                  {naikLagi ? ` → ${formatAngka(b.denganTambahan!)}` : ""} dari paket minimum {formatAngka(b.target)} {b.satuan}
                 </p>
               ) : null}
             </li>

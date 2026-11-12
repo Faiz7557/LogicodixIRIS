@@ -38,7 +38,7 @@ export type DataPrioritas = {
 };
 
 /**
- * Keadaan bersama dua layar Prioritas (Saran dan Simulasi pagu). Urutan dan skor datang dari server;
+ * Keadaan bersama dua layar Prioritas (Pagu dan Keputusan). Urutan dan skor datang dari server;
  * hook ini menyimpan pagu, keputusan, target, dan harga lewat API dengan pembaruan optimistis.
  */
 export function usePrioritas({ kode, catalog, awal, kesiapan, paket: paketAwal, harga: hargaAwal }: DataPrioritas) {

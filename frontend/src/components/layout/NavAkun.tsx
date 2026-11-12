@@ -29,14 +29,14 @@ const kelompok: Kelompok[] = [
     // Dana operasi bukan alat: dipisah dari daftar alat di bawah Kesiapan.
     tanya: "Berapa yang kita punya?",
     items: [
-      { href: (k) => `/desa/${k}/kesiapan/dana_operasi`, label: "Dana operasi", peran: ["mpa", "desa"], icon: <IconDana />, aktifSampai: "persis", item: "dana_operasi" },
+      { href: (k) => `/desa/${k}/kesiapan/dana_operasi`, label: "Biaya operasi", peran: ["mpa", "desa"], icon: <IconDana />, aktifSampai: "persis", item: "dana_operasi" },
     ],
   },
   {
     tanya: "Apa yang perlu dibeli?",
     items: [
-      // Tiga langkah berurutan: coba pagu, putuskan saran, terbitkan usulan.
-      { href: (k) => `/desa/${k}/prioritas/simulasi`, label: "1. Simulasi", peran: ["desa"], icon: <IconSlider /> },
+      // Tiga langkah berurutan: cek pagu, putuskan saran, terbitkan usulan.
+      { href: (k) => `/desa/${k}/prioritas/pagu`, label: "1. Pagu", peran: ["desa"], icon: <IconSlider /> },
       { href: (k) => `/desa/${k}/prioritas`, label: "2. Keputusan", peran: ["desa"], icon: <IconSort />, aktifSampai: "persis" },
       { href: (k) => `/desa/${k}/usulan`, label: "3. Usulan", peran: ["desa"], icon: <IconDoc /> },
     ],
@@ -52,7 +52,7 @@ const kelompok: Kelompok[] = [
 ];
 
 // Menu bawah di HP hanya memuat layar kerja akun, bukan tautan bukti.
-const KERJA = ["kesiapan", "dana_operasi", "simulasi", "prioritas", "usulan"];
+const KERJA = ["kesiapan", "dana_operasi", "pagu", "prioritas", "usulan"];
 
 type ItemNav = { kode: string; nama: string; kurang: number; belumDiisi: boolean; alat: boolean };
 

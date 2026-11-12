@@ -202,6 +202,34 @@ body {
   transform-origin: left;
   animation: isi-maju linear both;
 }
+/* Layar Pagu: garis kurva tergambar dari kiri (path dengan pathLength=1), arsiran menyusul. */
+@keyframes gambar-garis {
+  from {
+    stroke-dashoffset: 1;
+  }
+}
+.gambar-garis {
+  stroke-dasharray: 1;
+  animation: gambar-garis 1100ms var(--pegas) both;
+}
+@keyframes muncul-pelan {
+  from {
+    opacity: 0;
+  }
+}
+.muncul-pelan {
+  animation: muncul-pelan 900ms ease-out 300ms both;
+}
+/* Titik dana tambahan berdenyut pelan supaya terbaca sebagai nilai yang sedang dicoba. */
+@keyframes denyut {
+  50% {
+    r: 8;
+  }
+}
+.denyut {
+  animation: denyut 1600ms ease-in-out infinite;
+}
+
 /* Arsiran diagonal pada batang (pola referensi), warna dari token. */
 .arsir-ember {
   background: repeating-linear-gradient(135deg, var(--ember) 0 5px, color-mix(in oklab, var(--ember) 72%, white) 5px 8px);

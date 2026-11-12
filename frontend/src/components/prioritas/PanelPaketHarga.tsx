@@ -75,11 +75,11 @@ export function PanelPaketHarga({
                     return (
                       <Baris
                         key={aksi}
-                        label={`Harga ${namaAksi(aksi).toLowerCase()}`}
+                        label={namaAksi(aksi, c.kode) === "Sediakan" ? `Biaya per ${c.satuan}` : `Harga ${namaAksi(aksi).toLowerCase()}`}
                         nilai={h ? formatRupiah(h.hargaRp) : null}
                         sumber={h?.sumber}
                         tombol={h ? "Ubah" : "Isi harga"}
-                        labelTombol={`${h ? "Ubah" : "Isi"} harga ${namaAksi(aksi).toLowerCase()} ${c.nama}`}
+                        labelTombol={`${h ? "Ubah" : "Isi"} ${namaAksi(aksi, c.kode) === "Sediakan" ? `biaya per ${c.satuan}` : `harga ${namaAksi(aksi).toLowerCase()}`} ${c.nama}`}
                         onTombol={() => setEdit({ jenis: "harga", itemKode: c.kode, aksi })}
                       >
                         {edit?.jenis === "harga" && edit.itemKode === c.kode && edit.aksi === aksi ? (

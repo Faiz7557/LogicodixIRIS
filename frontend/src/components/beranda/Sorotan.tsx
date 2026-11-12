@@ -45,7 +45,7 @@ export function Sorotan() {
             <div>
               <h3 className="font-bold">Prioritas di bawah pagu</h3>
               <p className="mt-1 text-sm text-muted">
-                Masukkan pagu, lihat urutan belanja beserta alasan tiap baris. Skor kesiapan sebelum dan sesudah belanja tampil berdampingan.
+                Isi pagu, lihat urutan belanja beserta alasan tiap baris. Skor kesiapan sebelum dan sesudah belanja tampil berdampingan.
               </p>
               <Link href="/data" className="mt-1 inline-flex min-h-11 items-center text-sm font-bold text-water underline underline-offset-2">
                 Lihat sumber, harga, dan asumsi

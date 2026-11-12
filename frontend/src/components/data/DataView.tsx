@@ -274,7 +274,7 @@ export function DataView({ data }: { data: DataPage }) {
                     return (
                       <tr key={`${h.itemKode}-${h.aksi}`} className={baris}>
                         <th scope="row" className={`${td} min-w-[130px] text-left font-semibold`}>{item?.nama ?? h.itemKode}</th>
-                        <td className={td}>{namaAksi(h.aksi)}</td>
+                        <td className={td}>{namaAksi(h.aksi, h.itemKode)}</td>
                         <td className={`${td} tabular whitespace-nowrap text-right`}>
                           {formatRupiah(h.hargaRp)}
                           {item ? <span className="block text-sm font-normal text-muted">/{item.satuan}</span> : null}
