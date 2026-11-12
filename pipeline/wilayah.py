@@ -9,17 +9,19 @@ import shapely
 from shapely.geometry import mapping
 
 # Pemetaan kolom HDX COD-AB Indonesia level 4 (desa) ke kolom tabel desa.
-# WAJIB dicek pada berkas nyata saat T34: nama di bawah adalah konvensi umum
-# COD-AB (ADMn_PCODE, ADMn_EN), belum diperiksa pada unduhan Indonesia.
+# Unduhan 12 Nov 2026 memakai huruf kecil (`adm4_pcode`), versi lain huruf besar;
+# pencocokan di `load_desa` tidak membedakan huruf.
+# Tiap kolom punya beberapa nama kandidat: unduhan 2020 memakai `adm4_name`,
+# varian lama memakai `ADM4_EN`.
 HDX_COLS = {
-    "kode": "ADM4_PCODE",
-    "nama": "ADM4_EN",
-    "kec_kode": "ADM3_PCODE",
-    "kec_nama": "ADM3_EN",
-    "kab_kode": "ADM2_PCODE",
-    "kab_nama": "ADM2_EN",
-    "prov_kode": "ADM1_PCODE",
-    "prov_nama": "ADM1_EN",
+    "kode": ["ADM4_PCODE"],
+    "nama": ["ADM4_EN", "ADM4_NAME"],
+    "kec_kode": ["ADM3_PCODE"],
+    "kec_nama": ["ADM3_EN", "ADM3_NAME"],
+    "kab_kode": ["ADM2_PCODE"],
+    "kab_nama": ["ADM2_EN", "ADM2_NAME"],
+    "prov_kode": ["ADM1_PCODE"],
+    "prov_nama": ["ADM1_EN", "ADM1_NAME"],
 }
 # P-code COD-AB berawalan kode negara ("ID61"); dibuang agar prov_kode jadi "61".
 PCODE_PREFIX = "ID"
@@ -38,14 +40,17 @@ def _strip_prefix(s: pd.Series) -> pd.Series:
 
 def load_desa(path: str, prov_codes: list[str]) -> gpd.GeoDataFrame:
     raw = gpd.read_file(path)
-    missing = [c for c in HDX_COLS.values() if c not in raw.columns]
+    lookup = {str(c).lower(): c for c in raw.columns}
+    kolom = {k: next((lookup[x.lower()] for x in cand if x.lower() in lookup), None)
+             for k, cand in HDX_COLS.items()}
+    missing = [cand[0] for (k, cand) in HDX_COLS.items() if kolom[k] is None]
     if missing:
         raise ValueError(
             f"Kolom HDX COD-AB hilang: {', '.join(missing)}. Kolom yang ada: "
             f"{', '.join(map(str, raw.columns))}. Perbarui HDX_COLS di pipeline/wilayah.py.")
     if raw.crs is None:
         raise ValueError(f"{path} tidak memiliki CRS")
-    d = gpd.GeoDataFrame({k: raw[v] for k, v in HDX_COLS.items()}, geometry=raw.geometry, crs=raw.crs)
+    d = gpd.GeoDataFrame({k: raw[v] for k, v in kolom.items()}, geometry=raw.geometry, crs=raw.crs)
     for k in ("kode", "kec_kode", "kab_kode", "prov_kode"):
         d[k] = _strip_prefix(d[k])
     for k in ("nama", "kec_nama", "kab_nama", "prov_nama"):
