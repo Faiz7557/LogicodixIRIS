@@ -16,7 +16,7 @@ Bagian submission (tim, video, surat orisinalitas, atribusi lengkap) dilengkapi 
 |---|---|
 | API dan lapisan server Next.js | Hidup: auth sesi, otorisasi per desa, inventaris, paket, harga, kesiapan, prioritas, keputusan, usulan, parse pesan |
 | Basis data aplikasi | `db/schema.sql` lengkap. Lokal memakai `data/dev.db` berisi data uji |
-| Pipeline Python | Pengunduh FIRMS dan modul hitung tersedia. Ekspor DB (`export.py`, `run_all.py`) belum ada |
+| Pipeline Python | Lengkap: unduh FIRMS, batas desa, gambut, hitung, ekspor `data/siapkemarau.db` |
 | Narasi usulan | Masih template. Jalur AI yang hidup hanya parse pesan inventaris |
 | Deploy | Belum dikerjakan |
 
@@ -86,7 +86,9 @@ Semua perintah asli dijalankan dari akar repo.
 | Build | `make build` | `cd frontend && npm run build` |
 | Jalankan hasil build | `make start` | `cd frontend && npm run build && npm start` |
 | Gate sebelum commit | `make gate` | `npm test`, `npm run typecheck`, `npm run lint`, `npm run build` dari `frontend/`, lalu `uv run pytest pipeline/tests -q` |
+| Unduh batas desa dan gambut | `make pipeline-inputs` | `uv run python pipeline/fetch_inputs.py` |
 | Unduh FIRMS | `make pipeline-fetch` | `uv run python pipeline/fetch_firms.py` |
+| Jalankan pipeline | `make pipeline-run` | `uv run python pipeline/run_all.py` |
 | Bersihkan build | `make clean` | `rm -rf frontend/.next` |
 
 `npm ci` dipakai karena `package-lock.json` sudah ada dan hasilnya deterministik. Bila menambah dependency baru, pakai `npm install <paket>` dari `frontend/`, lalu commit `package.json` dan `package-lock.json`.
@@ -152,9 +154,16 @@ Dependency Python dikelola `uv` lewat `pyproject.toml` dan `uv.lock` (Python 3.1
 
 ```bash
 uv sync
+uv run python pipeline/fetch_inputs.py  # HDX COD-AB ADM4 + gambut WRI/GFW, tanpa kunci
 uv run python pipeline/fetch_firms.py   # butuh FIRMS_MAP_KEY di .env akar
+uv run python pipeline/run_all.py       # tulis data/siapkemarau.db + pipeline/run_output.txt
 uv run pytest pipeline/tests -q
 ```
+
+`fetch_inputs.py` menulis ke `data/raw/hdx/` dan `data/raw/peat/`; `fetch_firms.py` ke
+`data/raw/firms/`. Ketiga folder diabaikan git, jadi unduh ulang setelah clone baru.
+`run_all.py` menghitung paparan beku dan live, tiga fold backtest, gerbang, dan
+sensitivitas, lalu mencetak angka kontrol ke `pipeline/run_output.txt`.
 
 Modul yang ada:
 
@@ -166,8 +175,11 @@ Modul yang ada:
 | `pipeline/firms.py` | Agregasi deteksi per desa dan tahun |
 | `pipeline/paparan.py` | Paparan per desa dan kecamatan |
 | `pipeline/backtest.py` | Time Machine, tiga fold, gerbang |
+| `pipeline/fetch_inputs.py` | Unduh batas desa HDX dan poligon gambut WRI/GFW |
+| `pipeline/export.py` | Tulis tabel ke SQLite dari `db/schema.sql` |
+| `pipeline/run_all.py` | Jalankan seluruh pipeline dan tulis angka kontrol |
 
-`export.py` dan `run_all.py` belum ada. Karena itu `data/siapkemarau.db` belum terbentuk dan aplikasi lokal memakai `data/dev.db` berisi data uji. `scripts/dev-db.ts` membaca `db/schema.sql` dan `data/manual/*.csv`, bukan menyalin angka dari dokumen.
+Selama `data/siapkemarau.db` belum dihasilkan, aplikasi lokal memakai `data/dev.db` berisi data uji. `scripts/dev-db.ts` membaca `db/schema.sql` dan `data/manual/*.csv`, bukan menyalin angka dari dokumen.
 
 Untuk memakai `python` biasa, aktifkan venv dulu:
 
