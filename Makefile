@@ -4,7 +4,7 @@ DESA ?=
 UV ?= uv
 
 .DEFAULT_GOAL := help
-.PHONY: help setup install env db seed dev test typecheck lint check build start gate pipeline-inputs pipeline-fetch pipeline-run pipeline-test clean
+.PHONY: help setup install env db seed dev test typecheck lint check build start gate pipeline-inputs pipeline-fetch pipeline-run pipeline-test bundle clean
 
 help:
 	@echo "setup           npm ci + uv sync + salin .env + buat data/dev.db"
@@ -22,6 +22,7 @@ help:
 	@echo "pipeline-inputs unduh batas desa HDX dan gambut WRI/GFW"
 	@echo "pipeline-fetch  unduh FIRMS, butuh FIRMS_MAP_KEY"
 	@echo "pipeline-run    jalankan seluruh pipeline, tulis data/siapkemarau.db"
+	@echo "bundle          zip data gitignored (DB + data/raw) untuk dibagikan"
 	@echo "clean           hapus frontend/.next"
 
 setup: install env db
@@ -73,6 +74,14 @@ pipeline-fetch:
 
 pipeline-run:
 	$(UV) run python pipeline/run_all.py
+
+BUNDLE ?= ../siapkemarau-data.zip
+
+bundle:
+	@test -f data/siapkemarau.db || { echo "data/siapkemarau.db belum ada. Jalankan make pipeline-run dulu."; exit 1; }
+	@rm -f $(BUNDLE)
+	zip -q -r $(BUNDLE) data/siapkemarau.db data/raw
+	@ls -lh $(BUNDLE)
 
 pipeline-test:
 	$(UV) run pytest pipeline/tests -q
