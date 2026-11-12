@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { AssumptionNote } from "@/components/ui/AssumptionNote";
+import { RingkasanAi } from "@/components/ui/RingkasanAi";
 import { EmptyState } from "@/components/ui/PageState";
 import {
   bisaSusunPrioritas,
@@ -53,6 +54,7 @@ export function KesiapanView({
           Seberapa siap {desa.nama} menghadapi kemarau?
         </h1>
         <p className="mt-1 text-sm text-muted">{wilayah}</p>
+        <RingkasanAi halaman="kesiapan" kode={kode} className="mt-3" />
       </header>
 
       {keadaan === "kosong" ? (

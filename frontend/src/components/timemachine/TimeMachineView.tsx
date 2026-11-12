@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { RingkasanAi } from "@/components/ui/RingkasanAi";
 import { kelasKartu } from "@/components/paparan/dasbor/dasar";
 import { kesimpulanBacktest } from "@/lib/backtest";
 import type { Backtest } from "@/server/queries";
@@ -43,6 +44,7 @@ export function TimeMachineView({ data }: { data: Backtest }) {
           Dibekukan <span className="font-semibold">31 Des {tahun - 1}</span>
         </p>
       </header>
+      <RingkasanAi halaman="timemachine" className="mt-4" />
 
       {adaMetrik ? (
         <>
