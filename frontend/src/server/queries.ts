@@ -49,12 +49,14 @@ const toHit = (r: Row): DesaHit => ({
 });
 
 export async function searchDesa(teks: string): Promise<DesaHit[]> {
-  const t = teks.trim();
+  // Spasi dibuang di kedua sisi: "Kalibandung" harus menemukan "Kali Bandung" (HDX memakai spasi).
+  const t = teks.replace(/\s+/g, "");
   if (!t) return [];
   const pola = `%${t.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
   const rows = await q(
     `SELECT ${HIT_KOLOM} FROM desa
-     WHERE nama LIKE ?1 ESCAPE '\\' OR kec_nama LIKE ?1 ESCAPE '\\' OR kab_nama LIKE ?1 ESCAPE '\\'
+     WHERE replace(nama,' ','') LIKE ?1 ESCAPE '\\' OR replace(kec_nama,' ','') LIKE ?1 ESCAPE '\\'
+        OR replace(kab_nama,' ','') LIKE ?1 ESCAPE '\\'
      ORDER BY nama COLLATE NOCASE, kode LIMIT 20`,
     [pola],
   );
