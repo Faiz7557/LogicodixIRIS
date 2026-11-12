@@ -52,7 +52,7 @@ async function Navigasi({ kode: kodeP }: { kode: Promise<string> }) {
   const [card, hasil, catalog] = await Promise.all([getDesaCard(kode), getKesiapan(kode), getCatalog()]);
   if (!card) notFound();
   // Urutan katalog tetap (bukan urutan kesenjangan) supaya menu tidak berpindah-pindah.
-  // Item tanpa kondisi rusak (dana operasi) bukan alat, jadi menu menampilkannya terpisah.
+  // Item tanpa kondisi rusak bukan alat, jadi tidak ikut daftar alat di menu.
   const items = catalog.flatMap((c) => {
     const it = hasil.items.find((i) => i.itemKode === c.kode);
     return it ? [{ kode: c.kode, nama: c.nama, kurang: Math.max(it.target - it.berfungsi, 0), belumDiisi: it.belumDiisi, alat: c.punyaRusak }] : [];

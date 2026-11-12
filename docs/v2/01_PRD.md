@@ -99,7 +99,6 @@ Semua jumlah dan bobot adalah **asumsi tim**, bukan standar yang mengikat desa.
 
 | Kode | Item | Satuan | Target | Bobot | Jangkar sekunder |
 |---|---|---|---:|---:|---|
-| `dana_operasi` | Biaya operasi pemadaman | minggu | 1 | 15 | Rp5 juta per minggu untuk 7-10 ha, satu kesaksian (Nurhidayah 2023) |
 | `pompa_jinjing` | Pompa jinjing berfungsi | unit | 1 | 20 | Pergub Kalteng memuat 3 per regu |
 | `selang_keluar` | Selang keluar | buah | 10 | 20 | Kalibandung gagal dengan 100 m. Pergub Kalteng memuat 50 buah per regu |
 | `sumur_bor` | Sumur bor berfungsi | titik | 5 | 20 | Talio Hulu 8 dari 50 berfungsi. Hanya untuk desa bergambut |
@@ -115,7 +114,6 @@ Panjang selang tidak menjadi target. Keterangan meter selalu berbunyi turunan, m
 | `pompa_jinjing` | beli | Rp28.028.610 | Perbup Sanggau 32/2025 hlm. 175 | Harga satuan tertinggi |
 | `pompa_jinjing` | perbaiki | Rp510.000 | Perwal Kediri 3/2025 hlm. 269, item 4594 | Pendekatan dari servis pompa air umum |
 | `selang_keluar` | beli | Rp6.669.000 | Perbup Sanggau 32/2025 hlm. 174 | Panjang tidak tertulis. Pembanding Kediri hlm. 90: Rp3.490.500 per 20 m |
-| `dana_operasi` | beli | Rp5.000.000 | Nurhidayah dkk. 2023 hlm. 9 | Satu kesaksian, data 2019 |
 | `sumur_bor` | semua | Tanpa harga | | Desa mengisi sendiri |
 
 Harga tanpa sumber dilarang masuk data.

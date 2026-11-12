@@ -189,7 +189,7 @@ export function PaguView(data: DataPrioritas) {
                     <span className="min-w-0">
                       <span className="font-semibold">{p.nama(r.itemKode)}</span>{" "}
                       <span className="text-muted">
-                        · {namaAksi(r.aksi, r.itemKode)} {formatAngka(r.qty)} {p.satuan(r.itemKode)}
+                        · {namaAksi(r.aksi)} {formatAngka(r.qty)} {p.satuan(r.itemKode)}
                       </span>
                       <span className="mt-0.5 block text-xs text-muted">
                         {keadaan === "penuh" ? (

@@ -25,7 +25,7 @@ export interface CatalogItem {
   bobot: number;
   kritis: boolean;
   bisaDibeli: boolean;
-  /** false untuk dana_operasi: hanya satu stepper, total = berfungsi (Schema §4). */
+  /** false: item tanpa keadaan rusak, hanya satu stepper, total = berfungsi (Schema §4). */
   punyaRusak: boolean;
   hanyaGambut: boolean;
 }

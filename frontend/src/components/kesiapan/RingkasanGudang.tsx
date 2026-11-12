@@ -250,62 +250,6 @@ export function KartuSkor({
   );
 }
 
-/** Dana operasi (pengganti grafik bulanan Sparekit): satu kotak per minggu. Seluruh kartu menuju halaman Biaya operasi. */
-export function KartuDana({ kode, it, hargaRows }: { kode: string; it: ItemView | undefined; hargaRows: HargaRow[] }) {
-  if (!it) return null;
-  const ada = it.belumDiisi ? 0 : Math.max(it.berfungsi, 0);
-  const kurang = Math.max(it.target - ada, 0);
-  const h = harga(hargaRows, it.itemKode, "beli");
-  const sel = Math.max(it.target, ada);
-  const MAKS_SEL = 24;
-
-  return (
-    <Link
-      href={`/desa/${kode}/kesiapan/${it.itemKode}`}
-      aria-labelledby="dana-kartu"
-      className={`group ${kelasKartu} transition-[border-color,box-shadow] hover:border-ink/40 hover:shadow-md`}
-    >
-      <Kepala
-        id="dana-kartu"
-        judul="Biaya operasi pemadaman"
-        kanan={
-          <Lencana ragam={it.belumDiisi ? "netral" : kurang > 0 ? "kurang" : "ok"}>
-            {it.belumDiisi ? "Belum dicatat" : kurang > 0 ? `Kurang ${formatAngka(kurang)} ${it.satuan}` : "Terpenuhi"}
-          </Lencana>
-        }
-      />
-      <AngkaBesar nilai={formatAngka(ada)} keterangan={`dari ${formatAngka(it.target)} ${it.satuan} operasi`} />
-
-      <AreaVisual keterangan="Satu kotak satu minggu. Biru berarti dananya sudah ada.">
-        {sel > 0 && sel <= MAKS_SEL ? (
-          <ol aria-label={`${formatAngka(ada)} dari ${formatAngka(it.target)} ${it.satuan} sudah ada dananya`} className={`grid gap-2 ${sel <= 12 ? "grid-cols-4" : "grid-cols-6"}`}>
-            {Array.from({ length: sel }, (_, i) => (
-              <li
-                key={i}
-                aria-hidden="true"
-                className={`flex items-center justify-center rounded-lg font-semibold ${sel <= 12 ? "h-10 text-sm" : "h-7 text-xs"} ${
-                  i < ada ? "bg-water text-white" : "border-2 border-dashed border-line-2 text-muted"
-                }`}
-              >
-                {i + 1}
-              </li>
-            ))}
-          </ol>
-        ) : null}
-      </AreaVisual>
-
-      <div className="min-h-5 flex-1" />
-      <BarisAngka
-        isi={[
-          { label: "dana tersedia", nilai: h !== null ? rupiahRingkas(ada * h) : "–" },
-          { label: "masih dibutuhkan", nilai: kurang === 0 ? "Tidak ada" : h !== null ? rupiahRingkas(kurang * h) : "–", ragam: kurang > 0 ? "kurang" : undefined },
-        ]}
-      />
-      <TautanBawah>Lihat biaya operasi</TautanBawah>
-    </Link>
-  );
-}
-
 /** Item yang melebihi paket minimum: batang paket (hijau) lalu cadangan (biru), dan nilai cadangannya. */
 export function KartuLebih({ kode, items, hargaRows }: { kode: string; items: ItemView[]; hargaRows: HargaRow[] }) {
   const lebih = items

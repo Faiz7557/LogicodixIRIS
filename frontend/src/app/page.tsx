@@ -36,7 +36,7 @@ export default async function BerandaPage() {
       <IntroLogo />
       <PenggerakGulir />
       {/* ---------- Hero (isi terangkat dan memudar saat digulir keluar) ---------- */}
-      <section data-gulir="keluar" aria-labelledby="judul" className="relative isolate overflow-hidden border-b border-line">
+      <section data-gulir="keluar" aria-labelledby="judul" className="relative isolate z-10 overflow-x-clip border-b border-line">
         <Kontur />
         <KotakLahan />
         <div className="hero-angkat mx-auto max-w-[1040px] px-4 pb-20 pt-10 text-center sm:pt-14">
@@ -66,7 +66,7 @@ export default async function BerandaPage() {
           ) : null}
 
           <p className="mx-auto mt-4 max-w-[56ch] text-muted">
-            SiapKemarau membantu desa rawan karhutla melihat riwayat paparan dari deteksi satelit, mencatat alat yang benar-benar berfungsi, dan
+            SiapKemarau membantu desa rawan karhutla di Kalimantan Barat dan Kalimantan Tengah melihat riwayat paparan dari deteksi satelit, mencatat alat yang benar-benar berfungsi, dan
             mengurutkan belanja kesiapan di bawah pagu kecil.
           </p>
 

@@ -41,7 +41,7 @@ Asumsi dari sumber sekunder, belum diuji pengguna.
 | Rol | Buah |
 | Tervalidasi | Belum diuji pengguna |
 
-Nada langsung dan menghormati desa. Tulis "Belum ada pos untuk dana operasi", bukan "Desa lalai".
+Nada langsung dan menghormati desa. Tulis "Belum ada pos untuk selang", bukan "Desa lalai".
 
 | Nilai | Teks | Ikon |
 |---|---|---|

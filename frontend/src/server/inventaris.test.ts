@@ -24,11 +24,6 @@ describe("inventaris", () => {
     expect(inventarisSchema.safeParse([{ itemKode: "pompa_jinjing", total: "a", berfungsi: 0 }]).success).toBe(false);
   });
 
-  it("dana operasi menyamakan total", async () => {
-    await saveInventaris("D", 1, [{ itemKode: "dana_operasi", total: 0, berfungsi: 2 }]);
-    expect((await getInventaris("D")).rows).toEqual([expect.objectContaining({ total: 2, berfungsi: 2 })]);
-  });
-
   it("upsert dan audit", async () => {
     await saveInventaris("D", 1, [{ itemKode: "pompa_jinjing", total: 2, berfungsi: 1 }]);
     await saveInventaris("D", 1, [{ itemKode: "pompa_jinjing", total: 3, berfungsi: 2 }]);

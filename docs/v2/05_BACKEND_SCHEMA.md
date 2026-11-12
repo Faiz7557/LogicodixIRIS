@@ -312,7 +312,6 @@ ORDER BY k.urutan;
 
 | kode | nama | satuan | bobot | kritis | bisa_dibeli | punya_rusak | hanya_gambut | urutan |
 |---|---|---|---:|---:|---:|---:|---:|---:|
-| `dana_operasi` | Biaya operasi pemadaman | minggu | 15 | 1 | 1 | 0 | 0 | 1 |
 | `pompa_jinjing` | Pompa jinjing | unit | 20 | 1 | 1 | 1 | 0 | 2 |
 | `selang_keluar` | Selang keluar | buah | 20 | 1 | 1 | 1 | 0 | 3 |
 | `sumur_bor` | Sumur bor | titik | 20 | 1 | 1 | 1 | 1 | 4 |
@@ -342,10 +341,9 @@ ORDER BY k.urutan;
 | `paket_asumsi` | Paket minimum dan bobot adalah asumsi tim | batasan |
 | `harga_ssh_tertinggi` | SSH adalah harga satuan tertinggi | info |
 | `servis_pendekatan` | Harga servis berasal dari servis pompa air umum di Kediri | peringatan |
-| `dana_operasi_satu_sumber` | Biaya operasi berasal dari satu kesaksian di Riau, data 2019 | peringatan |
 | `dana_desa_2027` | Belum ada Permendesa fokus Dana Desa 2027 | peringatan |
 | `dana_desa_kdmp` | Sekitar 58,03% pagu Dana Desa 2026 dialokasikan ke Koperasi Merah Putih, sumber pemberitaan | peringatan |
-| `alat_di_catchall` | Pembelian pompa, selang, dan dana operasi tidak disebut eksplisit pada contoh Permendesa hlm. 13, sehingga perlu keputusan Musyawarah Desa | peringatan |
+| `alat_di_catchall` | Pembelian pompa dan selang tidak disebut eksplisit pada contoh Permendesa hlm. 13, sehingga perlu keputusan Musyawarah Desa | peringatan |
 
 ## 7. Angka kontrol
 
@@ -370,7 +368,7 @@ ORDER BY k.urutan;
   "kabupaten": "Contoh Kabupaten",
   "skor": "10,9",
   "status": "rawan",
-  "rantai_terlemah": "Dana operasi",
+  "rantai_terlemah": "Selang keluar",
   "paparan": "2 dari 4 tahun kering ekstrem",
   "tahun_tenang": "6",
   "pagu": "Rp15.000.000",

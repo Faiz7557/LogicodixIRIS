@@ -21,6 +21,15 @@ export const NAMA_STRATEGI: Record<Strategi, string> = {
   acak: "acak",
 };
 
+/** Nama untuk pembaca awam (kartu dan papan peringkat). Tabel lengkap dan kesimpulan tetap memakai NAMA_STRATEGI. */
+export const NAMA_RAMAH: Record<Strategi, string> = {
+  paparan: "Peringkat kami",
+  persistensi: "Desa yang terbakar tahun lalu",
+  total_riwayat: "Desa dengan titik api terbanyak",
+  gambut: "Desa dengan gambut terluas",
+  acak: "Tebak asal",
+};
+
 export const NAMA_METRIK: Record<Metrik, string> = {
   capture_10: "Tangkap 10%",
   capture_20: "Tangkap 20%",
@@ -49,7 +58,7 @@ export function kesimpulanBacktest(rows: MetricRow[], tahunUji: number): string 
   const terbaik = baseline.reduce((a, b) => (b.v > a.v ? b : a));
 
   const persen = (n: number) => Math.round(n * 100);
-  const awal = `Uji ${tahunUji}: peringkat riwayat menangkap ${persen(paparan)}% desa yang terdeteksi satelit di 20% desa teratas.`;
+  const awal = `Uji ${tahunUji}: dari semua desa yang terdeteksi api, ${persen(paparan)}% sudah ada di 20% teratas daftar kami (menebak asal hanya 20%).`;
   if (paparan > terbaik.v) {
     return `${awal} Unggul ${persen(paparan - terbaik.v)} poin dari ${NAMA_STRATEGI[terbaik.s]}, pembanding terbaik.`;
   }

@@ -74,7 +74,7 @@ export function CatatDenganPratinjau({
   const n = (x: number) => `${formatAngka(x)} ${item.satuan}`;
 
   // Speedometer pertama. Item yang punya kondisi rusak: bagian alat yang berfungsi dari jumlah total isian
-  // (11 dari 11 = 100%, 10 dari 11 = 91%). Dana operasi tidak punya total, jadi memakai cakupan paket minimum.
+  // (11 dari 11 = 100%, 10 dari 11 = 91%). Item tanpa keadaan rusak tidak punya total, jadi memakai cakupan paket minimum.
   const pakaiTotal = item.punyaRusak;
   const totalAwal = awal.berfungsi + awal.rusak;
   const total = pratinjau?.total ?? totalAwal;

@@ -59,7 +59,7 @@ export function DokumenUsulan({ usulan, isDemo }: { usulan: Usulan; isDemo: bool
                 <tr key={`${b.itemKode}:${b.aksi}`} className="border-b border-line align-top">
                   <td className="py-1.5 pr-2">{i + 1}</td>
                   <td className="py-1.5 pr-2">
-                    {namaAksi(b.aksi, b.itemKode)} {b.nama ?? b.itemKode}
+                    {namaAksi(b.aksi)} {b.nama ?? b.itemKode}
                   </td>
                   <td className="tabular py-1.5 pr-2">
                     {formatAngka(b.qty)} {b.satuan}

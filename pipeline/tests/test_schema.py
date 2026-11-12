@@ -27,7 +27,7 @@ def test_manual_price_rows_have_source():
 
 def test_package_values():
     assert dict(read_csv("paket_minimum.csv")[["item_kode", "target"]].values) == {
-        "dana_operasi": 1, "pompa_jinjing": 1, "selang_keluar": 10, "sumur_bor": 5}
+        "pompa_jinjing": 1, "selang_keluar": 10, "sumur_bor": 5}
 
 
 def test_valid_inventaris_accepted(conn):

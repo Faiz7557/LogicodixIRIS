@@ -292,11 +292,7 @@ export function BatangPagu({
   const persen = pagu > 0 ? Math.round((total / pagu) * 100) : 0;
   const aksiAda = (["beli", "perbaiki"] as Aksi[]).filter((a) => terpilih.some((b) => b.aksi === a));
   const aktif = arah !== null ? terpilih[arah] : null;
-  // Legenda ikut nama aksi tiap baris: biaya operasi "disediakan", barang "dibeli".
-  const labelLegenda = (a: Aksi) => {
-    const ragam = new Set(terpilih.filter((b) => b.aksi === a).map((b) => namaAksi(b.aksi, b.itemKode)));
-    return ragam.size > 1 ? "Beli atau sediakan" : ([...ragam][0] ?? namaAksi(a));
-  };
+  const labelLegenda = (a: Aksi) => namaAksi(a);
 
   return (
     <div>
@@ -306,7 +302,7 @@ export function BatangPagu({
       </p>
       <div
         role="img"
-        aria-label={`Pemakaian pagu: ${terpilih.map((b) => `${namaAksi(b.aksi, b.itemKode)} ${nama(b.itemKode)} ${formatRupiah(b.biayaRp)}`).join(", ") || "belum ada belanja"}; sisa ${formatRupiah(sisa)}.`}
+        aria-label={`Pemakaian pagu: ${terpilih.map((b) => `${namaAksi(b.aksi)} ${nama(b.itemKode)} ${formatRupiah(b.biayaRp)}`).join(", ") || "belum ada belanja"}; sisa ${formatRupiah(sisa)}.`}
         className="mt-2 flex h-6 w-full gap-[2px] overflow-hidden rounded-[6px]"
         onPointerLeave={() => setArah(null)}
       >
@@ -330,7 +326,7 @@ export function BatangPagu({
         {aktif ? (
           <>
             <span className="font-semibold text-ink">
-              {namaAksi(aktif.aksi, aktif.itemKode)} {nama(aktif.itemKode).toLowerCase()}
+              {namaAksi(aktif.aksi)} {nama(aktif.itemKode).toLowerCase()}
             </span>{" "}
             {formatAngka(aktif.qty)} × · <span className="tabular">{formatRupiah(aktif.biayaRp)}</span>
           </>

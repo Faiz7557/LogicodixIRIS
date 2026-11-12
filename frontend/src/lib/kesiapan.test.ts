@@ -14,21 +14,22 @@ const items = urutkanKesenjangan(mockReadiness.items, mockCatalog);
 
 describe("urutkanKesenjangan", () => {
   it("mendahulukan cakupan terendah", () => {
-    // dana_operasi dan pompa sama-sama 100%; pompa (bobot 20) mendahului dana operasi (bobot 15)
-    expect(items.map((i) => i.itemKode)).toEqual(["selang_keluar", "sumur_bor", "pompa_jinjing", "dana_operasi"]);
+    expect(items.map((i) => i.itemKode)).toEqual(["selang_keluar", "sumur_bor", "pompa_jinjing"]);
   });
 
   it("seri cakupan: bobot lebih besar dulu, lalu kode", () => {
+    // Item ringan sintetis (bobot 10) untuk menguji urutan bobot; katalog nyata semuanya bobot 20.
+    const katalog = [...mockCatalog, { ...mockCatalog[0], kode: "item_ringan", nama: "Item ringan", bobot: 10 }];
     const seri = urutkanKesenjangan(
       [
-        { itemKode: "dana_operasi", target: 1, berfungsi: 0, rusak: 0, coverage: 0, kritis: true, belumDiisi: false },
+        { itemKode: "item_ringan", target: 1, berfungsi: 0, rusak: 0, coverage: 0, kritis: true, belumDiisi: false },
         { itemKode: "sumur_bor", target: 5, berfungsi: 0, rusak: 0, coverage: 0, kritis: true, belumDiisi: false },
         { itemKode: "pompa_jinjing", target: 1, berfungsi: 0, rusak: 0, coverage: 0, kritis: true, belumDiisi: false },
       ],
-      mockCatalog,
+      katalog,
     );
-    // bobot 20 (pompa, sumur) di depan bobot 15 (dana operasi); pompa < sumur menurut kode
-    expect(seri.map((i) => i.itemKode)).toEqual(["pompa_jinjing", "sumur_bor", "dana_operasi"]);
+    // bobot 20 (pompa, sumur) di depan bobot 10; pompa < sumur menurut kode
+    expect(seri.map((i) => i.itemKode)).toEqual(["pompa_jinjing", "sumur_bor", "item_ringan"]);
   });
 
   it("label memakai satuan buah, bukan rol", () => {

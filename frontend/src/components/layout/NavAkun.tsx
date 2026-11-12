@@ -26,13 +26,6 @@ const kelompok: Kelompok[] = [
     items: [{ href: (k) => `/desa/${k}/kesiapan`, label: "Kesiapan", peran: ["mpa", "desa"], icon: <IconGauge />, aktifSampai: "persis" }],
   },
   {
-    // Dana operasi bukan alat: dipisah dari daftar alat di bawah Kesiapan.
-    tanya: "Berapa yang kita punya?",
-    items: [
-      { href: (k) => `/desa/${k}/kesiapan/dana_operasi`, label: "Biaya operasi", peran: ["mpa", "desa"], icon: <IconDana />, aktifSampai: "persis", item: "dana_operasi" },
-    ],
-  },
-  {
     tanya: "Apa yang perlu dibeli?",
     items: [
       // Tiga langkah berurutan: cek pagu, putuskan saran, terbitkan usulan.
@@ -52,7 +45,7 @@ const kelompok: Kelompok[] = [
 ];
 
 // Menu bawah di HP hanya memuat layar kerja akun, bukan tautan bukti.
-const KERJA = ["kesiapan", "dana_operasi", "pagu", "prioritas", "usulan"];
+const KERJA = ["kesiapan", "pagu", "prioritas", "usulan"];
 
 type ItemNav = { kode: string; nama: string; kurang: number; belumDiisi: boolean; alat: boolean };
 
@@ -65,14 +58,14 @@ export type RingkasanNav = {
   /** null = belum ada alat yang dicatat. */
   skor: number | null;
   status: Status;
-  /** Item paket minimum desa ini. Yang bukan alat (dana operasi) tampil di grupnya sendiri, bukan di bawah Kesiapan. */
+  /** Item paket minimum desa ini. Hanya alat yang tampil di bawah Kesiapan. */
   items: ItemNav[];
 };
 
 /**
  * Navigasi halaman berakun (App Flow §1).
  * Laptop: sidebar bergrup pertanyaan + kartu akun + kartu skor. HP: menempel di bawah.
- * Akun `mpa` hanya melihat Kesiapan dan Dana operasi (plus tautan bukti publik).
+ * Akun `mpa` hanya melihat Kesiapan (plus tautan bukti publik).
  */
 export function NavAkun({ r }: { r: RingkasanNav }) {
   const pathname = usePathname();
@@ -254,15 +247,6 @@ function IconGauge() {
     <svg {...ikon}>
       <path d="M4 17a8 8 0 1 1 16 0" />
       <path d="M12 17l4-5" />
-    </svg>
-  );
-}
-function IconDana() {
-  return (
-    <svg {...ikon}>
-      <rect x="3" y="6" width="18" height="12" rx="2" />
-      <circle cx="12" cy="12" r="2.5" />
-      <path d="M6.5 9.5h.01M17.5 14.5h.01" />
     </svg>
   );
 }

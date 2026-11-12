@@ -15,7 +15,8 @@ describe("prioritas", () => {
   });
 
   it("hanya baris setuju yang masuk", async () => {
-    await setPagu("D", 1, 15e6);
+    // Rp40 juta: 1 pompa (Rp28 juta) lalu 1 selang, jadi ada dua baris untuk diputuskan.
+    await setPagu("D", 1, 40e6);
     const [a, b] = (await getPrioritas("D")).terpilih;
     await setKeputusan("D", 1, a.itemKode, a.aksi, "setuju");
     await setKeputusan("D", 1, b.itemKode, b.aksi, "tolak");

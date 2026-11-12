@@ -19,12 +19,8 @@ export function parsePagu(mentah: string): number {
   return Math.min(Number(angka), PAGU_MAKS);
 }
 
-/** Item yang bukan barang: dananya disediakan, bukan dibeli (supaya tidak terbaca "membeli dana"). */
-const BUKAN_BARANG = new Set(["dana_operasi"]);
-
-export function namaAksi(aksi: Aksi, itemKode?: string): string {
-  if (aksi === "beli") return itemKode && BUKAN_BARANG.has(itemKode) ? "Sediakan" : "Beli";
-  return "Perbaiki";
+export function namaAksi(aksi: Aksi): string {
+  return aksi === "beli" ? "Beli" : "Perbaiki";
 }
 
 export function itemTermurah(harga: PriceRow[], catalog: CatalogItem[]): { nama: string; hargaRp: number; aksi: Aksi } | null {
