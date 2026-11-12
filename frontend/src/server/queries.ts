@@ -1,7 +1,7 @@
 import type { InArgs, Row } from "@libsql/client";
 import type { MetricRow } from "@/lib/backtest";
 import type {
-  CatalogItem, DesaCard, DesaHit, HargaRow, KeputusanGerbang, PaketRow, Tier,
+  CatalogItem, DesaCard, DesaGambut, DesaHit, HargaRow, KeputusanGerbang, PaketRow, Tier,
 } from "@/lib/types";
 import { db } from "./db";
 import { HttpError } from "./http";
@@ -49,12 +49,14 @@ const toHit = (r: Row): DesaHit => ({
 });
 
 export async function searchDesa(teks: string): Promise<DesaHit[]> {
-  const t = teks.trim();
+  // Spasi dibuang di kedua sisi: "Kalibandung" harus menemukan "Kali Bandung" (HDX memakai spasi).
+  const t = teks.replace(/\s+/g, "");
   if (!t) return [];
   const pola = `%${t.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
   const rows = await q(
     `SELECT ${HIT_KOLOM} FROM desa
-     WHERE nama LIKE ?1 ESCAPE '\\' OR kec_nama LIKE ?1 ESCAPE '\\' OR kab_nama LIKE ?1 ESCAPE '\\'
+     WHERE replace(nama,' ','') LIKE ?1 ESCAPE '\\' OR replace(kec_nama,' ','') LIKE ?1 ESCAPE '\\'
+        OR replace(kab_nama,' ','') LIKE ?1 ESCAPE '\\'
      ORDER BY nama COLLATE NOCASE, kode LIMIT 20`,
     [pola],
   );
@@ -154,6 +156,24 @@ export async function getBacktest(): Promise<Backtest> {
     })),
     dataAkhir2026,
   };
+}
+
+export async function getDesaGambut(opsi: { geom?: boolean } = {}): Promise<DesaGambut[]> {
+  const geom = opsi.geom ?? true;
+  const rows = await q(
+    `SELECT kode, nama, kec_kode, kec_nama, kab_kode, kab_nama, prov_kode, prov_nama,
+            lat, lon, luas_ha, peat_ha, peat_frac, ${geom ? "geom_json" : "NULL AS geom_json"}
+       FROM desa_gambut ORDER BY prov_kode, kab_kode, kec_kode, nama`,
+  );
+  return rows.map((r) => ({
+    kode: str(r.kode), nama: str(r.nama),
+    kecKode: str(r.kec_kode), kecNama: str(r.kec_nama),
+    kabKode: str(r.kab_kode), kabNama: str(r.kab_nama),
+    provKode: str(r.prov_kode), provNama: str(r.prov_nama),
+    lat: Number(r.lat), lon: Number(r.lon),
+    luasHa: Number(r.luas_ha), peatHa: Number(r.peat_ha), peatFrac: Number(r.peat_frac),
+    ...(geom ? { geomJson: str(r.geom_json) } : {}),
+  }));
 }
 
 export async function getDataPage(): Promise<DataPage> {
