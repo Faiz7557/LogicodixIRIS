@@ -80,7 +80,7 @@ BUNDLE ?= ../siapkemarau-data.zip
 bundle:
 	@test -f data/siapkemarau.db || { echo "data/siapkemarau.db belum ada. Jalankan make pipeline-run dulu."; exit 1; }
 	@rm -f $(BUNDLE)
-	zip -q -r $(BUNDLE) data/siapkemarau.db data/raw
+	zip -q -r $(BUNDLE) data/siapkemarau.db data/raw $(wildcard data/dev.db)
 	@ls -lh $(BUNDLE)
 
 pipeline-test:

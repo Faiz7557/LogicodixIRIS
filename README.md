@@ -196,6 +196,10 @@ mengunduh ulang:
 make bundle        # menulis ../siapkemarau-data.zip (DB + data/raw, ±220 MB)
 ```
 
+Isi zip: `data/siapkemarau.db`, seluruh `data/raw/` (FIRMS, HDX ADM4, gambut GFW,
+keluaran `gambut_kalimantan`), dan `data/dev.db` bila ada. Yang **tidak** ikut: berkas
+`.env` (berisi kredensial), `.venv/`, `node_modules/`, dan `.next/`.
+
 Penerima menjalankan, dari akar clone baru:
 
 ```bash
