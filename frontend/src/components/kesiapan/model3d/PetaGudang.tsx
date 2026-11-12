@@ -7,6 +7,7 @@ import * as THREE from "three";
 import { MapControls } from "three/addons/controls/MapControls.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { GambarItem } from "@/components/kesiapan/GambarItem";
+import { IkonGembok } from "@/components/kesiapan/ItemTerkunci";
 import { formatAngka } from "@/lib/format";
 import { buangBahan } from "./bangunPompaJinjing";
 import { SKALA_PANAS, bangunGudang } from "./bangunGudang";
@@ -19,6 +20,8 @@ export interface BarangPeta {
   berfungsi: number;
   rusak: number;
   belumDiisi: boolean;
+  /** Belum terbuka untuk desa ini (sumur bor di desa tanpa gambut). Tidak dihitung dalam skor. */
+  terkunci?: boolean;
 }
 
 type AksiKamera = { zoom: (faktor: number) => void; putar: (sudut: number) => void; ulang: () => void };
@@ -28,6 +31,7 @@ const ARAH_AWAL = new THREE.Vector3(0.55, 1.05, 1).normalize();
 const RADIUS_PETA = 10.5;
 
 function teksKurang(b: BarangPeta): { angka: string; sisa: string } {
+  if (b.terkunci) return { angka: "", sisa: "terkunci, desa tidak bergambut" };
   if (b.belumDiisi) return { angka: "", sisa: "belum dicatat" };
   const kurang = Math.max(b.target - b.berfungsi, 0);
   if (kurang === 0) return { angka: "", sisa: `lengkap, ${formatAngka(b.target)} ${b.satuan}` };
@@ -88,7 +92,7 @@ export default function PetaGudang({ kode, barang }: { kode: string; barang: Bar
     matahari.shadow.normalBias = 0.03;
     scene.add(matahari, new THREE.HemisphereLight(0xffffff, 0xb9c7a0, 0.6));
 
-    const peta = bangunGudang(data.map((b) => ({ kode: b.kode, target: b.target, berfungsi: b.berfungsi, rusak: b.rusak })));
+    const peta = bangunGudang(data.map((b) => ({ kode: b.kode, target: b.target, berfungsi: b.berfungsi, rusak: b.rusak, terkunci: b.terkunci })));
     scene.add(peta.akar);
 
     const kamera = new THREE.PerspectiveCamera(28, 1, 0.5, 200);
@@ -185,7 +189,7 @@ export default function PetaGudang({ kode, barang }: { kode: string; barang: Bar
       if (!b) return;
       const t = teksKurang(b);
       tip.firstElementChild!.textContent = b.nama;
-      tip.lastElementChild!.textContent = `${t.angka ? `${t.angka} ` : ""}${t.sisa} · klik untuk membuka`;
+      tip.lastElementChild!.textContent = `${t.angka ? `${t.angka} ` : ""}${t.sisa} · ${b.terkunci ? "klik untuk melihat alasannya" : "klik untuk membuka"}`;
       const r = el.getBoundingClientRect();
       tip.style.transform = `translate(${e.clientX - r.left + 14}px, ${e.clientY - r.top + 14}px)`;
       tip.hidden = false;
@@ -329,10 +333,16 @@ export default function PetaGudang({ kode, barang }: { kode: string; barang: Bar
             style={{ visibility: "hidden" }}
             className="absolute left-0 top-0 flex items-center gap-2 whitespace-nowrap rounded-full bg-surface py-1 pl-1 pr-3 text-sm shadow-card transition-[box-shadow,background-color] hover:bg-paper focus-visible:outline-2 focus-visible:outline-water data-[sorot]:bg-paper data-[sorot]:shadow-md @[44rem]:gap-2.5 @[44rem]:py-1.5 @[44rem]:pl-1.5 @[44rem]:pr-4 @[44rem]:text-base"
           >
-            <GambarItem kode={b.kode} className="size-7 rounded-full @[44rem]:size-8" />
-            <span className="font-semibold">{b.nama}</span>
+            {b.terkunci ? (
+              <span className="flex size-7 items-center justify-center rounded-full bg-ink text-white @[44rem]:size-8">
+                <IkonGembok className="size-4" />
+              </span>
+            ) : (
+              <GambarItem kode={b.kode} className="size-7 rounded-full @[44rem]:size-8" />
+            )}
+            <span className={`font-semibold ${b.terkunci ? "text-muted" : ""}`}>{b.nama}</span>
             {t.angka ? <span className="tabular font-bold">{t.angka}</span> : null}
-            <span className="hidden text-muted @[44rem]:inline">{t.sisa}</span>
+            <span className="hidden text-muted @[44rem]:inline">{b.terkunci ? "Terkunci · desa tidak bergambut" : t.sisa}</span>
           </Link>
         );
       })}

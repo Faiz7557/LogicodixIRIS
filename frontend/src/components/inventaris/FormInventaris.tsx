@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { GambarItem } from "@/components/kesiapan/GambarItem";
+import { KartuTerkunci } from "@/components/kesiapan/ItemTerkunci";
 import { Stepper } from "@/components/ui/Stepper";
 import { ApiError } from "@/lib/api-client";
 import { formatAngka, formatWaktu, keteranganMeter } from "@/lib/format";
@@ -37,6 +38,7 @@ export function FormInventaris({
   terakhir,
   namaPengisi,
   onNilai,
+  terkunci = [],
 }: {
   kode: string;
   catalog: CatalogItem[];
@@ -47,6 +49,8 @@ export function FormInventaris({
   namaPengisi: string;
   /** Dipanggil tiap isian berubah, untuk pratinjau langsung di luar formulir. */
   onNilai?: (form: FormState) => void;
+  /** Item yang belum terbuka untuk desa ini (mis. sumur bor di desa tanpa gambut): tampil tanpa isian. */
+  terkunci?: CatalogItem[];
 }) {
   const awal = useMemo(() => awalForm(catalog, tersimpan), [catalog, tersimpan]);
   const [form, setForm] = useState<FormState>(awal);
@@ -168,6 +172,9 @@ export function FormInventaris({
             }}
             disorot={sorot === item.kode}
           />
+        ))}
+        {terkunci.map((item) => (
+          <KartuTerkunci key={item.kode} item={item} />
         ))}
       </div>
 

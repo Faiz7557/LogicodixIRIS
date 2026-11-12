@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { FormInventaris } from "@/components/inventaris/FormInventaris";
 import { LoadingState } from "@/components/ui/PageState";
 import { getAkun, getCatalog, getDesaCard, getInventaris, getPaket } from "@/lib/dataSource";
+import { itemTerkunci } from "@/lib/kesiapan";
 
 export const metadata: Metadata = { title: "Catat Alat" };
 
@@ -32,8 +33,9 @@ async function Isi({ params }: { params: Promise<{ kode: string }> }) {
   ]);
   if (!card) notFound();
 
-  // Sumur bor hanya untuk desa bergambut (katalog.hanyaGambut).
-  const catalog = katalog.filter((c) => !(c.hanyaGambut && card.desa.peatFrac === 0));
+  // Sumur bor hanya diisi oleh desa bergambut; di desa tanpa gambut tampil sebagai kartu terkunci.
+  const terkunci = itemTerkunci(katalog, card.desa.peatFrac);
+  const catalog = katalog.filter((c) => !terkunci.includes(c));
   const target = Object.fromEntries(paket.map((p) => [p.itemKode, p.target]));
 
   return (
@@ -53,6 +55,7 @@ async function Isi({ params }: { params: Promise<{ kode: string }> }) {
         tersimpan={inv.rows}
         terakhir={inv.terakhir}
         namaPengisi={akun.namaTampil}
+        terkunci={terkunci}
       />
     </div>
   );
