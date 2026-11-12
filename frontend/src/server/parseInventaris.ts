@@ -57,7 +57,7 @@ function endpointNineRouter(): string {
   return `${base}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
-function teksDariJawaban(data: unknown, label: string): string {
+export function teksDariJawaban(data: unknown, label: string): string {
   if (typeof data !== "object" || data === null) throw new Error(`Respons ${label} bukan objek.`);
   const choices = "choices" in data ? data.choices : undefined;
   if (!Array.isArray(choices) || choices.length === 0) throw new Error(`Respons ${label} tanpa choices.`);
