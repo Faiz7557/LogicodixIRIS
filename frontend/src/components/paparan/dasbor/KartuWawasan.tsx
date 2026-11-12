@@ -26,6 +26,7 @@ export function KartuWawasan({ daftar }: { daftar: Wawasan[] }) {
 
   // Pergantian dipicu oleh selesainya animasi bilah kemajuan, jadi jeda dan bilah selalu sejalan.
   const lanjut = () => setI((x) => (x + 1) % daftar.length);
+  const mundur = () => setI((x) => (x - 1 + daftar.length) % daftar.length);
 
   const w = daftar[i];
 
@@ -37,6 +38,11 @@ export function KartuWawasan({ daftar }: { daftar: Wawasan[] }) {
       onPointerLeave={() => setJeda(false)}
       onFocus={() => setJeda(true)}
       onBlur={() => setJeda(false)}
+      onKeyDown={(e) => {
+        if (daftar.length < 2) return;
+        if (e.key === "ArrowLeft") mundur();
+        else if (e.key === "ArrowRight") lanjut();
+      }}
       className="masuk relative flex h-full min-h-64 flex-col overflow-hidden rounded-panel p-5 text-white shadow-card"
       style={{
         animationDelay: "240ms",
@@ -62,7 +68,8 @@ export function KartuWawasan({ daftar }: { daftar: Wawasan[] }) {
       </div>
 
       {daftar.length > 1 ? (
-        <div className="relative mt-5 flex gap-1.5">
+        <div className="relative mt-5 flex items-center gap-1.5">
+          <TombolGeser arah="kiri" onClick={mundur} label="Wawasan sebelumnya" />
           {daftar.map((d, j) => (
             <button
               key={d.judul}
@@ -90,8 +97,25 @@ export function KartuWawasan({ daftar }: { daftar: Wawasan[] }) {
               </span>
             </button>
           ))}
+          <TombolGeser arah="kanan" onClick={lanjut} label="Wawasan berikutnya" />
         </div>
       ) : null}
     </section>
+  );
+}
+
+/** Tombol bulat ‹ › untuk berpindah wawasan; berputar dari ujung ke ujung. */
+function TombolGeser({ arah, onClick, label }: { arah: "kiri" | "kanan"; onClick: () => void; label: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      className="tekan flex size-9 shrink-0 items-center justify-center rounded-full bg-white/15 backdrop-blur-sm transition-colors hover:bg-white/30 focus-visible:outline-2 focus-visible:outline-white"
+    >
+      <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d={arah === "kiri" ? "M15 6l-6 6 6 6" : "M9 6l6 6-6 6"} />
+      </svg>
+    </button>
   );
 }

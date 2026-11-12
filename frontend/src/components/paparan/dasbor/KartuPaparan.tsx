@@ -22,7 +22,7 @@ export function KartuPaparan({
   paparan: DesaPaparan;
   jumlahTahun: number;
   /** Tahun kering ekstrem dan apakah desa terdeteksi pada tahun itu. */
-  ekstrem: { tahun: number; kena: boolean }[];
+  ekstrem: { tahun: number; kena: boolean; hari: number; titik: number }[];
 }) {
   const baris = [
     { label: "Tahun kering ekstrem terdeteksi", k: paparan.kExt, n: paparan.nExt, arsir: "arsir-ember" },
@@ -33,7 +33,13 @@ export function KartuPaparan({
   return (
     <section aria-labelledby="paparan" className={`${kelasKartu} flex flex-col`} style={{ animationDelay: "60ms" }}>
       <KepalaKartu id="paparan" judul="Paparan desa" />
-      <p className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
+      {/*
+       * Kartu ini ikut setinggi grafik riwayat di sebelahnya. Sisa tinggi dibagi rata di antara tiga blok
+       * (angka utama, tahun ekstrem, rincian), bukan menumpuk jadi satu celah kosong.
+       */}
+      <div className="mt-3 flex flex-1 flex-col justify-between gap-5">
+      <div>
+      <p className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <span className="tabular text-5xl font-semibold leading-none tracking-[-0.03em]">
           {formatAngka(paparan.kExt)}
           <span className="text-2xl text-muted"> / {formatAngka(paparan.nExt)}</span>
@@ -42,28 +48,36 @@ export function KartuPaparan({
       </p>
       <p className="mt-2 text-sm text-muted">tahun kering ekstrem terdeteksi satelit</p>
       <p className="mt-3 text-sm font-semibold leading-snug">{headlinePaparan(paparan)}</p>
+      </div>
 
-      <ul aria-label="Tahun kering ekstrem" className="mt-4 grid grid-cols-4 gap-1.5">
+      {/* Ubin tahun ekstrem (pola matriks 2×2): status di atas, tahun besar, lalu hari dan titik. Mengisi sisa tinggi kartu. */}
+      <ul aria-label="Tahun kering ekstrem" className="grid min-h-0 flex-1 auto-rows-fr grid-cols-2 gap-2.5">
         {ekstrem.map((e, i) => (
           <li
             key={e.tahun}
-            className={`masuk flex flex-col items-center gap-1 rounded-xl border px-1 py-2 ${e.kena ? "border-ember/40 bg-ember-soft" : "border-line bg-surface-2"}`}
+            className={`masuk flex flex-col justify-between gap-3 rounded-2xl p-3.5 ${ekstrem.length % 2 === 1 && i === ekstrem.length - 1 ? "col-span-2" : ""} ${
+              e.kena ? "bg-ember-soft" : "bg-surface-2"
+            }`}
             style={{ animationDelay: `${180 + i * 70}ms` }}
           >
-            <span className="tabular text-sm font-semibold">{e.tahun}</span>
-            <span className={`inline-flex items-center gap-1 text-[11px] font-semibold ${e.kena ? "text-ember" : "text-muted"}`}>
-              <svg aria-hidden="true" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+            <span className={`inline-flex items-center gap-1.5 text-sm font-semibold ${e.kena ? "text-ember" : "text-muted"}`}>
+              <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                 {e.kena ? <circle cx="12" cy="12" r="5" fill="currentColor" /> : null}
                 <circle cx="12" cy="12" r="9" />
               </svg>
-              {e.kena ? "Terdeteksi" : "Tidak"}
-              <span className="sr-only">{e.kena ? "" : " terdeteksi"}</span>
+              {e.kena ? "Terdeteksi" : "Tidak terdeteksi"}
+            </span>
+            <span>
+              <span className={`tabular block text-3xl font-semibold leading-none tracking-[-0.02em] ${e.kena ? "text-ember" : "text-ink"}`}>{e.tahun}</span>
+              <span className={`tabular mt-1.5 block text-xs ${e.kena ? "text-ember/80" : "text-muted"}`}>
+                {e.kena ? `${formatAngka(e.hari)} hari · ${formatAngka(e.titik)} titik api` : "tanpa deteksi"}
+              </span>
             </span>
           </li>
         ))}
       </ul>
 
-      <dl className="mt-auto space-y-3.5 pt-5">
+      <dl className="space-y-3.5">
         {baris.map((b, i) => (
           <div key={b.label}>
             <div className="flex items-baseline justify-between gap-2 text-sm">
@@ -81,6 +95,7 @@ export function KartuPaparan({
           </div>
         ))}
       </dl>
+      </div>
     </section>
   );
 }

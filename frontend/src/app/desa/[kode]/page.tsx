@@ -3,7 +3,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { MiniShape } from "@/components/paparan/MiniShape";
 import { DasborSatelit } from "@/components/paparan/dasbor/DasborSatelit";
 import { KerangkaAkun } from "@/components/layout/KerangkaAkun";
 import { ErrorState, LoadingState } from "@/components/ui/PageState";
@@ -28,7 +27,7 @@ export default function KartuPaparanPage({ params }: PageProps<"/desa/[kode]">) 
 
 /*
  * Bukti satelit (App Flow v2 §3.2) sebagai dasbor interaktif: riwayat, paparan, musim, matriks hari dan titik,
- * wawasan, konteks kecamatan dan wilayah (lihat DasborSatelit), lalu ajakan memeriksa kesiapan dan batasan data.
+ * wawasan, perbandingan kecamatan (lihat DasborSatelit), lalu ajakan memeriksa kesiapan dan batasan data.
  */
 async function Isi({ params }: { params: Promise<{ kode: string }> }) {
   await connection();
@@ -55,10 +54,7 @@ async function Isi({ params }: { params: Promise<{ kode: string }> }) {
         paparan={paparan}
         kecamatan={kecamatan}
         kecNama={desa.kecNama}
-        luasHa={desa.luasHa}
-        peatFrac={desa.peatFrac}
         tampakAman={tampakAman}
-        wilayah={<MiniShape geomJson={desa.geomJson} nama={desa.nama} />}
       />
       <div className="mx-auto max-w-[1200px] px-4 pb-8 md:px-8">
       {/* Ajakan bertindak, pita gelap seperti "Ready to act?" pada referensi. */}
