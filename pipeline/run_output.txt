@@ -1,0 +1,230 @@
+Berkas FIRMS: 1081
+Deteksi sebelum filter per satelit/sumber:
+satellite  sumber
+N          SP        1147881
+           NRT        284171
+Deteksi sesudah filter per satelit/sumber:
+satellite  sumber
+N          SP        1088038
+           NRT        273685
+Tanggal terakhir SP: 2026-07-31
+Tanggal terakhir NRT: 2026-11-02
+Celah SP->NRT: 2026-07-31 sampai 2026-08-01
+Desa bergambut 5 provinsi: 1220; luas gambut 4.92 juta ha
+prov_nama
+Kalimantan Barat      546
+Kalimantan Selatan     80
+Kalimantan Tengah     501
+Kalimantan Timur       51
+Kalimantan Utara       42
+Desa: 3706
+prov_nama
+Kalimantan Barat     2132
+Kalimantan Tengah    1574
+Desa dengan peat_frac > 0: 1047
+Desa-tahun terpapar per tahun:
+tahun
+2012    3373
+2013    3184
+2014    3431
+2015    3442
+2016    2592
+2017    2165
+2018    2903
+2019    3157
+2020    2110
+2021    2050
+2022    1948
+2023    3015
+2024    2414
+2025    2534
+2026    3255
+Desa tampak aman (live): 168
+Metrik backtest:
+ tahun_uji      unit      strategi     metrik    nilai
+      2019      desa       paparan capture_10 0.106747
+      2019      desa       paparan capture_20 0.212860
+      2019      desa       paparan capture_30 0.322141
+      2019      desa       paparan    roc_auc 0.732699
+      2019      desa       paparan     pr_auc 0.916699
+      2019      desa   persistensi capture_10 0.117517
+      2019      desa   persistensi capture_20 0.234717
+      2019      desa   persistensi capture_30 0.350649
+      2019      desa   persistensi    roc_auc 0.879404
+      2019      desa   persistensi     pr_auc 0.971973
+      2019      desa total_riwayat capture_10 0.117517
+      2019      desa total_riwayat capture_20 0.233766
+      2019      desa total_riwayat capture_30 0.348749
+      2019      desa total_riwayat    roc_auc 0.891860
+      2019      desa total_riwayat     pr_auc 0.976151
+      2019      desa        gambut capture_10 0.109281
+      2019      desa        gambut capture_20 0.215711
+      2019      desa        gambut capture_30 0.321825
+      2019      desa        gambut    roc_auc 0.575827
+      2019      desa        gambut     pr_auc 0.869412
+      2019      desa          acak capture_10 0.100000
+      2019      desa          acak capture_20 0.200000
+      2019      desa          acak capture_30 0.300000
+      2019      desa          acak    roc_auc 0.500000
+      2019      desa          acak     pr_auc 0.851862
+      2019 kecamatan       paparan capture_10 0.111111
+      2019 kecamatan       paparan capture_20 0.222222
+      2019 kecamatan       paparan capture_30 0.333333
+      2019 kecamatan       paparan    roc_auc 0.860735
+      2019 kecamatan       paparan     pr_auc 0.971786
+      2019 kecamatan   persistensi capture_10 0.111111
+      2019 kecamatan   persistensi capture_20 0.222222
+      2019 kecamatan   persistensi capture_30 0.333333
+      2019 kecamatan   persistensi    roc_auc 0.844375
+      2019 kecamatan   persistensi     pr_auc 0.978445
+      2019 kecamatan total_riwayat capture_10 0.111111
+      2019 kecamatan total_riwayat capture_20 0.222222
+      2019 kecamatan total_riwayat capture_30 0.333333
+      2019 kecamatan total_riwayat    roc_auc 0.881142
+      2019 kecamatan total_riwayat     pr_auc 0.983862
+      2019 kecamatan        gambut capture_10 0.111111
+      2019 kecamatan        gambut capture_20 0.215054
+      2019 kecamatan        gambut capture_30 0.318996
+      2019 kecamatan        gambut    roc_auc 0.548965
+      2019 kecamatan        gambut     pr_auc 0.930058
+      2019 kecamatan          acak capture_10 0.100000
+      2019 kecamatan          acak capture_20 0.200000
+      2019 kecamatan          acak capture_30 0.300000
+      2019 kecamatan          acak    roc_auc 0.500000
+      2019 kecamatan          acak     pr_auc 0.900000
+      2023      desa       paparan capture_10 0.116418
+      2023      desa       paparan capture_20 0.233167
+      2023      desa       paparan capture_30 0.347927
+      2023      desa       paparan    roc_auc 0.806748
+      2023      desa       paparan     pr_auc 0.929123
+      2023      desa   persistensi capture_10 0.122388
+      2023      desa   persistensi capture_20 0.244113
+      2023      desa   persistensi capture_30 0.364511
+      2023      desa   persistensi    roc_auc 0.794454
+      2023      desa   persistensi     pr_auc 0.931822
+      2023      desa total_riwayat capture_10 0.121061
+      2023      desa total_riwayat capture_20 0.240133
+      2023      desa total_riwayat capture_30 0.358541
+      2023      desa total_riwayat    roc_auc 0.861645
+      2023      desa total_riwayat     pr_auc 0.956666
+      2023      desa        gambut capture_10 0.105141
+      2023      desa        gambut capture_20 0.204312
+      2023      desa        gambut capture_30 0.304146
+      2023      desa        gambut    roc_auc 0.509577
+      2023      desa        gambut     pr_auc 0.818391
+      2023      desa          acak capture_10 0.100000
+      2023      desa          acak capture_20 0.200000
+      2023      desa          acak capture_30 0.300000
+      2023      desa          acak    roc_auc 0.500000
+      2023      desa          acak     pr_auc 0.813546
+      2023 kecamatan       paparan capture_10 0.113553
+      2023 kecamatan       paparan capture_20 0.227106
+      2023 kecamatan       paparan capture_30 0.340659
+      2023 kecamatan       paparan    roc_auc 0.910702
+      2023 kecamatan       paparan     pr_auc 0.986185
+      2023 kecamatan   persistensi capture_10 0.113553
+      2023 kecamatan   persistensi capture_20 0.227106
+      2023 kecamatan   persistensi capture_30 0.336996
+      2023 kecamatan   persistensi    roc_auc 0.778636
+      2023 kecamatan   persistensi     pr_auc 0.962349
+      2023 kecamatan total_riwayat capture_10 0.113553
+      2023 kecamatan total_riwayat capture_20 0.227106
+      2023 kecamatan total_riwayat capture_30 0.340659
+      2023 kecamatan total_riwayat    roc_auc 0.875161
+      2023 kecamatan total_riwayat     pr_auc 0.980501
+      2023 kecamatan        gambut capture_10 0.113553
+      2023 kecamatan        gambut capture_20 0.219780
+      2023 kecamatan        gambut capture_30 0.307692
+      2023 kecamatan        gambut    roc_auc 0.491288
+      2023 kecamatan        gambut     pr_auc 0.907397
+      2023 kecamatan          acak capture_10 0.100000
+      2023 kecamatan          acak capture_20 0.200000
+      2023 kecamatan          acak capture_30 0.300000
+      2023 kecamatan          acak    roc_auc 0.500000
+      2023 kecamatan          acak     pr_auc 0.880645
+      2026      desa       paparan capture_10 0.112135
+      2026      desa       paparan capture_20 0.224885
+      2026      desa       paparan capture_30 0.337942
+      2026      desa       paparan    roc_auc 0.880731
+      2026      desa       paparan     pr_auc 0.975499
+      2026      desa   persistensi capture_10 0.113978
+      2026      desa   persistensi capture_20 0.227035
+      2026      desa   persistensi capture_30 0.338556
+      2026      desa   persistensi    roc_auc 0.817366
+      2026      desa   persistensi     pr_auc 0.963709
+      2026      desa total_riwayat capture_10 0.113978
+      2026      desa total_riwayat capture_20 0.227650
+      2026      desa total_riwayat capture_30 0.340092
+      2026      desa total_riwayat    roc_auc 0.910852
+      2026      desa total_riwayat     pr_auc 0.984866
+      2026      desa        gambut capture_10 0.105991
+      2026      desa        gambut capture_20 0.209831
+      2026      desa        gambut capture_30 0.313978
+      2026      desa        gambut    roc_auc 0.557133
+      2026      desa        gambut     pr_auc 0.886087
+      2026      desa          acak capture_10 0.100000
+      2026      desa          acak capture_20 0.200000
+      2026      desa          acak capture_30 0.300000
+      2026      desa          acak    roc_auc 0.500000
+      2026      desa          acak     pr_auc 0.878305
+      2026 kecamatan       paparan capture_10 0.110320
+      2026 kecamatan       paparan capture_20 0.220641
+      2026 kecamatan       paparan capture_30 0.330961
+      2026 kecamatan       paparan    roc_auc 0.951589
+      2026 kecamatan       paparan     pr_auc 0.992977
+      2026 kecamatan   persistensi capture_10 0.110320
+      2026 kecamatan   persistensi capture_20 0.220641
+      2026 kecamatan   persistensi capture_30 0.327402
+      2026 kecamatan   persistensi    roc_auc 0.810774
+      2026 kecamatan   persistensi     pr_auc 0.975802
+      2026 kecamatan total_riwayat capture_10 0.110320
+      2026 kecamatan total_riwayat capture_20 0.220641
+      2026 kecamatan total_riwayat capture_30 0.330961
+      2026 kecamatan total_riwayat    roc_auc 0.916800
+      2026 kecamatan total_riwayat     pr_auc 0.990127
+      2026 kecamatan        gambut capture_10 0.110320
+      2026 kecamatan        gambut capture_20 0.213523
+      2026 kecamatan        gambut capture_30 0.309609
+      2026 kecamatan        gambut    roc_auc 0.502454
+      2026 kecamatan        gambut     pr_auc 0.928039
+      2026 kecamatan          acak capture_10 0.100000
+      2026 kecamatan          acak capture_20 0.200000
+      2026 kecamatan          acak capture_30 0.300000
+      2026 kecamatan          acak    roc_auc 0.500000
+      2026 kecamatan          acak     pr_auc 0.906452
+Grup titik buta:
+                 grup strata  n_desa  n_terpapar_2026     rate
+          tampak_aman  semua     298              190 0.637584
+                aktif  semua    3241             3046 0.939833
+tanpa_riwayat_ekstrem  semua     167               19 0.113772
+          tampak_aman     q1     174              100 0.574713
+                aktif     q1     617              521 0.844408
+tanpa_riwayat_ekstrem     q1     136               11 0.080882
+          tampak_aman     q2      66               47 0.712121
+                aktif     q2     843              785 0.931198
+tanpa_riwayat_ekstrem     q2      17                4 0.235294
+          tampak_aman     q3      30               20 0.666667
+                aktif     q3     891              871 0.977553
+tanpa_riwayat_ekstrem     q3       5                1 0.200000
+          tampak_aman     q4      28               23 0.821429
+                aktif     q4     890              869 0.976404
+tanpa_riwayat_ekstrem     q4       9                3 0.333333
+Gerbang: {"a": true, "b": true, "keputusan": "pertahankan"}
+Riwayat Kali Bandung (Sungai Raya, Kubu Raya; HDX 6112070019) - Kalibandung:
+      kode  tahun  n_det  det_days  terpapar
+6112070019   2012     48        19         1
+6112070019   2013     46        25         1
+6112070019   2014    141        39         1
+6112070019   2015    214        31         1
+6112070019   2016     17         9         1
+6112070019   2017      7         5         1
+6112070019   2018     61        15         1
+6112070019   2019     61        13         1
+6112070019   2020      2         2         1
+6112070019   2021     15         4         1
+6112070019   2022      0         0         0
+6112070019   2023      0         0         0
+6112070019   2024      7         4         1
+6112070019   2025      7         6         1
+6112070019   2026    365        42         1
+DB: /home/primarizki/project/LogicodixIRIS/data/siapkemarau.db (14.1 MB)

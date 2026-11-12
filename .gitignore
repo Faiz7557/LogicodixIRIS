@@ -10,8 +10,9 @@
 
 # data mentah pipeline (README menjelaskan cara mengunduhnya)
 /data/raw/
-# basis data pengembangan lokal (data uji)
+# basis data lokal (data uji dan keluaran pipeline). Dibagikan lewat make bundle, bukan git.
 /data/dev.db*
+/data/siapkemarau.db*
 
 # python pipeline
 __pycache__/

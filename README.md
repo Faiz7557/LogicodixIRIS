@@ -16,7 +16,7 @@ Bagian submission (tim, video, surat orisinalitas, atribusi lengkap) dilengkapi 
 |---|---|
 | API dan lapisan server Next.js | Hidup: auth sesi, otorisasi per desa, inventaris, paket, harga, kesiapan, prioritas, keputusan, usulan, parse pesan |
 | Basis data aplikasi | `db/schema.sql` lengkap. Lokal memakai `data/dev.db` berisi data uji |
-| Pipeline Python | Pengunduh FIRMS dan modul hitung tersedia. Ekspor DB (`export.py`, `run_all.py`) belum ada |
+| Pipeline Python | Lengkap: unduh FIRMS, batas desa, gambut, hitung, ekspor `data/siapkemarau.db` |
 | Narasi usulan | Masih template. Jalur AI yang hidup hanya parse pesan inventaris |
 | Deploy | Belum dikerjakan |
 
@@ -65,7 +65,7 @@ make seed
 make dev
 ```
 
-Buka <http://localhost:3000>. Masuk dengan `demo-mpa` (ketua MPA) atau `demo-sekdes` (sekdes) memakai `DEMO_PASSWORD` yang baru diisi. `make seed DESA=KALIBANDUNG` membuat akun untuk desa lain.
+Buka <http://localhost:3000>. Masuk dengan `demo-mpa` (ketua MPA) atau `demo-sekdes` (sekdes) memakai `DEMO_PASSWORD` yang baru diisi. `make seed DESA=<kode>` membuat akun untuk desa lain. Tanpa `DESA`, seed memakai desa akun demo yang sudah ada, atau desa pertama di DB.
 
 `make setup` dan `make db` membuat ulang `data/dev.db`, jadi data inventaris uji di dalamnya ikut hilang. `make env` tidak menimpa `.env` yang sudah ada. `make help` menampilkan semua target.
 
@@ -78,7 +78,7 @@ Semua perintah asli dijalankan dari akar repo.
 | Pasang dependency | `make install` | `cd frontend && npm ci` lalu `uv sync` |
 | Salin env | `make env` | `cp frontend/.env.example frontend/.env` dan `cp .env.example .env` (hanya bila belum ada) |
 | Buat DB uji | `make db` | `cd frontend && npx tsx scripts/dev-db.ts` |
-| Buat akun demo | `make seed` | `cd frontend && npx tsx scripts/seed-accounts.ts --desa TINGGI` |
+| Buat akun demo | `make seed` | `cd frontend && npx tsx scripts/seed-accounts.ts --desa <kode>`; tanpa `--desa` memakai desa akun demo atau desa pertama |
 | Jalankan dev | `make dev` | `cd frontend && npm run dev` |
 | Tes | `make test` | `cd frontend && npm test` lalu `uv run pytest pipeline/tests -q` |
 | Typecheck | `make typecheck` | `cd frontend && npm run typecheck` |
@@ -86,7 +86,9 @@ Semua perintah asli dijalankan dari akar repo.
 | Build | `make build` | `cd frontend && npm run build` |
 | Jalankan hasil build | `make start` | `cd frontend && npm run build && npm start` |
 | Gate sebelum commit | `make gate` | `npm test`, `npm run typecheck`, `npm run lint`, `npm run build` dari `frontend/`, lalu `uv run pytest pipeline/tests -q` |
+| Unduh batas desa dan gambut | `make pipeline-inputs` | `uv run python pipeline/fetch_inputs.py` |
 | Unduh FIRMS | `make pipeline-fetch` | `uv run python pipeline/fetch_firms.py` |
+| Jalankan pipeline | `make pipeline-run` | `uv run python pipeline/run_all.py` |
 | Bersihkan build | `make clean` | `rm -rf frontend/.next` |
 
 `npm ci` dipakai karena `package-lock.json` sudah ada dan hasilnya deterministik. Bila menambah dependency baru, pakai `npm install <paket>` dari `frontend/`, lalu commit `package.json` dan `package-lock.json`.
@@ -123,6 +125,7 @@ Semua respons JSON. Galat memakai `{ "error": { "kode": "...", "pesan": "..." } 
 | GET | `/api/desa/[kode]` | Publik | 200 `DesaCard` |
 | GET | `/api/backtest` | Publik | 200 metrik, grup, gerbang, 20 teratas |
 | GET | `/api/data` | Publik | 200 sumber, sensor, catatan data, meta, paket, harga |
+| GET | `/api/gambut` | Publik | 200 `{ hasil }`, 1.220 desa bergambut 5 provinsi. Bawaan membawa `geomJson` (±2,4 MB); `?geom=0` hanya atribut (±300 KB) |
 | POST | `/api/auth/masuk` | Publik, 10/15 menit per username+IP | 200 `{ akun }` + cookie sesi |
 | POST | `/api/auth/keluar` | Publik | 204, cookie dihapus |
 | GET | `/api/auth/saya` | Akun | 200 `{ akun }` |
@@ -136,6 +139,10 @@ Semua respons JSON. Galat memakai `{ "error": { "kode": "...", "pesan": "..." } 
 | PUT | `/api/desa/[kode]/keputusan` | `desa` | 204, satu baris prioritas |
 | GET, POST | `/api/desa/[kode]/usulan` | `desa` | 200 `{ hasil, meta }` (`?limit=1..50&cursor=`), 201 `{ id }` + `Location` |
 | GET | `/api/desa/[kode]/usulan/[id]` | `desa` | 200 `Usulan` dengan fakta beku |
+
+`/api/gambut` menyertakan `geomJson` supaya frontend bisa menggambar poligon desa. Untuk tabel
+atau pencarian, pakai `?geom=0` agar payload turun dari ±2,4 MB ke ±300 KB. Data ini terpisah dari
+`/api/desa/[kode]` karena paparan dan backtest hanya dihitung untuk Kalbar dan Kalteng.
 
 Aturan yang berlaku di semua route ber-`[kode]`:
 
@@ -152,9 +159,16 @@ Dependency Python dikelola `uv` lewat `pyproject.toml` dan `uv.lock` (Python 3.1
 
 ```bash
 uv sync
+uv run python pipeline/fetch_inputs.py  # HDX COD-AB ADM4 + gambut WRI/GFW, tanpa kunci
 uv run python pipeline/fetch_firms.py   # butuh FIRMS_MAP_KEY di .env akar
+uv run python pipeline/run_all.py       # tulis data/siapkemarau.db + pipeline/run_output.txt
 uv run pytest pipeline/tests -q
 ```
+
+`fetch_inputs.py` menulis ke `data/raw/hdx/` dan `data/raw/peat/`; `fetch_firms.py` ke
+`data/raw/firms/`. Ketiga folder diabaikan git, jadi unduh ulang setelah clone baru.
+`run_all.py` menghitung paparan beku dan live, tiga fold backtest, gerbang, dan
+sensitivitas, lalu mencetak angka kontrol ke `pipeline/run_output.txt`.
 
 Modul yang ada:
 
@@ -166,8 +180,36 @@ Modul yang ada:
 | `pipeline/firms.py` | Agregasi deteksi per desa dan tahun |
 | `pipeline/paparan.py` | Paparan per desa dan kecamatan |
 | `pipeline/backtest.py` | Time Machine, tiga fold, gerbang |
+| `pipeline/fetch_inputs.py` | Unduh batas desa HDX dan poligon gambut WRI/GFW |
+| `pipeline/gambut_kalimantan.py` | Desa bergambut seluruh Kalimantan (CSV + GeoJSON) |
+| `pipeline/export.py` | Tulis tabel ke SQLite dari `db/schema.sql` |
+| `pipeline/run_all.py` | Jalankan seluruh pipeline dan tulis angka kontrol |
 
-`export.py` dan `run_all.py` belum ada. Karena itu `data/siapkemarau.db` belum terbentuk dan aplikasi lokal memakai `data/dev.db` berisi data uji. `scripts/dev-db.ts` membaca `db/schema.sql` dan `data/manual/*.csv`, bukan menyalin angka dari dokumen.
+Selama `data/siapkemarau.db` belum dihasilkan, aplikasi lokal memakai `data/dev.db` berisi data uji. `scripts/dev-db.ts` membaca `db/schema.sql` dan `data/manual/*.csv`, bukan menyalin angka dari dokumen.
+
+### Membagikan data pipeline
+
+Seluruh data mentah dan DB hasil pipeline diabaikan git. Untuk membagikannya tanpa
+mengunduh ulang:
+
+```bash
+make bundle        # menulis ../siapkemarau-data.zip (DB + data/raw, ±220 MB)
+```
+
+Isi zip: `data/siapkemarau.db`, seluruh `data/raw/` (FIRMS, HDX ADM4, gambut GFW,
+keluaran `gambut_kalimantan`), dan `data/dev.db` bila ada. Yang **tidak** ikut: berkas
+`.env` (berisi kredensial), `.venv/`, `node_modules/`, dan `.next/`.
+
+Penerima menjalankan, dari akar clone baru:
+
+```bash
+unzip siapkemarau-data.zip -d .
+# frontend/.env: DATABASE_URL=file:../data/siapkemarau.db
+cd frontend && npx tsx scripts/seed-accounts.ts   # reset akun demo ke DEMO_PASSWORD sendiri
+```
+
+`make bundle` menolak jalan bila `data/siapkemarau.db` belum ada. Paket ini tidak memuat
+`data/dev.db` (data uji demo); untuk itu salin terpisah.
 
 Untuk memakai `python` biasa, aktifkan venv dulu:
 
