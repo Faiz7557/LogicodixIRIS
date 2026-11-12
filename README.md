@@ -65,7 +65,7 @@ make seed
 make dev
 ```
 
-Buka <http://localhost:3000>. Masuk dengan `demo-mpa` (ketua MPA) atau `demo-sekdes` (sekdes) memakai `DEMO_PASSWORD` yang baru diisi. `make seed DESA=KALIBANDUNG` membuat akun untuk desa lain.
+Buka <http://localhost:3000>. Masuk dengan `demo-mpa` (ketua MPA) atau `demo-sekdes` (sekdes) memakai `DEMO_PASSWORD` yang baru diisi. `make seed DESA=<kode>` membuat akun untuk desa lain. Tanpa `DESA`, seed memakai desa akun demo yang sudah ada, atau desa pertama di DB.
 
 `make setup` dan `make db` membuat ulang `data/dev.db`, jadi data inventaris uji di dalamnya ikut hilang. `make env` tidak menimpa `.env` yang sudah ada. `make help` menampilkan semua target.
 
@@ -78,7 +78,7 @@ Semua perintah asli dijalankan dari akar repo.
 | Pasang dependency | `make install` | `cd frontend && npm ci` lalu `uv sync` |
 | Salin env | `make env` | `cp frontend/.env.example frontend/.env` dan `cp .env.example .env` (hanya bila belum ada) |
 | Buat DB uji | `make db` | `cd frontend && npx tsx scripts/dev-db.ts` |
-| Buat akun demo | `make seed` | `cd frontend && npx tsx scripts/seed-accounts.ts --desa TINGGI` |
+| Buat akun demo | `make seed` | `cd frontend && npx tsx scripts/seed-accounts.ts --desa <kode>`; tanpa `--desa` memakai desa akun demo atau desa pertama |
 | Jalankan dev | `make dev` | `cd frontend && npm run dev` |
 | Tes | `make test` | `cd frontend && npm test` lalu `uv run pytest pipeline/tests -q` |
 | Typecheck | `make typecheck` | `cd frontend && npm run typecheck` |

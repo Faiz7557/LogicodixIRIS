@@ -13,8 +13,15 @@ function gagal(pesan: string): never {
 async function main() {
   if (existsSync(".env")) process.loadEnvFile(".env"); // tidak menimpa env yang sudah diset
   const i = process.argv.indexOf("--desa");
-  const kode = i >= 0 ? process.argv[i + 1] : undefined;
-  if (!kode) gagal("Pakai: npx tsx scripts/seed-accounts.ts --desa <kode>");
+  let kode = i >= 0 ? process.argv[i + 1] : undefined;
+  if (!kode) {
+    // Tanpa --desa: pertahankan desa akun demo yang ada, atau pilih desa pertama di DB (data uji maupun data nyata).
+    const lama = await db().execute("SELECT desa_kode FROM akun WHERE username = 'demo-mpa'");
+    const pertama = await db().execute("SELECT kode FROM desa ORDER BY kode LIMIT 1");
+    kode = String(lama.rows[0]?.desa_kode ?? pertama.rows[0]?.kode ?? "");
+    if (!kode) gagal("DB tidak memuat desa. Jalankan pipeline atau make db lebih dulu.");
+    console.log(`--desa tidak diisi, memakai ${kode}.`);
+  }
   const password = process.env.DEMO_PASSWORD ?? "";
   if (!password) gagal("DEMO_PASSWORD kosong. Isi di env atau frontend/.env.");
 

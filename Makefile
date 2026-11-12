@@ -1,5 +1,6 @@
 FRONTEND := frontend
-DESA ?= TINGGI
+# Kosong: seed memakai desa akun demo yang ada, atau desa pertama di DB.
+DESA ?=
 UV ?= uv
 
 .DEFAULT_GOAL := help
@@ -10,7 +11,7 @@ help:
 	@echo "install         npm ci dan uv sync"
 	@echo "env             salin .env.example ke .env bila belum ada"
 	@echo "db              buat ulang data/dev.db (25 desa uji)"
-	@echo "seed            buat akun demo, DESA=TINGGI secara bawaan"
+	@echo "seed            buat akun demo untuk DESA (bawaan: desa akun demo / desa pertama)"
 	@echo "dev             jalankan next dev"
 	@echo "test            npm test + pytest"
 	@echo "typecheck       next typegen + tsc --noEmit"
@@ -39,7 +40,7 @@ db:
 	cd $(FRONTEND) && npx tsx scripts/dev-db.ts
 
 seed:
-	cd $(FRONTEND) && npx tsx scripts/seed-accounts.ts --desa $(DESA)
+	cd $(FRONTEND) && npx tsx scripts/seed-accounts.ts $(if $(DESA),--desa $(DESA),)
 
 dev:
 	cd $(FRONTEND) && npm run dev
