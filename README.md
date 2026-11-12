@@ -125,6 +125,7 @@ Semua respons JSON. Galat memakai `{ "error": { "kode": "...", "pesan": "..." } 
 | GET | `/api/desa/[kode]` | Publik | 200 `DesaCard` |
 | GET | `/api/backtest` | Publik | 200 metrik, grup, gerbang, 20 teratas |
 | GET | `/api/data` | Publik | 200 sumber, sensor, catatan data, meta, paket, harga |
+| GET | `/api/gambut` | Publik | 200 `{ hasil }`, 1.220 desa bergambut 5 provinsi. Bawaan membawa `geomJson` (±2,4 MB); `?geom=0` hanya atribut (±300 KB) |
 | POST | `/api/auth/masuk` | Publik, 10/15 menit per username+IP | 200 `{ akun }` + cookie sesi |
 | POST | `/api/auth/keluar` | Publik | 204, cookie dihapus |
 | GET | `/api/auth/saya` | Akun | 200 `{ akun }` |
@@ -138,6 +139,10 @@ Semua respons JSON. Galat memakai `{ "error": { "kode": "...", "pesan": "..." } 
 | PUT | `/api/desa/[kode]/keputusan` | `desa` | 204, satu baris prioritas |
 | GET, POST | `/api/desa/[kode]/usulan` | `desa` | 200 `{ hasil, meta }` (`?limit=1..50&cursor=`), 201 `{ id }` + `Location` |
 | GET | `/api/desa/[kode]/usulan/[id]` | `desa` | 200 `Usulan` dengan fakta beku |
+
+`/api/gambut` menyertakan `geomJson` supaya frontend bisa menggambar poligon desa. Untuk tabel
+atau pencarian, pakai `?geom=0` agar payload turun dari ±2,4 MB ke ±300 KB. Data ini terpisah dari
+`/api/desa/[kode]` karena paparan dan backtest hanya dihitung untuk Kalbar dan Kalteng.
 
 Aturan yang berlaku di semua route ber-`[kode]`:
 

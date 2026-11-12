@@ -138,7 +138,7 @@ export interface DesaGambut {
   luasHa: number;
   peatHa: number;
   peatFrac: number;
-  geomJson: string;
+  geomJson?: string; // ada kecuali GET /api/gambut?geom=0
 }
 
 export interface DesaTahun {

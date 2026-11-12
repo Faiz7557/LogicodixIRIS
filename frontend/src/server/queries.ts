@@ -158,10 +158,11 @@ export async function getBacktest(): Promise<Backtest> {
   };
 }
 
-export async function getDesaGambut(): Promise<DesaGambut[]> {
+export async function getDesaGambut(opsi: { geom?: boolean } = {}): Promise<DesaGambut[]> {
+  const geom = opsi.geom ?? true;
   const rows = await q(
     `SELECT kode, nama, kec_kode, kec_nama, kab_kode, kab_nama, prov_kode, prov_nama,
-            lat, lon, luas_ha, peat_ha, peat_frac, geom_json
+            lat, lon, luas_ha, peat_ha, peat_frac, ${geom ? "geom_json" : "NULL AS geom_json"}
        FROM desa_gambut ORDER BY prov_kode, kab_kode, kec_kode, nama`,
   );
   return rows.map((r) => ({
@@ -171,7 +172,7 @@ export async function getDesaGambut(): Promise<DesaGambut[]> {
     provKode: str(r.prov_kode), provNama: str(r.prov_nama),
     lat: Number(r.lat), lon: Number(r.lon),
     luasHa: Number(r.luas_ha), peatHa: Number(r.peat_ha), peatFrac: Number(r.peat_frac),
-    geomJson: str(r.geom_json),
+    ...(geom ? { geomJson: str(r.geom_json) } : {}),
   }));
 }
 
