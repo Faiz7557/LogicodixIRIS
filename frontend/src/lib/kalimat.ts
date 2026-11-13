@@ -3,7 +3,7 @@
  * Selalu "deteksi satelit", bukan "kebakaran". Desa tanpa deteksi tidak pernah dinyatakan aman.
  */
 import { formatAngka } from "./format";
-import type { KeputusanGerbang, Tier } from "./types";
+import type { DesaTahun, KeputusanGerbang, Tier } from "./types";
 
 export function headlinePaparan(p: { kExt: number; nExt: number; tahunTenang: number }): string {
   if (p.kExt === 0) {
@@ -39,4 +39,19 @@ export function sebutKecamatan(namaKec: string): string {
 export function kalimatKecamatan(k: { pMean: number; rateMin: number; rateMax: number }, namaKec: string): string {
   const p = (x: number) => `${formatAngka(Math.round(x * 100))}%`;
   return `Di ${sebutKecamatan(namaKec)}, rata-rata ${p(k.pMean)} desa terdeteksi satelit pada tahun kering ekstrem (terendah ${p(k.rateMin)}, tertinggi ${p(k.rateMax)} antar tahun).`;
+}
+
+
+/**
+ * Kisah desa jangkar (Kali Bandung) dari deteksi satelit, plan 11 Task 5.
+ * `tenang`: tahun 2020-2025 tanpa deteksi yang memenuhi ambang. `maksSebelum`: deteksi terbanyak 2020-2025.
+ * Tahun yang tidak ada di larik dihitung nol.
+ */
+export function kisahJangkar(r: Pick<DesaTahun, "tahun" | "nDet" | "terpapar">[]): { tenang: number; maksSebelum: number; nDet2026: number } {
+  const sebelum = r.filter((x) => x.tahun >= 2020 && x.tahun <= 2025);
+  return {
+    tenang: sebelum.filter((x) => !x.terpapar).length,
+    maksSebelum: sebelum.reduce((m, x) => Math.max(m, x.nDet), 0),
+    nDet2026: r.find((x) => x.tahun === 2026)?.nDet ?? 0,
+  };
 }
