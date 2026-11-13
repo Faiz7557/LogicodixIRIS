@@ -3,7 +3,7 @@ import type { CSSProperties } from "react";
 import { AngkaHitung } from "@/components/ui/AngkaHitung";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { formatAngka, formatRupiah, formatSkor } from "@/lib/format";
-import type { ItemView } from "@/lib/kesiapan";
+import { hargaItem, type BarisTindakan, type ItemView } from "@/lib/kesiapan";
 import type { CatalogItem, HargaRow, Status } from "@/lib/types";
 
 /*
@@ -12,68 +12,7 @@ import type { CatalogItem, HargaRow, Status } from "@/lib/types";
  * Murni tampilan: semua angka datang dari props.
  */
 
-type Baris = {
-  kunci: string;
-  kode: string;
-  nama: string;
-  keadaan: string;
-  aksi: string;
-  biaya: number | null;
-  ragam: "kurang" | "rusak" | "kosong";
-};
-
-const harga = (rows: HargaRow[], kode: string, aksi: "beli" | "perbaiki") => rows.find((h) => h.itemKode === kode && h.aksi === aksi)?.hargaRp ?? null;
-
-/**
- * Baris tindakan terurut dari item paling genting (urutan `items` sudah dari kesenjangan terbesar).
- * Ukurannya sama dengan mesin prioritas (engine/priority.ts): kekurangan = target dikurangi yang berfungsi;
- * unit rusak diperbaiki dulu sampai menutup kekurangan, sisanya baru dibeli. Unit rusak tanpa harga perbaikan
- * ikut dibeli. Unit rusak di luar kekurangan tidak dimasukkan karena paket minimum sudah terpenuhi tanpanya.
- */
-export function barisTindakan(items: ItemView[], catalog: CatalogItem[], hargaRows: HargaRow[]): Baris[] {
-  const out: Baris[] = [];
-  for (const it of items) {
-    const c = catalog.find((x) => x.kode === it.itemKode);
-    const alat = c?.punyaRusak ?? true;
-    const n = (x: number) => `${formatAngka(x)} ${it.satuan}`;
-    if (it.belumDiisi) {
-      out.push({ kunci: `${it.itemKode}:catat`, kode: it.itemKode, nama: it.nama, keadaan: "Belum dicatat, dihitung 0", aksi: "Catat jumlahnya", biaya: null, ragam: "kosong" });
-      continue;
-    }
-    const kurang = Math.max(it.target - it.berfungsi, 0);
-    if (kurang === 0) continue;
-    const hPerbaiki = harga(hargaRows, it.itemKode, "perbaiki");
-    const perbaiki = alat && hPerbaiki !== null ? Math.min(it.rusak, kurang) : 0;
-    const beli = kurang - perbaiki;
-    const keadaan = alat ? `Ada ${formatAngka(it.berfungsi)}, butuh ${n(it.target)}` : `Tersedia ${formatAngka(it.berfungsi)}, butuh ${n(it.target)}`;
-    if (perbaiki > 0) {
-      out.push({
-        kunci: `${it.itemKode}:perbaiki`,
-        kode: it.itemKode,
-        nama: it.nama,
-        keadaan: `${keadaan}, ${n(it.rusak)} rusak`,
-        aksi: `Perbaiki ${n(perbaiki)}`,
-        biaya: perbaiki * (hPerbaiki ?? 0),
-        ragam: "rusak",
-      });
-    }
-    if (beli > 0) {
-      const h = harga(hargaRows, it.itemKode, "beli");
-      out.push({
-        kunci: `${it.itemKode}:beli`,
-        kode: it.itemKode,
-        nama: it.nama,
-        keadaan: perbaiki > 0 ? `Masih kurang ${n(beli)} setelah diperbaiki` : keadaan,
-        aksi: alat ? `Beli ${n(beli)}` : `Tambah dana ${n(beli)}`,
-        biaya: h === null ? null : beli * h,
-        ragam: "kurang",
-      });
-    }
-  }
-  return out;
-}
-
-export function TanganiDulu({ kode, baris }: { kode: string; baris: Baris[] }) {
+export function TanganiDulu({ kode, baris }: { kode: string; baris: BarisTindakan[] }) {
   return (
     <section aria-labelledby="tangani" className="overflow-hidden rounded-panel border border-line bg-surface shadow-card">
       <div className="flex flex-wrap items-baseline justify-between gap-2 px-5 py-4 md:px-6">
@@ -224,7 +163,7 @@ export function KartuSkor({
   status: Status;
   skorSesudah: number;
   paguRp: number;
-  baris: Baris[];
+  baris: BarisTindakan[];
   kode: string;
   bisaPrioritas: boolean;
 }) {
@@ -266,7 +205,7 @@ export function KartuLebih({ kode, items, hargaRows }: { kode: string; items: It
   const lebih = items
     .filter((it) => !it.belumDiisi && it.berfungsi > it.target)
     .sort((a, b) => b.berfungsi - b.target - (a.berfungsi - a.target));
-  const nilai = lebih.reduce((a, it) => a + (it.berfungsi - it.target) * (harga(hargaRows, it.itemKode, "beli") ?? 0), 0);
+  const nilai = lebih.reduce((a, it) => a + (it.berfungsi - it.target) * (hargaItem(hargaRows, it.itemKode, "beli") ?? 0), 0);
   const teratas = lebih[0];
 
   return (

@@ -5,7 +5,7 @@ import { getRingkasan } from "@/server/ringkasan";
 
 // POST /api/ringkasan: ringkasan satu halaman. Klien hanya menyebut halaman dan kode; fakta disusun server.
 const body = z.object({
-  halaman: z.enum(["paparan", "kesiapan", "prioritas"], { error: "Halaman tidak dikenal." }),
+  halaman: z.enum(["paparan", "kesiapan", "prioritas", "anggaran", "usulan"], { error: "Halaman tidak dikenal." }),
   kode: z.string().min(1).max(20).optional(),
 });
 
@@ -18,9 +18,9 @@ export const POST = handle(async (req) => {
 
   // Halaman berakun diperiksa sebelum apa pun, supaya akun lain tidak memicu panggilan OpenAI.
   let pemilik = ipDari(req);
-  if (halaman === "kesiapan" || halaman === "prioritas") {
+  if (halaman === "kesiapan" || halaman === "prioritas" || halaman === "anggaran" || halaman === "usulan") {
     if (!kode) throw new HttpError(400, "input_tidak_sah", "Kode desa wajib diisi.");
-    const akun = await requireDesaAccess(req, kode, halaman === "prioritas" ? ["desa"] : ["mpa", "desa"]);
+    const akun = await requireDesaAccess(req, kode, halaman === "kesiapan" ? ["mpa", "desa"] : ["desa"]);
     pemilik = String(akun.id);
   }
   if (!(await hitRateLimit(`ringkas:${pemilik}`, 20, 60))) throw lewat();

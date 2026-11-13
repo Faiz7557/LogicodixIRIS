@@ -16,7 +16,7 @@ export type Kanal = "apbdes_perubahan" | "bpbd" | "daops" | "csr";
 export type SumberTeks = "ai" | "template";
 
 /** Halaman yang punya tombol "Ringkasan AI" (plan 09 Bagian C). */
-export type HalamanRingkasan = "paparan" | "kesiapan" | "prioritas";
+export type HalamanRingkasan = "paparan" | "kesiapan" | "prioritas" | "anggaran" | "usulan";
 /** Balasan `POST /api/ringkasan`: satu kalimat inti dan tepat tiga butir. */
 export interface Ringkasan {
   judul: string;

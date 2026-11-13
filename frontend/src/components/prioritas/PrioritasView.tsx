@@ -63,6 +63,7 @@ export function PrioritasView(data: DataPrioritas) {
         namaDesa={namaDesa}
         aktif={2}
         ringkas={p.ringkasLangkah}
+        halaman="prioritas"
         judul="Apa yang perlu dibeli dulu?"
         kalimat={p.kalimat}
         menghitung={p.menghitung}

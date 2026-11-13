@@ -4,7 +4,7 @@
  */
 import { hasilDariItems, round1, skorDari } from "./engine/readiness";
 import { formatRupiah, formatSkor } from "./format";
-import type { Aksi, BarisTerkunci, CatalogItem, Keputusan, PriceRow, PriorityResult, PriorityRow, ReadinessResult } from "./types";
+import type { Aksi, BarisTerkunci, CatalogItem, Keputusan, PriceRow, PrioritasPayload, PriorityResult, PriorityRow, ReadinessResult } from "./types";
 
 export const PAGU_DEFAULT = 15_000_000;
 export const PAGU_MAKS = 1_000_000_000;
@@ -126,3 +126,69 @@ export function tambahTerkunci(readiness: ReadinessResult, terkunci: BarisTerkun
 }
 
 export const ALASAN_MIN = 5;
+
+export type RingkasAnggaran = {
+  /** Biaya semua kebutuhan yang punya harga; dasar kurva "skor menurut besar anggaran". */
+  kebutuhan: number;
+  kekurangan: number;
+  /** Biaya baris yang sudah masuk surat usulan; sudah tidak bisa dipakai saran baru. */
+  terkunciRp: number;
+  jumlahTerkunci: number;
+  /** Belanja yang disetujui di halaman Keputusan (masih simulasi, belum jadi surat). */
+  disetujuiRp: number;
+  jumlahDisetujui: number;
+  /** Sisa setelah belanja yang disetujui: kartu "Sisa anggaran sementara" di halaman Keputusan. */
+  sisaSementara: number;
+  skorDisetujui: number;
+  cukup: boolean;
+  /** Pagu dua kali lipat atau lebih dari seluruh kebutuhan hampir pasti salah ketik (mis. kelebihan nol). */
+  berlebih: boolean;
+  cakupan: { kode: string; nama: string; satuan: string; target: number; sebelum: number; sesudah: number; persenSebelum: number; persenSesudah: number }[];
+};
+
+/**
+ * Angka halaman Anggaran (langkah 1) dan Keputusan. `paguBebas` = pagu dikurangi baris yang sudah masuk surat.
+ * Dipakai `PaguView` dan fakta ringkasan AI, supaya keduanya menyebut angka yang sama.
+ */
+export function ringkasAnggaran(
+  prioritas: PrioritasPayload,
+  readiness: ReadinessResult,
+  catalog: CatalogItem[],
+  paguBebas: number,
+  keputusan: KeputusanMap,
+): RingkasAnggaran {
+  const disetujui = barisDisetujui(prioritas.terpilih, keputusan);
+  const sementara = anggaranSementara(paguBebas, disetujui);
+  const kebutuhan = totalBiaya([...prioritas.terpilih, ...prioritas.tidakTerdanai]);
+  const kekurangan = totalBiaya(prioritas.tidakTerdanai);
+  const nama = (kode: string) => catalog.find((c) => c.kode === kode)?.nama ?? kode;
+  const satuan = (kode: string) => catalog.find((c) => c.kode === kode)?.satuan ?? "";
+  const persen = (ada: number, target: number) => Math.round(Math.min(ada / target, 1) * 100);
+  return {
+    kebutuhan,
+    kekurangan,
+    terkunciRp: prioritas.terkunciRp ?? 0,
+    jumlahTerkunci: (prioritas.terkunci ?? []).length,
+    disetujuiRp: sementara.disetujuiRp,
+    jumlahDisetujui: disetujui.length,
+    sisaSementara: sementara.sisaRp,
+    skorDisetujui: skorSetelahDisetujui(readiness, catalog, disetujui),
+    cukup: kekurangan === 0,
+    berlebih: kebutuhan > 0 && paguBebas >= kebutuhan * 2,
+    cakupan: readiness.items
+      .filter((i) => i.target > 0)
+      .map((i) => {
+        const sesudah = i.berfungsi + prioritas.terpilih.filter((b) => b.itemKode === i.itemKode).reduce((a, b) => a + b.qty, 0);
+        return {
+          kode: i.itemKode,
+          nama: nama(i.itemKode),
+          satuan: satuan(i.itemKode),
+          target: i.target,
+          sebelum: i.berfungsi,
+          sesudah,
+          persenSebelum: persen(i.berfungsi, i.target),
+          persenSesudah: persen(sesudah, i.target),
+        };
+      }),
+  };
+}

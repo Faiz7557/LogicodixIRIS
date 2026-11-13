@@ -3,7 +3,7 @@
  * Angka skor dan status datang dari mesin backend; di sini hanya urutan, kalimat, dan label.
  */
 import { formatAngka } from "./format";
-import type { CatalogItem, DesaPaparan, Peran, ReadinessItem, ReadinessResult, ReferensiPergub } from "./types";
+import type { CatalogItem, DesaPaparan, HargaRow, Peran, ReadinessItem, ReadinessResult, ReferensiPergub } from "./types";
 
 export type ItemView = ReadinessItem & {
   nama: string;
@@ -102,4 +102,69 @@ export const ALASAN_TERKUNCI_GAMBUT = "Desa ini tidak tercatat punya lahan gambu
  */
 export function itemTerkunci(catalog: CatalogItem[], peatFrac: number): CatalogItem[] {
   return catalog.filter((c) => c.hanyaGambut && peatFrac === 0);
+}
+
+/** Harga acuan satu item untuk satu aksi ("beli" atau "perbaiki"); `null` bila belum ada. */
+export function hargaItem(rows: HargaRow[], kode: string, aksi: "beli" | "perbaiki"): number | null {
+  return rows.find((h) => h.itemKode === kode && h.aksi === aksi)?.hargaRp ?? null;
+}
+
+/** Satu baris tabel "Tangani ini lebih dulu": keadaan, tindakan, dan biayanya. */
+export type BarisTindakan = {
+  kunci: string;
+  kode: string;
+  nama: string;
+  keadaan: string;
+  aksi: string;
+  biaya: number | null;
+  ragam: "kurang" | "rusak" | "kosong";
+};
+
+/**
+ * Baris tindakan terurut dari item paling genting (urutan `items` sudah dari kesenjangan terbesar).
+ * Ukurannya sama dengan mesin prioritas (engine/priority.ts): kekurangan = target dikurangi yang berfungsi;
+ * unit rusak diperbaiki dulu sampai menutup kekurangan, sisanya baru dibeli. Unit rusak tanpa harga perbaikan
+ * ikut dibeli. Unit rusak di luar kekurangan tidak dimasukkan karena paket minimum sudah terpenuhi tanpanya.
+ */
+export function barisTindakan(items: ItemView[], catalog: CatalogItem[], hargaRows: HargaRow[]): BarisTindakan[] {
+  const out: BarisTindakan[] = [];
+  for (const it of items) {
+    const c = catalog.find((x) => x.kode === it.itemKode);
+    const alat = c?.punyaRusak ?? true;
+    const n = (x: number) => `${formatAngka(x)} ${it.satuan}`;
+    if (it.belumDiisi) {
+      out.push({ kunci: `${it.itemKode}:catat`, kode: it.itemKode, nama: it.nama, keadaan: "Belum dicatat, dihitung 0", aksi: "Catat jumlahnya", biaya: null, ragam: "kosong" });
+      continue;
+    }
+    const kurang = Math.max(it.target - it.berfungsi, 0);
+    if (kurang === 0) continue;
+    const hPerbaiki = hargaItem(hargaRows, it.itemKode, "perbaiki");
+    const perbaiki = alat && hPerbaiki !== null ? Math.min(it.rusak, kurang) : 0;
+    const beli = kurang - perbaiki;
+    const keadaan = alat ? `Ada ${formatAngka(it.berfungsi)}, butuh ${n(it.target)}` : `Tersedia ${formatAngka(it.berfungsi)}, butuh ${n(it.target)}`;
+    if (perbaiki > 0) {
+      out.push({
+        kunci: `${it.itemKode}:perbaiki`,
+        kode: it.itemKode,
+        nama: it.nama,
+        keadaan: `${keadaan}, ${n(it.rusak)} rusak`,
+        aksi: `Perbaiki ${n(perbaiki)}`,
+        biaya: perbaiki * (hPerbaiki ?? 0),
+        ragam: "rusak",
+      });
+    }
+    if (beli > 0) {
+      const h = hargaItem(hargaRows, it.itemKode, "beli");
+      out.push({
+        kunci: `${it.itemKode}:beli`,
+        kode: it.itemKode,
+        nama: it.nama,
+        keadaan: perbaiki > 0 ? `Masih kurang ${n(beli)} setelah diperbaiki` : keadaan,
+        aksi: alat ? `Beli ${n(beli)}` : `Tambah dana ${n(beli)}`,
+        biaya: h === null ? null : beli * h,
+        ragam: "kurang",
+      });
+    }
+  }
+  return out;
 }

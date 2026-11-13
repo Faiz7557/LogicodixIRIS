@@ -14,7 +14,8 @@ import {
 import type { CatalogItem, DesaCard, HargaRow, Peran, ReadinessResult, ReferensiPergub } from "@/lib/types";
 import { KalenderSatelit } from "./KalenderSatelit";
 import { KotakPetaGudang } from "./model3d/KotakPetaGudang";
-import { KartuLebih, KartuSkor, TanganiDulu, barisTindakan } from "./RingkasanGudang";
+import { barisTindakan } from "@/lib/kesiapan";
+import { KartuLebih, KartuSkor, TanganiDulu } from "./RingkasanGudang";
 
 /** Jeda muncul bertahap untuk [data-muncul] (dibaca CSS sebagai --tunda). */
 export const tunda = (ms: number) => ({ ["--tunda" as string]: `${ms}ms` }) as CSSProperties;

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { mockCatalog } from "@/test/fixtures";
 import type { ItemView } from "@/lib/kesiapan";
 import type { HargaRow } from "@/lib/types";
-import { barisTindakan } from "./RingkasanGudang";
+import { barisTindakan } from "@/lib/kesiapan";
 
 const item = (itemKode: string, target: number, berfungsi: number, rusak: number): ItemView => ({
   itemKode,
