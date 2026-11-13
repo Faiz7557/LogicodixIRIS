@@ -153,8 +153,9 @@ describe("ringkasan paparan memakai angka kalender satelit", () => {
   it("fakta memuat bulan rawan, hari terbanyak, dan jumlah tahun terdeteksi", async () => {
     const f = await faktaRingkasan("paparan", KODE_UJI);
     expect(f.bulan_ravan).toBe("September");
+    expect(f.titik_total).toBe("42");
+    expect(f.hari_total).toBe("21");
     expect(f.hari_terbanyak).toBe("3");
-    expect(f.jumlah_tahun_terdeteksi).toBe("7 dari 15");
     const t = templateRingkasan("paparan", f);
     expect(t.butir[1]).toContain("Titik api paling sering muncul September sampai September");
     expect(validasiRingkasan(t, f)).toEqual({ ok: true, pelanggaran: [] });

@@ -93,11 +93,9 @@ export async function faktaRingkasan(halaman: HalamanRingkasan, kode?: string): 
     };
     return {
       tahun_uji: String(TAHUN_UJI),
-      keputusan_gerbang: bt.gerbang.keputusan,
       uji_a: bt.gerbang.a ? "lulus" : "tidak lulus",
       uji_b: bt.gerbang.b ? "lulus" : "tidak lulus",
       kesimpulan_2026: kesimpulanBacktest(bt.metrik, TAHUN_UJI),
-      data_akhir_2026: bt.dataAkhir2026 ?? "belum ada",
       capture_20_paparan: paparan === undefined ? "belum ada" : formatPersen(paparan),
       capture_20_acak: acak === undefined ? "belum ada" : formatPersen(acak),
       kohort_tampak_aman: kohortTeks("tampak_aman"),
@@ -121,10 +119,8 @@ export async function faktaRingkasan(halaman: HalamanRingkasan, kode?: string): 
       tahun_awal: "2012",
       tahun_ekstrem: card.tahunEkstrem.map(String),
       tahun_terdeteksi: card.strip.filter((s) => s.terpapar && card.tahunEkstrem.includes(s.tahun)).map((s) => String(s.tahun)),
-      jumlah_tahun_terdeteksi: st.totalTahun ? `${st.terdeteksi} dari ${st.totalTahun}` : "belum ada",
       tahun_tenang: formatAngka(p.tahunTenang),
       tingkat: LABEL_TIER[p.tier],
-      porsi_gambut: formatPersen(card.desa.peatFrac),
       bulan_ravan: st.rawan.hari > 0 ? NAMA_BULAN[st.rawan.i] : "belum ada",
       musim: st.musim.length ? `${NAMA_BULAN[st.musim[0]]} sampai ${NAMA_BULAN[st.musim[st.musim.length - 1]]}` : "belum ada",
       hari_terbanyak: formatAngka(st.terpadat.detDays),
@@ -270,11 +266,10 @@ export function templateRingkasan(halaman: HalamanRingkasan, f: Fakta): { judul:
       const satu = terdeteksi.length
         ? `Tahun kering ekstrem yang terdeteksi satelit: ${daftar(terdeteksi)}.`
         : "Tidak ada tahun kering ekstrem yang terdeteksi satelit.";
-      const gambut = teks(f, "porsi_gambut");
       const rata = teks(f, "kecamatan_rata_rata");
       const musim = teks(f, "musim", "belum ada");
       const dua =
-        `${teks(f, "tingkat", "Tingkat paparan belum ada")}${gambut ? `, porsi gambut ${gambut}` : ""}.` +
+        `${teks(f, "tingkat", "Tingkat paparan belum ada")}.` +
         (rata ? ` Rata-rata kecamatan: ${rata} desa terdeteksi satelit pada tahun kering ekstrem.` : "") +
         (musim === "belum ada" ? "" : ` Titik api paling sering muncul ${musim}.`);
       return { judul, butir: [satu, dua, catatan] };
@@ -346,12 +341,18 @@ export function templateRingkasan(halaman: HalamanRingkasan, f: Fakta): { judul:
           : `Pada uji ${teks(f, "tahun_uji")}, peringkat riwayat menangkap ${pap} dan urutan acak ${teks(f, "capture_20_acak", "belum ada")}.`);
       const kohort = teks(f, "kohort_tampak_aman", "belum ada");
       const dua =
-        `Keputusan gerbang data: ${teks(f, "keputusan_gerbang")}. Data ${teks(f, "tahun_uji")} sampai: ${teks(f, "data_akhir_2026", "belum ada")}.` +
+        `Gerbang data: uji A ${teks(f, "uji_a", "belum ada")}, uji B ${teks(f, "uji_b", "belum ada")}.` +
         (kohort === "belum ada" ? "" : ` Desa yang tampak aman sebelumnya, terdeteksi pada ${teks(f, "tahun_uji")}: ${kohort}.`);
       return { judul, butir: [satu, dua, catatan] };
     }
   }
 }
+
+/** Tambahan aturan per halaman; hanya memuat hal yang tidak berlaku umum. */
+const PETUNJUK: Partial<Record<HalamanRingkasan, string>> = {
+  timemachine:
+    "Judul berisi hasil uji terpenting, bukan peringatan: sebut angka tangkapan dan pembanding terbaik. Sebut angka kohort tampak aman bila ada. Kata ramalan cukup di catatan_wajib, jangan di judul.",
+};
 
 const ATURAN =
   "Kamu menulis ringkasan satu halaman aplikasi kesiapan karhutla desa untuk perangkat desa. " +
@@ -380,7 +381,7 @@ export async function getRingkasan(halaman: HalamanRingkasan, kode?: string): Pr
   const kunci = `${halaman}:${JSON.stringify(fakta)}`;
   const ada = cache.get(kunci);
   if (ada) return ada;
-  const mentah = await tulisJson(`${ATURAN} Halaman: ${halaman}.`, `FAKTA\n${JSON.stringify(fakta)}`, SKEMA);
+  const mentah = await tulisJson(`${ATURAN} Halaman: ${halaman}. ${PETUNJUK[halaman] ?? ""}`, `FAKTA\n${JSON.stringify(fakta)}`, SKEMA);
   if (mentah) {
     try {
       const j = JSON.parse(mentah) as { judul: string; butir: string[] };
