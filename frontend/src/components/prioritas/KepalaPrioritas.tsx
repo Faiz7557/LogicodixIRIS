@@ -31,8 +31,8 @@ export function KepalaPrioritas({
   kalimat: string;
   menghitung: boolean;
   galat: string | null;
-  /** Ringkasan yang dimuat: halaman Anggaran punya angka sendiri, jangan memakai fakta halaman Keputusan. */
-  halaman: "prioritas" | "anggaran";
+  /** Ringkasan yang dimuat: tiap halaman punya fakta sendiri, jangan berbagi fakta halaman Keputusan. */
+  halaman: "prioritas" | "anggaran" | "usulan";
 }) {
   return (
     <>

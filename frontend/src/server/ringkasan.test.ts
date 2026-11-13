@@ -73,7 +73,7 @@ describe("templateRingkasan", () => {
     expect(t.butir).toHaveLength(3);
     expect(validasiRingkasan(t, FAKTA).ok).toBe(true);
   });
-  it.each(["paparan", "kesiapan", "prioritas", "anggaran", "timemachine"] as const)("template %s dari DB uji lolos pengaman", async (h) => {
+  it.each(["paparan", "kesiapan", "prioritas", "anggaran", "usulan", "timemachine"] as const)("template %s dari DB uji lolos pengaman", async (h) => {
     const f = await faktaRingkasan(h, h === "timemachine" ? undefined : KODE_UJI);
     expect(validasiRingkasan(templateRingkasan(h, f), f)).toEqual({ ok: true, pelanggaran: [] });
   });

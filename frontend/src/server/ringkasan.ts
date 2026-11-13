@@ -4,13 +4,14 @@ import { LABEL_TIER, headlinePaparan, labelTampakAman } from "@/lib/kalimat";
 import { barisTindakan, urutkanKesenjangan } from "@/lib/kesiapan";
 import { keyBaris, ringkasAnggaran, ringkasKeputusan, type KeputusanMap } from "@/lib/prioritas";
 import { NAMA_BULAN, statistikSatelit } from "@/lib/satelitBulanan";
-import type { CatalogItem, HalamanRingkasan, Ringkasan, Status } from "@/lib/types";
+import type { CatalogItem, HalamanRingkasan, Kanal, Ringkasan, Status } from "@/lib/types";
+import { labelKanal } from "@/lib/usulan";
 import { getHargaEfektif } from "./efektif";
 import { HttpError } from "./http";
 import { getKesiapan } from "./kesiapan";
 import { modelPenulis, tulisJson } from "./llm";
 import { getPrioritas } from "./prioritas";
-import { getBacktest, getCatalog, getDesaCard } from "./queries";
+import { getBacktest, getCatalog, getDesaCard, q } from "./queries";
 
 /*
  * Ringkasan satu halaman (plan 09 Bagian C). Server menyusun fakta yang sudah diformat persis seperti di layar,
@@ -47,6 +48,7 @@ const CATATAN_WAJIB: Record<HalamanRingkasan, string> = {
   kesiapan: "Skor mengukur kelengkapan paket minimum asumsi tim, bukan jaminan api bisa dipadamkan.",
   prioritas: "Urutan ini hasil hitungan dengan sebagian harga asumsi tim; keputusan tetap di musyawarah desa.",
   anggaran: "Anggaran dan harga berasal dari acuan tim; sisa anggaran bukan berarti alat sudah cukup.",
+  usulan: "Angka di surat dibekukan saat terbit dan memakai harga acuan tim, bukan penawaran setempat.",
   timemachine: "Ini uji mundur pada deteksi satelit, bukan ramalan kebakaran di desa tertentu.",
 };
 
@@ -193,6 +195,24 @@ export async function faktaRingkasan(halaman: HalamanRingkasan, kode?: string): 
     };
   }
 
+  if (halaman === "usulan") {
+    // Halaman Usulan punya angka sendiri: bahan surat (belanja disetujui) dan riwayat surat.
+    const [jumlah, terakhir] = await Promise.all([
+      q("SELECT COUNT(*) AS n FROM usulan WHERE desa_kode = ?", [k]),
+      q("SELECT kanal, baris_json FROM usulan WHERE desa_kode = ? ORDER BY id DESC LIMIT 1", [k]),
+    ]);
+    const surat = terakhir[0];
+    return {
+      kekurangan_anggaran: formatRupiah(dana.kekurangan),
+      disetujui_jumlah: formatAngka(dana.jumlahDisetujui),
+      nilai_disetujui: formatRupiah(dana.disetujuiRp),
+      jumlah_surat: formatAngka(Number(jumlah[0]?.n ?? 0)),
+      kanal_terakhir: surat ? labelKanal(String(surat.kanal) as Kanal) : "belum ada",
+      alat_surat_terakhir: surat ? formatAngka((JSON.parse(String(surat.baris_json)) as unknown[]).length) : "0",
+      catatan_wajib,
+    };
+  }
+
   return {
     pagu: formatRupiah(pr.paguRp),
     total_terpilih: formatRupiah(pr.terpakaiRp),
@@ -300,6 +320,16 @@ export function templateRingkasan(halaman: HalamanRingkasan, f: Fakta): { judul:
           (teks(f, "cukup") === "ya"
             ? "Anggaran sudah cukup untuk semua alat yang harganya diketahui."
             : `Uang yang masih kurang ${teks(f, "kurang_rp")}.`);
+      return { judul, butir: [satu, dua, catatan] };
+    }
+    case "usulan": {
+      const jumlahSurat = teks(f, "jumlah_surat", "0");
+      const judul = `Bahan surat: ${teks(f, "disetujui_jumlah", "0")} baris belanja disetujui senilai ${teks(f, "nilai_disetujui")}.`;
+      const satu = `Anggaran yang masih kurang ${teks(f, "kekurangan_anggaran")}.`;
+      const dua =
+        jumlahSurat === "0"
+          ? "Belum ada surat yang diterbitkan."
+          : `${jumlahSurat} surat sudah diterbitkan; yang terakhir ke ${teks(f, "kanal_terakhir", "belum ada")}, berisi ${teks(f, "alat_surat_terakhir", "0")} alat.`;
       return { judul, butir: [satu, dua, catatan] };
     }
     case "timemachine": {
