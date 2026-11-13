@@ -398,7 +398,7 @@ npx tsx scripts/seed-accounts.ts --desa 6112070019
 | `/data` | Tidak ada `PERLU_DIISI`; catatan `label_jenuh` tampil |
 | Login `demo-mpa`, simpan alat | Tersimpan; banner akun demonstrasi tampil |
 | Login `demo-sekdes`, buka usulan, cetak | Skor sesudah sama dengan hitungan baris disetujui |
-| Tombol Ringkasan AI di empat halaman | Ringkasan tampil; label sumber `ai` atau `template` |
+| Tombol Ringkasan AI di enam halaman (Informasi detail, Kesiapan, Keputusan, Anggaran, Usulan, Time Machine) | Ringkasan tampil; label sumber `ai` atau `template`; setiap angka di ringkasan bisa ditunjuk di halaman itu |
 | 31 pencarian dalam semenit dari satu perangkat | Perangkat itu kena 429; perangkat lain tetap bisa mencari |
 | Buka `/desa/6112070019` tanpa login | Tampil; tidak ada data inventaris |
 | Buka `/desa/6112070019/kesiapan` tanpa login | Dialihkan ke `/masuk` |
