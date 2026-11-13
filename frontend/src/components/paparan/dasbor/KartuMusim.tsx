@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { formatAngka } from "@/lib/format";
 import { NAMA_BULAN, NAMA_BULAN_PENDEK } from "@/lib/satelitBulanan";
-import { KepalaKartu, LencanaDemo, kelasKartu, type TahunDasbor } from "./dasar";
+import { KepalaKartu, kelasKartu, type TahunDasbor } from "./dasar";
 
 const L = 300;
 const T = 120;
@@ -15,7 +15,7 @@ const T = 120;
  */
 export function KartuMusim({ data, dalam }: { data: TahunDasbor[]; dalam: (t: number) => boolean }) {
   const [sorot, setSorot] = useState<number | null>(null);
-  const perBulan = Array.from({ length: 12 }, (_, i) => data.filter((d) => dalam(d.tahun)).reduce((a, d) => a + d.bulan[i], 0));
+  const perBulan = Array.from({ length: 12 }, (_, i) => data.filter((d) => dalam(d.tahun)).reduce((a, d) => a + (d.bulan?.[i] ?? 0), 0));
   const total = perBulan.reduce((a, b) => a + b, 0);
   const maks = Math.max(...perBulan, 1);
   const puncak = perBulan.indexOf(Math.max(...perBulan));
@@ -29,7 +29,7 @@ export function KartuMusim({ data, dalam }: { data: TahunDasbor[]; dalam: (t: nu
 
   return (
     <section aria-labelledby="musim" className={`${kelasKartu} flex flex-col`} style={{ animationDelay: "120ms" }}>
-      <KepalaKartu id="musim" judul="Musim titik api" keterangan="Hari deteksi per bulan, semua tahun dalam rentang." kanan={<LencanaDemo />} />
+      <KepalaKartu id="musim" judul="Musim titik api" keterangan="Hari deteksi per bulan, semua tahun dalam rentang." />
 
       <div className="relative mt-4 flex-1">
         <svg viewBox={`0 0 ${L} ${T}`} preserveAspectRatio="none" aria-hidden="true" className="h-36 w-full overflow-visible">

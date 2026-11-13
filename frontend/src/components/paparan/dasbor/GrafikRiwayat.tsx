@@ -3,7 +3,7 @@
 import { useRef } from "react";
 import { formatAngka } from "@/lib/format";
 import { NAMA_BULAN, NAMA_BULAN_PENDEK } from "@/lib/satelitBulanan";
-import { KepalaKartu, LencanaDemo, METRIK, batasRapi, kelasKartu, nilaiDari, type Metrik, type TahunDasbor } from "./dasar";
+import { KepalaKartu, METRIK, batasRapi, kelasKartu, nilaiDari, type Metrik, type TahunDasbor } from "./dasar";
 
 /**
  * Grafik utama: satu batang per tahun (pola grafik Payments pada referensi).
@@ -158,12 +158,13 @@ export function GrafikRiwayat({
   );
 }
 
-/** Rincian tahun terpilih: status, dua angka, dan sebaran per bulan (demo). */
+/** Rincian tahun terpilih: status, dua angka, dan sebaran per bulan bila tabel `desa_bulan` ada. */
 function RincianTahun({ d }: { d: TahunDasbor }) {
-  const maks = Math.max(...d.bulan, 1);
-  const puncak = d.bulan.indexOf(Math.max(...d.bulan));
+  const bulan = d.bulan;
+  const maks = bulan ? Math.max(...bulan, 1) : 1;
+  const puncak = bulan ? bulan.indexOf(Math.max(...bulan)) : 0;
   return (
-    <div aria-live="polite" className="mt-5 grid gap-4 rounded-xl bg-surface-2 p-4 md:grid-cols-[minmax(0,15rem)_minmax(0,1fr)] md:gap-6">
+    <div aria-live="polite" className={`mt-5 grid gap-4 rounded-xl bg-surface-2 p-4 md:gap-6 ${bulan ? "md:grid-cols-[minmax(0,15rem)_minmax(0,1fr)]" : ""}`}>
       <div>
         <p className="flex flex-wrap items-center gap-2">
           <span className="tabular text-2xl font-semibold tracking-tight">{d.tahun}</span>
@@ -190,13 +191,13 @@ function RincianTahun({ d }: { d: TahunDasbor }) {
         </dl>
       </div>
 
+      {bulan ? (
       <figure className="min-w-0">
         <figcaption className="flex items-center justify-between gap-2 text-xs text-muted">
           <span>{d.hari > 0 ? `Hari deteksi per bulan, puncak ${NAMA_BULAN[puncak]}` : "Tidak ada hari deteksi tahun ini"}</span>
-          <LencanaDemo />
         </figcaption>
         <div className="mt-2 flex h-16 items-end gap-1">
-          {d.bulan.map((b, i) => (
+          {bulan.map((b, i) => (
             <span key={i} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1">
               <span
                 className={`block w-full rounded-sm transition-[height] duration-500 [transition-timing-function:var(--pegas)] ${b > 0 ? (i === puncak ? "bg-ember" : "bg-ember/45") : "bg-line"}`}
@@ -213,8 +214,9 @@ function RincianTahun({ d }: { d: TahunDasbor }) {
             </span>
           ))}
         </div>
-        <p className="sr-only">{d.bulan.map((b, i) => `${NAMA_BULAN[i]} ${b} hari`).join(", ")}</p>
+        <p className="sr-only">{bulan.map((b, i) => `${NAMA_BULAN[i]} ${b} hari`).join(", ")}</p>
       </figure>
+      ) : null}
     </div>
   );
 }

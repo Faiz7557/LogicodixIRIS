@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { formatAngka } from "@/lib/format";
-import { NAMA_BULAN, NAMA_BULAN_PENDEK, sebarBulanan } from "@/lib/satelitBulanan";
+import { NAMA_BULAN, NAMA_BULAN_PENDEK } from "@/lib/satelitBulanan";
 import type { DesaPaparan, DesaTahun } from "@/lib/types";
 import { PilihTampilanSatelit } from "./PilihTampilanSatelit";
 import { TINGKAT, tingkat, type TahunSatelit } from "./skalaSatelit";
@@ -10,7 +10,7 @@ import { TINGKAT, tingkat, type TahunSatelit } from "./skalaSatelit";
  * Baris = bulan, kolom = tahun, sehingga musim kebakaran terlihat sebagai pita mendatar.
  * Tahun kering ekstrem diberi latar kolom dan label tebal, jadi arti tidak hanya lewat warna.
  *
- * DEMO: angka per bulan diperkirakan dari total hari per tahun (lib/satelitBulanan) sampai backend punya `desa_bulan`.
+ * Angka per bulan dari tabel `desa_bulan`. Bila tabel itu belum ada, kalender dan balok 3D tidak dirender.
  */
 
 export function KalenderSatelit({
@@ -24,14 +24,16 @@ export function KalenderSatelit({
   tahunEkstrem: number[];
   paparan: DesaPaparan;
 }) {
-  if (strip.length === 0) return null;
+  if (strip.length === 0 || strip.some((s) => !s.bulan)) return null;
   const awal = strip[0].tahun;
   const akhir = strip[strip.length - 1].tahun;
 
-  const data: TahunSatelit[] = strip.map((s) => {
-    const ekstrem = tahunEkstrem.includes(s.tahun);
-    return { tahun: s.tahun, hari: s.detDays, ekstrem, bulan: sebarBulanan(kode, s.tahun, s.detDays, ekstrem) };
-  });
+  const data: TahunSatelit[] = strip.map((s) => ({
+    tahun: s.tahun,
+    hari: s.detDays,
+    ekstrem: tahunEkstrem.includes(s.tahun),
+    bulan: s.bulan!,
+  }));
 
   const terdeteksi = strip.filter((s) => s.terpapar);
   // Tahun dengan hari deteksi terbanyak (hari berbeda yang ada titik api), bukan lama satu kebakaran.
@@ -133,8 +135,7 @@ export function KalenderSatelit({
               Kapan titik api muncul di desa ini?
             </h2>
             <p className="text-sm text-muted">
-              Hari ada titik api per bulan, {awal} sampai {akhir}.{" "}
-              <span className="rounded bg-warn-soft px-1.5 py-0.5 text-xs font-semibold text-warn">Demo</span>
+              Hari ada titik api per bulan, {awal} sampai {akhir}.
             </p>
           </div>
         }
@@ -172,9 +173,7 @@ export function KalenderSatelit({
 
       <div className="mt-5 flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-t border-line pt-4">
         <p className="max-w-[72ch] text-sm text-muted">
-          Setiap kotak satu bulan. Makin gelap, makin banyak hari ada titik api di desa. Kolom berlatar pasir = tahun kering ekstrem.{" "}
-          <span className="font-semibold text-ink">Demo:</span> angka per bulan diperkirakan dari total hari per tahun dengan pola musim kemarau
-          Kalimantan, sampai data satelit per bulan tersedia.
+          Setiap kotak satu bulan. Makin gelap, makin banyak hari ada titik api di desa. Kolom berlatar pasir = tahun kering ekstrem.
         </p>
         <ul aria-label="Keterangan warna" className="flex items-center gap-1.5 text-sm text-muted">
           <li>Sedikit</li>

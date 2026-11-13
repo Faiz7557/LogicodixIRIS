@@ -59,6 +59,9 @@ export const mockPergubKalteng: ReferensiPergub[] = [
 const tahun = Array.from({ length: 15 }, (_, i) => 2012 + i);
 const terpapar = new Set([2015, 2019, 2026]);
 
+/** 12 angka bulan: semua hari deteksi jatuh di September. */
+const bulanDari = (hari: number) => Array.from({ length: 12 }, (_, i) => (i === 8 ? hari : 0));
+
 /** Strip 2012-2026 dengan tahun terpapar yang ditentukan. */
 export const stripDari = (terpaparSet: number[]) =>
   tahun.map((t) => ({
@@ -66,6 +69,7 @@ export const stripDari = (terpaparSet: number[]) =>
     nDet: terpaparSet.includes(t) ? 6 : 0,
     detDays: terpaparSet.includes(t) ? 3 : 0,
     terpapar: terpaparSet.includes(t),
+    bulan: bulanDari(terpaparSet.includes(t) ? 3 : 0),
   }));
 
 export const mockDesaCard: DesaCard = {
@@ -92,6 +96,7 @@ export const mockDesaCard: DesaCard = {
     nDet: terpapar.has(t) ? 6 : 0,
     detDays: terpapar.has(t) ? 3 : 0,
     terpapar: terpapar.has(t),
+    bulan: bulanDari(terpapar.has(t) ? 3 : 0),
   })),
   paparan: {
     mode: "live",

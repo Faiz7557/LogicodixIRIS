@@ -50,7 +50,6 @@ async function Isi({ params }: { params: Promise<{ kode: string }> }) {
         <RingkasanAi halaman="paparan" kode={kode} />
       </div>
       <DasborSatelit
-        kode={kode}
         namaDesa={desa.nama}
         lokasi={`${desa.kecNama}, ${desa.kabNama}, ${desa.provNama}`}
         strip={card.strip}

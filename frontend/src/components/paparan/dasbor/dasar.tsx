@@ -2,14 +2,14 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
-/** Satu tahun di dasbor: angka tahunan dari backend, sebaran per bulan masih demo (lib/satelitBulanan). */
+/** Satu tahun di dasbor. `bulan` dari tabel `desa_bulan`; `null` bila tabel itu belum ada (tampilan bulanan disembunyikan). */
 export type TahunDasbor = {
   tahun: number;
   hari: number;
   titik: number;
   terpapar: boolean;
   ekstrem: boolean;
-  bulan: number[];
+  bulan: number[] | null;
 };
 
 export type Metrik = "hari" | "titik";
@@ -131,14 +131,6 @@ export function KepalaKartu({ id, judul, keterangan, kanan }: { id: string; judu
       </div>
       {kanan}
     </div>
-  );
-}
-
-export function LencanaDemo() {
-  return (
-    <span title="Sebaran per bulan diperkirakan dari total hari per tahun sampai data bulanan tersedia." className="shrink-0 rounded-md bg-warn-soft px-1.5 py-0.5 text-xs font-semibold text-warn">
-      Demo
-    </span>
   );
 }
 

@@ -98,9 +98,30 @@ export async function getRiwayatJangkar(): Promise<DesaTahun[] | null> {
     const tahun = 2020 + i;
     const r = rows.find((x) => Number(x.tahun) === tahun);
     return r
-      ? { tahun, nDet: Number(r.n_det), detDays: Number(r.det_days), terpapar: Number(r.terpapar) === 1 }
-      : { tahun, nDet: 0, detDays: 0, terpapar: false };
+      ? { tahun, nDet: Number(r.n_det), detDays: Number(r.det_days), terpapar: Number(r.terpapar) === 1, bulan: null }
+      : { tahun, nDet: 0, detDays: 0, terpapar: false, bulan: null };
   });
+}
+
+/**
+ * Hari deteksi per bulan untuk satu desa: tahun -> 12 angka (Jan sampai Des). `null` bila tabel
+ * `desa_bulan` belum ada (DB dari pipeline lama); tampilan bulanan lalu disembunyikan.
+ */
+async function getBulanan(kode: string): Promise<Map<number, number[]> | null> {
+  let rows: Row[];
+  try {
+    rows = await q("SELECT tahun, bulan, det_days FROM desa_bulan WHERE kode = ?", [kode]);
+  } catch (e) {
+    if (e instanceof HttpError && e.status === 503) return null;
+    throw e;
+  }
+  const hasil = new Map<number, number[]>();
+  for (const r of rows) {
+    const tahun = Number(r.tahun);
+    if (!hasil.has(tahun)) hasil.set(tahun, Array<number>(12).fill(0));
+    hasil.get(tahun)![Number(r.bulan) - 1] = Number(r.det_days);
+  }
+  return hasil;
 }
 
 export async function getDesaCard(kode: string): Promise<DesaCard | null> {
@@ -109,8 +130,9 @@ export async function getDesaCard(kode: string): Promise<DesaCard | null> {
     [kode],
   );
   if (!d) return null;
-  const [strip, [p], [k], ext, gerbang] = await Promise.all([
+  const [strip, bulanan, [p], [k], ext, gerbang] = await Promise.all([
     q("SELECT tahun, n_det, det_days, terpapar FROM desa_tahun WHERE kode = ? AND tahun BETWEEN 2012 AND 2026 ORDER BY tahun", [kode]),
+    getBulanan(kode),
     q("SELECT * FROM desa_paparan WHERE kode = ? AND mode = 'live'", [kode]),
     q("SELECT * FROM kecamatan_paparan WHERE kec_kode = ? AND mode = 'live'", [d.kec_kode]),
     metaNilai("ext_years"),
@@ -127,6 +149,7 @@ export async function getDesaCard(kode: string): Promise<DesaCard | null> {
     tahunEkstrem: ext ? ext.split(",").map(Number).filter(Number.isFinite) : [],
     strip: strip.map((r) => ({
       tahun: Number(r.tahun), nDet: Number(r.n_det), detDays: Number(r.det_days), terpapar: Number(r.terpapar) === 1,
+      bulan: bulanan ? (bulanan.get(Number(r.tahun)) ?? Array<number>(12).fill(0)) : null,
     })),
     paparan: {
       mode: "live",

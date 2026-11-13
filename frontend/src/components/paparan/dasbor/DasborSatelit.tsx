@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { RentangKecamatan } from "@/components/paparan/RentangKecamatan";
 import { formatAngka } from "@/lib/format";
 import { kalimatKecamatan, sebutKecamatan } from "@/lib/kalimat";
-import { NAMA_BULAN, sebarBulanan } from "@/lib/satelitBulanan";
+import { NAMA_BULAN } from "@/lib/satelitBulanan";
 import type { DesaPaparan, DesaTahun, KecamatanPaparan } from "@/lib/types";
 import { GrafikRiwayat } from "./GrafikRiwayat";
 import { KartuMatriks } from "./KartuMatriks";
@@ -19,7 +19,6 @@ import { KepalaKartu, METRIK, RENTANG, Segmen, gerakDikurangi, kelasKartu, type 
  * Pemilih di kepala mengubah semua kartu sekaligus.
  */
 export function DasborSatelit({
-  kode,
   namaDesa,
   lokasi,
   strip,
@@ -29,7 +28,6 @@ export function DasborSatelit({
   kecNama,
   tampakAman,
 }: {
-  kode: string;
   namaDesa: string;
   lokasi: string;
   strip: DesaTahun[];
@@ -41,12 +39,18 @@ export function DasborSatelit({
 }) {
   const data: TahunDasbor[] = useMemo(
     () =>
-      strip.map((s) => {
-        const ekstrem = tahunEkstrem.includes(s.tahun);
-        return { tahun: s.tahun, hari: s.detDays, titik: s.nDet, terpapar: s.terpapar, ekstrem, bulan: sebarBulanan(kode, s.tahun, s.detDays, ekstrem) };
-      }),
-    [kode, strip, tahunEkstrem],
+      strip.map((s) => ({
+        tahun: s.tahun,
+        hari: s.detDays,
+        titik: s.nDet,
+        terpapar: s.terpapar,
+        ekstrem: tahunEkstrem.includes(s.tahun),
+        bulan: s.bulan,
+      })),
+    [strip, tahunEkstrem],
   );
+  // Tanpa tabel desa_bulan, kartu bulanan disembunyikan; angka per bulan tidak dibangkitkan di klien.
+  const adaBulan = data.length > 0 && data.every((d) => d.bulan !== null);
 
   const [metrik, setMetrik] = useState<Metrik>("hari");
   const [rentang, setRentang] = useState<Rentang>("semua");
@@ -57,7 +61,7 @@ export function DasborSatelit({
   const awal = data[0]?.tahun ?? 2012;
   const dalam = (t: number) => (rentang === "semua" ? true : rentang === "lima" ? t > akhir - 5 : tahunEkstrem.includes(t));
 
-  const wawasan = buatWawasan({ data, paparan, kecamatan, kecNama, tampakAman });
+  const wawasan = buatWawasan({ data, paparan, kecamatan, kecNama, tampakAman, adaBulan });
 
   return (
     <div className="mx-auto max-w-[1200px] px-4 py-6 md:px-8 md:py-8">
@@ -92,13 +96,15 @@ export function DasborSatelit({
         <KartuPaparan paparan={paparan} jumlahTahun={data.length} ekstrem={data.filter((x) => x.ekstrem).map((x) => ({ tahun: x.tahun, kena: x.terpapar, hari: x.hari, titik: x.titik }))} />
       </div>
 
-      <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)_minmax(0,1fr)]">
-        <KartuMusim data={data} dalam={dalam} />
+      <div
+        className={`mt-4 grid gap-4 md:grid-cols-2 ${adaBulan ? "xl:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)_minmax(0,1fr)]" : ""}`}
+      >
+        {adaBulan ? <KartuMusim data={data} dalam={dalam} /> : null}
         <div className="grid gap-4">
           <KartuMatriks id="kartu-hari" judul="Hari deteksi" satuan="hari" data={data} nilai={(d) => d.hari} dalam={dalam} jeda={160} />
           <KartuMatriks id="kartu-titik" judul="Titik api" satuan="titik" data={data} nilai={(d) => d.titik} dalam={dalam} jeda={200} />
         </div>
-        <div className="md:col-span-2 xl:col-span-1">
+        <div className={adaBulan ? "md:col-span-2 xl:col-span-1" : ""}>
           <KartuWawasan daftar={wawasan} />
         </div>
       </div>
@@ -196,12 +202,14 @@ function buatWawasan({
   kecamatan,
   kecNama,
   tampakAman,
+  adaBulan,
 }: {
   data: TahunDasbor[];
   paparan: DesaPaparan;
   kecamatan: KecamatanPaparan;
   kecNama: string;
   tampakAman: boolean;
+  adaBulan: boolean;
 }): Wawasan[] {
   const persen = (x: number) => `${formatAngka(Math.round(x * 100))}%`;
   const lajuDesa = paparan.nExt > 0 ? paparan.kExt / paparan.nExt : 0;
@@ -216,15 +224,15 @@ function buatWawasan({
     },
   ];
 
-  const bulan = Array.from({ length: 12 }, (_, i) => data.reduce((a, d) => a + d.bulan[i], 0));
+  const bulan = Array.from({ length: 12 }, (_, i) => data.reduce((a, d) => a + (d.bulan?.[i] ?? 0), 0));
   const total = bulan.reduce((a, b) => a + b, 0);
-  if (total > 0) {
+  if (adaBulan && total > 0) {
     const puncak = bulan.indexOf(Math.max(...bulan));
     const tiga = [puncak - 1, puncak, puncak + 1].filter((i) => i >= 0 && i < 12).reduce((a, i) => a + bulan[i], 0);
     daftar.push({
       angka: persen(tiga / total),
       judul: `Hari deteksi jatuh di sekitar ${NAMA_BULAN[puncak]}`,
-      isi: `Alat sebaiknya siap sebelum ${NAMA_BULAN[Math.max(puncak - 1, 0)]}. Sebaran per bulan masih perkiraan (demo).`,
+      isi: `Alat sebaiknya siap sebelum ${NAMA_BULAN[Math.max(puncak - 1, 0)]}.`,
     });
   }
 

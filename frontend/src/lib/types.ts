@@ -156,6 +156,8 @@ export interface DesaTahun {
   nDet: number;
   detDays: number;
   terpapar: boolean;
+  /** Hari deteksi per bulan, Jan sampai Des (tabel `desa_bulan`). `null` di semua tahun bila tabel belum ada. */
+  bulan: number[] | null;
 }
 
 export interface DesaPaparan {

@@ -145,6 +145,11 @@ function isiUji(): InStatement[] {
         sql: "INSERT INTO desa_tahun (kode, tahun, n_det, det_days, terpapar) VALUES (?,?,?,?,?)",
         args: [d.kode, t, kena ? 6 : 0, kena ? 3 : 0, kena ? 1 : 0],
       });
+      // Sebaran per bulan (Plan 11 T4): September menampung sampai 30 hari, sisanya Agustus.
+      const hari = kena ? 3 : 0;
+      for (const [bulan, n] of [[9, Math.min(hari, 30)], [8, hari - Math.min(hari, 30)]] as const) {
+        if (n > 0) s.push({ sql: "INSERT INTO desa_bulan (kode, tahun, bulan, det_days) VALUES (?,?,?,?)", args: [d.kode, t, bulan, n] });
+      }
     }
     if (!kec.has(w.kec)) kec.set(w.kec, { idx: [] });
     kec.get(w.kec)!.idx.push(i);
@@ -189,9 +194,22 @@ function isiUji(): InStatement[] {
   return s;
 }
 
+/**
+ * DDL `desa_bulan` dari Plan 11 T4. `IF NOT EXISTS` supaya tetap jalan sebelum dan sesudah tabel ini
+ * ditambahkan ke db/schema.sql oleh sisi pipeline.
+ */
+const DESA_BULAN_DDL = `CREATE TABLE IF NOT EXISTS desa_bulan (
+  kode TEXT NOT NULL REFERENCES desa(kode),
+  tahun INTEGER NOT NULL,
+  bulan INTEGER NOT NULL CHECK (bulan BETWEEN 1 AND 12),
+  det_days INTEGER NOT NULL CHECK (det_days > 0),
+  PRIMARY KEY (kode, tahun, bulan)
+)`;
+
 export async function buildTestDb(url: string): Promise<Client> {
   const c = createClient({ url });
   await c.executeMultiple(readFileSync(path.join(AKAR, "db", "schema.sql"), "utf8"));
+  await c.execute(DESA_BULAN_DDL);
   await c.batch([...CSV.flatMap(muatCsv), ...isiUji()], "write");
   return c;
 }

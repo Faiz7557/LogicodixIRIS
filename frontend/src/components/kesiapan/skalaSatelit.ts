@@ -23,6 +23,6 @@ export interface TahunSatelit {
   /** Total hari ada titik api dalam setahun. */
   hari: number;
   ekstrem: boolean;
-  /** Hari ada titik api per bulan, Jan sampai Des (demo: diperkirakan dari total tahunan). */
+  /** Hari ada titik api per bulan, Jan sampai Des (tabel `desa_bulan`). */
   bulan: number[];
 }
