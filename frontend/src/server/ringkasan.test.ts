@@ -73,7 +73,7 @@ describe("templateRingkasan", () => {
     expect(t.butir).toHaveLength(3);
     expect(validasiRingkasan(t, FAKTA).ok).toBe(true);
   });
-  it.each(["paparan", "kesiapan", "prioritas", "timemachine"] as const)("template %s dari DB uji lolos pengaman", async (h) => {
+  it.each(["paparan", "kesiapan", "prioritas", "anggaran", "timemachine"] as const)("template %s dari DB uji lolos pengaman", async (h) => {
     const f = await faktaRingkasan(h, h === "timemachine" ? undefined : KODE_UJI);
     expect(validasiRingkasan(templateRingkasan(h, f), f)).toEqual({ ok: true, pelanggaran: [] });
   });
@@ -157,6 +157,26 @@ describe("ringkasan paparan memakai angka kalender satelit", () => {
     expect(f.jumlah_tahun_terdeteksi).toBe("7 dari 15");
     const t = templateRingkasan("paparan", f);
     expect(t.butir[1]).toContain("Titik api paling sering muncul September sampai September");
+    expect(validasiRingkasan(t, f)).toEqual({ ok: true, pelanggaran: [] });
+  });
+});
+
+describe("ringkasan anggaran", () => {
+  useTestDb();
+
+  it("fakta memuat sisa, cukup, dan cakupan per alat", async () => {
+    const f = await faktaRingkasan("anggaran", KODE_UJI);
+    expect(f).toMatchObject({ disetujui_rp: "Rp0", disetujui_jumlah: "0", cukup: "tidak", pagu_berlebih: "tidak" });
+    expect(Number(String(f.kurang_rp).replace(/[^0-9]/g, ""))).toBeGreaterThan(0);
+    expect((f.cakupan as string[]).length).toBe(3);
+    expect((f.cakupan as string[])[0]).toMatch(/^[^:]+: \d+% menjadi \d+%$/);
+  });
+
+  it("template anggaran menyebut sisa dan uang yang masih kurang", async () => {
+    const f = await faktaRingkasan("anggaran", KODE_UJI);
+    const t = templateRingkasan("anggaran", f);
+    expect(t.butir[0]).toContain("sisa anggaran");
+    expect(t.butir[1]).toContain("Uang yang masih kurang");
     expect(validasiRingkasan(t, f)).toEqual({ ok: true, pelanggaran: [] });
   });
 });

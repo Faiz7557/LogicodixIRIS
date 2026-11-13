@@ -101,3 +101,62 @@ export function skorSetelahDisetujui(readiness: ReadinessResult, catalog: Catalo
 }
 
 export const ALASAN_MIN = 5;
+
+export type RingkasAnggaran = {
+  /** Biaya semua kebutuhan yang punya harga; dasar kurva "skor menurut besar anggaran". */
+  kebutuhan: number;
+  kekurangan: number;
+  disetujuiRp: number;
+  jumlahDisetujui: number;
+  sisaRp: number;
+  skorDisetujui: number;
+  cukup: boolean;
+  /** Pagu dua kali lipat atau lebih dari seluruh kebutuhan hampir pasti salah ketik (mis. kelebihan nol). */
+  berlebih: boolean;
+  cakupan: { kode: string; nama: string; satuan: string; target: number; sebelum: number; sesudah: number; persenSebelum: number; persenSesudah: number }[];
+};
+
+/**
+ * Angka halaman Anggaran (langkah 1): kebutuhan, kekurangan, anggaran terpakai, dan cakupan per item.
+ * Dipakai `PaguView` dan fakta ringkasan AI, supaya keduanya menyebut angka yang sama.
+ */
+export function ringkasAnggaran(
+  hasil: PriorityResult,
+  readiness: ReadinessResult,
+  catalog: CatalogItem[],
+  paguRp: number,
+  keputusan: KeputusanMap,
+): RingkasAnggaran {
+  const disetujui = barisDisetujui(hasil.terpilih, keputusan);
+  const sementara = anggaranSementara(paguRp, disetujui);
+  const kebutuhan = totalBiaya([...hasil.terpilih, ...hasil.tidakTerdanai]);
+  const kekurangan = totalBiaya(hasil.tidakTerdanai);
+  const nama = (kode: string) => catalog.find((c) => c.kode === kode)?.nama ?? kode;
+  const satuan = (kode: string) => catalog.find((c) => c.kode === kode)?.satuan ?? "";
+  const persen = (ada: number, target: number) => Math.round(Math.min(ada / target, 1) * 100);
+  return {
+    kebutuhan,
+    kekurangan,
+    disetujuiRp: sementara.disetujuiRp,
+    jumlahDisetujui: disetujui.length,
+    sisaRp: sementara.sisaRp,
+    skorDisetujui: skorSetelahDisetujui(readiness, catalog, disetujui),
+    cukup: kekurangan === 0,
+    berlebih: kebutuhan > 0 && paguRp >= kebutuhan * 2,
+    cakupan: readiness.items
+      .filter((i) => i.target > 0)
+      .map((i) => {
+        const sesudah = i.berfungsi + hasil.terpilih.filter((b) => b.itemKode === i.itemKode).reduce((a, b) => a + b.qty, 0);
+        return {
+          kode: i.itemKode,
+          nama: nama(i.itemKode),
+          satuan: satuan(i.itemKode),
+          target: i.target,
+          sebelum: i.berfungsi,
+          sesudah,
+          persenSebelum: persen(i.berfungsi, i.target),
+          persenSesudah: persen(sesudah, i.target),
+        };
+      }),
+  };
+}

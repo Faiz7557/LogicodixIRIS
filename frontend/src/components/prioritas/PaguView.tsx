@@ -6,7 +6,7 @@ import { useAngkaNaik } from "@/components/paparan/dasbor/dasar";
 import { BilahAksi, kelasAksiUtama } from "@/components/ui/BilahAksi";
 import { rankPriorities } from "@/lib/engine/priority";
 import { formatAngka, formatRupiah, formatSkor } from "@/lib/format";
-import { keyBaris, namaAksi } from "@/lib/prioritas";
+import { keyBaris, namaAksi, ringkasAnggaran } from "@/lib/prioritas";
 import type { PriorityResult } from "@/lib/types";
 import { BatangPagu, CakupanSesudah, KurvaSkorPagu, type BarisCakupan } from "./GrafikPrioritas";
 import { KepalaPrioritas } from "./KepalaPrioritas";
@@ -40,7 +40,7 @@ export function PaguView(data: DataPrioritas) {
   }, [catalog, paket, readiness, harga]);
 
   // Kurva skor untuk tiap besar dana; titik pagu dan kebutuhan penuh dihitung persis supaya label = angka kartu.
-  const { titikKurva, kebutuhan, skorPenuh } = useMemo(() => {
+  const { titikKurva, skorPenuh } = useMemo(() => {
     const penuh = urutkan(1e13);
     const atas = Math.max(penuh.terpakaiRp * 1.1, pagu * 1.15, 10_000_000);
     const langkah = Math.max(LANGKAH_TAMBAHAN, bulatAtas(atas / 60));
@@ -48,13 +48,16 @@ export function PaguView(data: DataPrioritas) {
     const besar = new Set([...Array.from({ length: n + 1 }, (_, i) => i * langkah), pagu, penuh.terpakaiRp]);
     return {
       titikKurva: [...besar].sort((a, b) => a - b).map((b) => ({ pagu: b, skor: urutkan(b).skorSesudah })),
-      kebutuhan: penuh.terpakaiRp,
       skorPenuh: penuh.skorSesudah,
     };
   }, [urutkan, pagu]);
 
-  // Kekurangan = biaya belanja yang tidak muat di pagu (sama dengan total daftar dan bahan usulan).
-  const kekurangan = hasil.tidakTerdanai.reduce((s, r) => s + r.biayaRp, 0);
+  // Kebutuhan, kekurangan, dan cakupan dari fungsi yang sama dengan fakta ringkasan AI.
+  const ringkasDana = useMemo(
+    () => ringkasAnggaran(hasil, readiness, catalog, pagu, p.keputusan),
+    [hasil, readiness, catalog, pagu, p.keputusan],
+  );
+  const { kebutuhan, kekurangan } = ringkasDana;
   const maksTambahan = bulatAtas(Math.max(kekurangan, kebutuhan - pagu, 0));
   const tambahanAktif = Math.min(tambahan, maksTambahan);
   const coba: PriorityResult = useMemo(() => (tambahanAktif > 0 ? urutkan(pagu + tambahanAktif) : hasil), [tambahanAktif, urutkan, pagu, hasil]);
@@ -64,17 +67,10 @@ export function PaguView(data: DataPrioritas) {
   const jumlahPada = (r: PriorityResult, kunci: string) => r.terpilih.filter((b) => keyBaris(b) === kunci).reduce((a, b) => a + b.qty, 0);
   const tambahDari = (r: PriorityResult, itemKode: string) => r.terpilih.filter((b) => b.itemKode === itemKode).reduce((a, b) => a + b.qty, 0);
 
-  const cakupan: BarisCakupan[] = readiness.items
-    .filter((i) => i.target > 0)
-    .map((i) => ({
-      kode: i.itemKode,
-      nama: p.nama(i.itemKode),
-      satuan: p.satuan(i.itemKode),
-      target: i.target,
-      sebelum: i.berfungsi,
-      sesudah: i.berfungsi + tambahDari(hasil, i.itemKode),
-      denganTambahan: tambahanAktif > 0 ? i.berfungsi + tambahDari(coba, i.itemKode) : undefined,
-    }));
+  const cakupan: BarisCakupan[] = ringkasDana.cakupan.map((c) => ({
+    ...c,
+    denganTambahan: tambahanAktif > 0 ? c.sebelum + tambahDari(coba, c.kode) : undefined,
+  }));
 
   // Dana tambahan sampai baris ke-i daftar kekurangan ikut terdanai (urutan sistem).
   const sampaiBaris = (i: number) => bulatAtas(Math.max(0, hasil.tidakTerdanai.slice(0, i + 1).reduce((s, r) => s + r.biayaRp, 0) - p.sisa));
@@ -88,6 +84,7 @@ export function PaguView(data: DataPrioritas) {
         namaDesa={namaDesa}
         aktif={1}
         ringkas={p.ringkasLangkah}
+        halaman="anggaran"
         judul="Cukupkah anggaran desa untuk alat pemadam?"
         kalimat={p.kalimat}
         menghitung={p.menghitung}

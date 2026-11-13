@@ -20,6 +20,7 @@ export function KepalaPrioritas({
   kalimat,
   menghitung,
   galat,
+  halaman,
 }: {
   kode: string;
   namaDesa: string;
@@ -30,6 +31,8 @@ export function KepalaPrioritas({
   kalimat: string;
   menghitung: boolean;
   galat: string | null;
+  /** Ringkasan yang dimuat: halaman Anggaran punya angka sendiri, jangan memakai fakta halaman Keputusan. */
+  halaman: "prioritas" | "anggaran";
 }) {
   return (
     <>
@@ -84,7 +87,7 @@ export function KepalaPrioritas({
         <p aria-live="polite" className="mt-1 min-h-5 text-sm font-semibold text-muted">
           {menghitung ? "Menghitung…" : ""}
         </p>
-        <RingkasanAi halaman="prioritas" kode={kode} className="mt-2" />
+        <RingkasanAi halaman={halaman} kode={kode} className="mt-2" />
       </header>
 
       {galat ? (

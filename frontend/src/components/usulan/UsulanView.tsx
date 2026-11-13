@@ -134,6 +134,7 @@ export function UsulanView({
     <div className="mx-auto max-w-[1120px] px-4 py-6 pb-32 md:px-8 md:py-8 md:pb-8">
       <KepalaPrioritas
         kode={kode}
+        halaman="prioritas"
         namaDesa={namaDesa}
         aktif={3}
         ringkas={ringkasLangkah}
