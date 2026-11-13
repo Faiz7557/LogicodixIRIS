@@ -92,3 +92,14 @@ export function keteranganProvinsi(provKode: string, pergub: ReferensiPergub[]):
   }
   return "";
 }
+
+/** Alasan item terkunci, satu kalimat yang sama di peta, formulir, dan halaman rincian. */
+export const ALASAN_TERKUNCI_GAMBUT = "Desa ini tidak tercatat punya lahan gambut.";
+
+/**
+ * Item yang terkunci untuk desa ini: item khusus gambut (sumur bor) di desa tanpa gambut.
+ * Item terkunci tetap ditampilkan supaya desa tahu alat itu ada, tetapi tidak dihitung dalam skor.
+ */
+export function itemTerkunci(catalog: CatalogItem[], peatFrac: number): CatalogItem[] {
+  return catalog.filter((c) => c.hanyaGambut && peatFrac === 0);
+}

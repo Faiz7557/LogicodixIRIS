@@ -3,6 +3,7 @@ import { AssumptionNote } from "@/components/ui/AssumptionNote";
 import { EmptyState } from "@/components/ui/PageState";
 import {
   bisaSusunPrioritas,
+  itemTerkunci,
   kalimatRantaiTerlemah,
   keadaanKesiapan,
   keteranganProvinsi,
@@ -97,7 +98,20 @@ export function KesiapanView({
                   berfungsi: it.berfungsi,
                   rusak: it.rusak,
                   belumDiisi: it.belumDiisi,
-                }))}
+                }))
+                // Item terkunci (sumur bor di desa tanpa gambut) tetap ada di peta, digembok.
+                .concat(
+                  itemTerkunci(catalog, desa.peatFrac).map((c) => ({
+                    kode: c.kode,
+                    nama: c.nama,
+                    satuan: c.satuan,
+                    target: 0,
+                    berfungsi: 0,
+                    rusak: 0,
+                    belumDiisi: false,
+                    terkunci: true,
+                  })),
+                )}
             />
           </section>
 
