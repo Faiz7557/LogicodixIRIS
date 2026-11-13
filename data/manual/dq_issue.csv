@@ -9,7 +9,6 @@ geometri_2020,Batas desa HDX geometri 2020,"Batas desa HDX: geometri 2020, tinja
 kelurahan_tercampur,Batas memuat kelurahan tanpa Dana Desa,Data batas memuat kelurahan yang tidak menerima Dana Desa,peringatan,
 luas_desa_bias,Desa luas lebih mudah terdeteksi,Desa luas lebih mudah terdeteksi,peringatan,
 konsesi,Api konsesi tidak tertangani anggaran desa,Api di konsesi tidak bisa diselesaikan oleh anggaran desa,batasan,
-paket_asumsi,Paket minimum dan bobot asumsi,Paket minimum dan bobot adalah asumsi tim,batasan,
 harga_ssh_tertinggi,SSH harga satuan tertinggi,SSH adalah harga satuan tertinggi,info,
 servis_pendekatan,Harga servis pompa air umum,Harga servis berasal dari servis pompa air umum di Kediri,peringatan,
 dana_desa_2027,Belum ada Permendesa Dana Desa 2027,Belum ada Permendesa fokus Dana Desa 2027,peringatan,

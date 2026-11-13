@@ -42,7 +42,7 @@ export function KepalaPrioritas({
             const n = i + 1;
             const on = n === aktif;
             return (
-              <li key={l.judul} className="min-w-0">
+              <li key={l.judul} data-muncul style={{ ["--tunda" as string]: `${i * 70}ms` } as React.CSSProperties} className="min-w-0">
                 <Link
                   href={l.href(kode)}
                   aria-current={on ? "step" : undefined}
@@ -67,7 +67,18 @@ export function KepalaPrioritas({
                     <span className="hidden truncate text-xs text-muted md:block">{ringkas[i]}</span>
                   </span>
                   {!on ? (
-                    <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="hidden shrink-0 text-muted transition-transform group-hover:translate-x-0.5 md:block">
+                    <svg
+                      aria-hidden="true"
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="hidden shrink-0 text-muted transition-transform group-hover:translate-x-0.5 md:block"
+                    >
                       <path d="M5 12h14M13 6l6 6-6 6" />
                     </svg>
                   ) : null}
@@ -79,9 +90,22 @@ export function KepalaPrioritas({
       </nav>
 
       <header className="mt-6">
-        <p className="text-sm font-semibold text-ember">Prioritas belanja · {namaDesa}</p>
-        <h1 className="mt-1 text-balance text-3xl font-semibold leading-tight tracking-tight md:text-4xl">{judul}</h1>
-        <p aria-live="polite" className="mt-2 max-w-[70ch] text-lg font-semibold leading-snug">
+        <p data-muncul style={{ ["--tunda" as string]: "60ms" } as React.CSSProperties} className="text-sm font-semibold text-ember">
+          Prioritas belanja · {namaDesa}
+        </p>
+        <h1
+          data-muncul
+          style={{ ["--tunda" as string]: "100ms" } as React.CSSProperties}
+          className="mt-1 text-balance text-3xl font-semibold leading-tight tracking-tight md:text-4xl"
+        >
+          {judul}
+        </h1>
+        <p
+          data-muncul
+          style={{ ["--tunda" as string]: "150ms" } as React.CSSProperties}
+          aria-live="polite"
+          className="mt-2 max-w-[70ch] text-lg font-semibold leading-snug"
+        >
           {kalimat}
         </p>
         <p aria-live="polite" className="mt-1 min-h-5 text-sm font-semibold text-muted">

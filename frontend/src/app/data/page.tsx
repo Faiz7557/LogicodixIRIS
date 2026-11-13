@@ -7,11 +7,11 @@ import { ErrorState } from "@/components/ui/PageState";
 import { getSesiAkun } from "@/server/auth";
 import { getDataPage } from "@/server/queries";
 
-export const metadata: Metadata = { title: "Data dan Asumsi" };
+export const metadata: Metadata = { title: "Sumber dan Batasan Data" };
 
 /*
  * Isi sama untuk semua desa. Publik: halaman biasa. Sudah masuk: tampil di kerangka dasbor desa akun,
- * sama seperti Time Machine. Data dibaca dari basis data (GET /api/data) lewat `getDataPage`.
+ * sama seperti Paparan. Data dibaca dari basis data (GET /api/data) lewat `getDataPage`.
  */
 export default function DataPage() {
   return (

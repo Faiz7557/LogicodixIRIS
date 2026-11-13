@@ -46,8 +46,8 @@ describe("format", () => {
   });
 
   it("keterangan meter berlabel turunan", () => {
-    expect(keteranganMeter(3)).toBe("≈90 m pada asumsi 30 m per buah");
-    expect(keteranganMeter(10, 30)).toBe("≈300 m pada asumsi 30 m per buah");
+    expect(keteranganMeter(3)).toBe("≈90 m (30 m per buah)");
+    expect(keteranganMeter(10, 30)).toBe("≈300 m (30 m per buah)");
   });
 
   it("membersihkan nama HDX bergaris miring", () => {

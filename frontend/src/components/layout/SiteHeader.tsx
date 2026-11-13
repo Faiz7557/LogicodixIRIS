@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { TombolKeluar } from "./TombolKeluar";
 
 const links = [
-  { href: "/time-machine", label: "Time Machine" },
   { href: "/data", label: "Data" },
 ];
 
@@ -18,18 +17,18 @@ export type SesiHeader = { desaKode: string } | null;
 
 /**
  * Header situs.
- * Publik: logo di kiri dalam kolom 1040 px, tautan Time Machine, Data, dan Masuk di kanan.
+ * Publik: logo di kiri dalam kolom 1040 px, tautan Data dan Masuk di kanan.
  * Berakun: selebar layar dengan logo di paling kiri, sejajar sidebar. Di laptop tidak ada tombol,
- * karena Time Machine, Data, dan Keluar ada di sidebar. Di HP (tanpa sidebar) tautan tetap ada.
- * Kartu Paparan, Time Machine, dan Data saat sudah masuk ikut mode berakun.
+ * karena Data dan Keluar ada di sidebar. Di HP (tanpa sidebar) tautan tetap ada.
+ * Kartu Paparan dan Data saat sudah masuk ikut mode berakun.
  * Halaman publik lain saat sudah masuk: tombol Masuk diganti "Dasbor desa".
  */
 export function SiteHeader({ sesi = null }: { sesi?: SesiHeader }) {
   const path = usePathname();
   const paparan = PAPARAN.exec(path)?.[1];
-  // Time Machine saat sudah masuk juga tampil di kerangka dasbor.
+  // Data saat sudah masuk juga tampil di kerangka dasbor.
   const akun =
-    AKUN.test(path) || (!!sesi && (path === "/time-machine" || path === "/data" || sesi.desaKode === paparan));
+    AKUN.test(path) || (!!sesi && (path === "/data" || sesi.desaKode === paparan));
 
   return (
     // Berakun di laptop: header menempel (tinggi tetap 45 px) supaya sidebar di bawahnya muat satu layar.

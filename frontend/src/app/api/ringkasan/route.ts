@@ -5,7 +5,7 @@ import { getRingkasan } from "@/server/ringkasan";
 
 // POST /api/ringkasan: ringkasan satu halaman. Klien hanya menyebut halaman dan kode; fakta disusun server.
 const body = z.object({
-  halaman: z.enum(["paparan", "kesiapan", "prioritas", "anggaran", "usulan", "timemachine"], { error: "Halaman tidak dikenal." }),
+  halaman: z.enum(["paparan", "kesiapan", "prioritas", "anggaran", "usulan"], { error: "Halaman tidak dikenal." }),
   kode: z.string().min(1).max(20).optional(),
 });
 

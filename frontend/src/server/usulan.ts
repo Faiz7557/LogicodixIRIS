@@ -1,6 +1,6 @@
 import type { InArgs, Row } from "@libsql/client";
 import { formatRupiah, formatSkor, formatTanggal } from "@/lib/format";
-import { PAGU_MAKS, keyBaris, skorSetelahDisetujui, totalBiaya } from "@/lib/prioritas";
+import { PAGU_MAKS, keyBaris, skorSetelahDisetujui, tambahTerkunci, totalBiaya } from "@/lib/prioritas";
 import { terbilangRupiah } from "@/lib/terbilang";
 import type { Aksi, CatalogItem, DesaCard, HargaRow, Kanal, PrioritasPayload, PriorityRow, ReadinessResult, Usulan } from "@/lib/types";
 import { namaDesaSaja } from "@/lib/usulan";
@@ -30,7 +30,7 @@ interface Konteks {
 }
 
 async function konteks(kode: string): Promise<Konteks> {
-  const [card, readiness, prioritas, catalog, harga] = await Promise.all([
+  const [card, kesiapan, prioritas, catalog, harga] = await Promise.all([
     getDesaCard(kode),
     getKesiapan(kode),
     getPrioritas(kode),
@@ -38,6 +38,8 @@ async function konteks(kode: string): Promise<Konteks> {
     getHargaEfektif(kode),
   ]);
   if (!card) throw new HttpError(404, "desa_tidak_ada", "Desa tidak ditemukan.");
+  // Skor surat memperhitungkan alat dari surat sebelumnya (sama dengan skor di layar Prioritas).
+  const readiness = tambahTerkunci(kesiapan, prioritas.terkunci, catalog);
 
   const setuju = new Set(prioritas.keputusan.filter((k) => k.keputusan === "setuju").map((k) => `${k.itemKode}|${k.aksi}`));
   const disetujui = prioritas.terpilih.filter((b) => setuju.has(`${b.itemKode}|${b.aksi}`));
@@ -93,6 +95,8 @@ async function simpanUsulan(
   facts: FaktaUsulan,
   baris: unknown[],
   narasi: { teks: string; sumber: "ai" | "template"; model: string | null },
+  /** Baris yang masuk surat: keputusannya dihapus karena kini terkunci sebagai riwayat. */
+  dikunci: PriorityRow[] = [],
 ): Promise<number> {
   const waktu = new Date().toISOString();
   const tx = await db().transaction("write");
@@ -103,6 +107,10 @@ async function simpanUsulan(
       args: [kode, kanal, JSON.stringify(facts), JSON.stringify(baris), narasi.teks, narasi.sumber, narasi.model, akunId, waktu],
     });
     const id = Number(hasil.lastInsertRowid);
+    // Saran berikutnya untuk item yang sama mulai dari "Perlu diputuskan", bukan mewarisi keputusan lama.
+    for (const b of dikunci) {
+      await tx.execute({ sql: "DELETE FROM keputusan WHERE desa_kode = ? AND item_kode = ? AND aksi = ?", args: [kode, b.itemKode, b.aksi] });
+    }
     await tx.execute(auditStatement(akunId, kode, "terbitkan_usulan", { id, kanal, jenis: facts.jenis }));
     await tx.commit();
     return id;
@@ -143,7 +151,7 @@ export async function terbitkanUsulan(
   const fakta = susunFakta(k, dimuat);
   // Narasi hanya melihat nama placeholder fakta isi; data surat (jenis, nomor) ditambahkan sesudahnya.
   const narasi = await generateNarrative(fakta, kanal);
-  return simpanUsulan(kode, akunId, kanal, { ...fakta, jenis: "alat", nomor }, bekukanBaris(k, dimuat), narasi);
+  return simpanUsulan(kode, akunId, kanal, { ...fakta, jenis: "alat", nomor }, bekukanBaris(k, dimuat), narasi, dimuat);
 }
 
 /** Proposal permohonan bantuan anggaran: sejumlah uang, bukan daftar alat. Isi selalu dari template. */

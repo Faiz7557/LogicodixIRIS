@@ -21,11 +21,14 @@ export function ReadinessGauge({
   status,
   label,
   transisi = false,
+  durasi,
 }: {
   skor: number;
   status: Status;
-  label?: { teks: string; sr: string };
+  label?: { teks: React.ReactNode; sr: string };
   transisi?: boolean;
+  /** Durasi isi busur saat masuk (ms); bawaan 400 ms. Dijeda sampai terlihat bila di dalam [data-muncul]. */
+  durasi?: number;
 }) {
   const pct = Math.min(Math.max(skor, 0), 100);
   const offset = LEN * (1 - pct / 100);
@@ -42,7 +45,7 @@ export function ReadinessGauge({
             strokeLinecap="round"
           />
           <path
-            className={transisi ? "gauge-transisi" : "gauge-fill"}
+            className={transisi ? "gauge-transisi" : "tunggu-terlihat gauge-fill"}
             d={`M ${100 - R} 100 A ${R} ${R} 0 0 1 ${100 + R} 100`}
             fill="none"
             stroke={WARNA[status]}
@@ -50,7 +53,10 @@ export function ReadinessGauge({
             strokeLinecap="round"
             strokeDasharray={LEN}
             strokeDashoffset={offset}
-            style={{ ["--gauge-len" as string]: LEN }}
+            style={{
+              ["--gauge-len" as string]: LEN,
+              ...(durasi ? { animationDuration: `${durasi}ms`, animationDelay: "200ms", animationTimingFunction: "var(--pegas)" } : {}),
+            }}
           />
         </svg>
         <p className="tabular absolute inset-x-0 bottom-0 text-center text-5xl font-bold leading-none">

@@ -73,8 +73,8 @@ describe("templateRingkasan", () => {
     expect(t.butir).toHaveLength(3);
     expect(validasiRingkasan(t, FAKTA).ok).toBe(true);
   });
-  it.each(["paparan", "kesiapan", "prioritas", "anggaran", "usulan", "timemachine"] as const)("template %s dari DB uji lolos pengaman", async (h) => {
-    const f = await faktaRingkasan(h, h === "timemachine" ? undefined : KODE_UJI);
+  it.each(["paparan", "kesiapan", "prioritas", "anggaran", "usulan"] as const)("template %s dari DB uji lolos pengaman", async (h) => {
+    const f = await faktaRingkasan(h, KODE_UJI);
     expect(validasiRingkasan(templateRingkasan(h, f), f)).toEqual({ ok: true, pelanggaran: [] });
   });
   it.each(["KOSONG", "NONGAMBUT", "D"])("template paparan desa %s lolos pengaman", async (kode) => {
@@ -167,7 +167,7 @@ describe("ringkasan anggaran", () => {
 
   it("fakta memuat sisa, cukup, dan cakupan per alat", async () => {
     const f = await faktaRingkasan("anggaran", KODE_UJI);
-    expect(f).toMatchObject({ disetujui_rp: "Rp0", disetujui_jumlah: "0", cukup: "tidak", pagu_berlebih: "tidak" });
+    expect(f).toMatchObject({ terkunci_rp: "Rp0", terkunci_jumlah: "0", cukup: "tidak", pagu_berlebih: "tidak" });
     expect(Number(String(f.kurang_rp).replace(/[^0-9]/g, ""))).toBeGreaterThan(0);
     expect((f.cakupan as string[]).length).toBe(3);
     expect((f.cakupan as string[])[0]).toMatch(/^[^:]+: \d+% menjadi \d+%$/);
@@ -210,11 +210,11 @@ describe("getRingkasan", () => {
   it("jatuh ke template saat jawaban bukan JSON", async () => {
     vi.stubEnv("OPENAI_API_KEY", "kunci-uji");
     vi.stubGlobal("fetch", jawab("bukan json"));
-    expect((await getRingkasan("timemachine")).sumber).toBe("template");
+    expect((await getRingkasan("paparan", KODE_UJI)).sumber).toBe("template");
   });
   it("jatuh ke template saat fetch gagal", async () => {
     vi.stubEnv("OPENAI_API_KEY", "kunci-uji");
     vi.stubGlobal("fetch", vi.fn(async () => { throw new Error("putus"); }));
-    expect((await getRingkasan("timemachine")).sumber).toBe("template");
+    expect((await getRingkasan("paparan", KODE_UJI)).sumber).toBe("template");
   });
 });

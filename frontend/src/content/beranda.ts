@@ -28,7 +28,7 @@ export const PERAN = [
   },
   {
     peran: "Publik dan juri",
-    bisa: "Melihat paparan desa, Time Machine, serta sumber dan batasan data. Tanpa akun.",
+    bisa: "Melihat paparan desa serta sumber dan batasan data. Tanpa akun.",
   },
 ] as const;
 

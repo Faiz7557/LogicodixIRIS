@@ -1,8 +1,7 @@
-import { kesimpulanBacktest } from "@/lib/backtest";
 import { formatAngka, formatPersen, formatRupiah, formatSkor } from "@/lib/format";
 import { LABEL_TIER, headlinePaparan, labelTampakAman } from "@/lib/kalimat";
 import { barisTindakan, urutkanKesenjangan } from "@/lib/kesiapan";
-import { keyBaris, ringkasAnggaran, ringkasKeputusan, type KeputusanMap } from "@/lib/prioritas";
+import { keyBaris, ringkasAnggaran, ringkasKeputusan, tambahTerkunci, type KeputusanMap } from "@/lib/prioritas";
 import { NAMA_BULAN, statistikSatelit } from "@/lib/satelitBulanan";
 import type { CatalogItem, HalamanRingkasan, Kanal, Ringkasan, Status } from "@/lib/types";
 import { labelKanal } from "@/lib/usulan";
@@ -11,7 +10,7 @@ import { HttpError } from "./http";
 import { getKesiapan } from "./kesiapan";
 import { modelPenulis, tulisJson } from "./llm";
 import { getPrioritas } from "./prioritas";
-import { getBacktest, getCatalog, getDesaCard, q } from "./queries";
+import { getCatalog, getDesaCard, q } from "./queries";
 
 /*
  * Ringkasan satu halaman (plan 09 Bagian C). Server menyusun fakta yang sudah diformat persis seperti di layar,
@@ -24,7 +23,6 @@ export type Fakta = Record<string, string | string[]>;
 const ANGKA = /\d+(?:[.,]\d+)*/g;
 const MAKS_JUDUL = 160;
 const MAKS_BUTIR = 240;
-const TAHUN_UJI = 2026;
 
 export const KATA_TERLARANG = [
   "penyebab",
@@ -41,15 +39,15 @@ export const KATA_TERLARANG = [
 
 const STATUS_TEKS: Record<Status, string> = { siap: "siap", sebagian: "sebagian siap", rawan: "rawan" };
 const AKSI_TEKS = { beli: "Beli", perbaiki: "Perbaiki" } as const;
-const STATUS_KEPUTUSAN = { setuju: "disetujui", tunda: "ditunda", tolak: "ditolak", belum: "belum diputuskan" } as const;
+// Kolom "Ditunda" sudah dihapus: keputusan lama "tunda" tampil sebagai belum diputuskan.
+const STATUS_KEPUTUSAN = { setuju: "disetujui", tunda: "belum diputuskan", tolak: "ditolak", belum: "belum diputuskan" } as const;
 
 const CATATAN_WAJIB: Record<HalamanRingkasan, string> = {
   paparan: "Tanpa deteksi satelit bukan berarti aman. Ini deteksi satelit, bukan luas terbakar.",
-  kesiapan: "Skor mengukur kelengkapan paket minimum asumsi tim, bukan jaminan api bisa dipadamkan.",
-  prioritas: "Urutan ini hasil hitungan dengan sebagian harga asumsi tim; keputusan tetap di musyawarah desa.",
-  anggaran: "Anggaran dan harga berasal dari acuan tim; sisa anggaran bukan berarti alat sudah cukup.",
-  usulan: "Angka di surat dibekukan saat terbit dan memakai harga acuan tim, bukan penawaran setempat.",
-  timemachine: "Ini uji mundur pada deteksi satelit, bukan ramalan kebakaran di desa tertentu.",
+  kesiapan: "Skor mengukur kelengkapan paket minimum, bukan jaminan api bisa dipadamkan.",
+  prioritas: "Urutan ini hasil hitungan dari harga acuan; keputusan tetap di musyawarah desa.",
+  anggaran: "Anggaran dan harga memakai acuan tim; sisa anggaran bukan berarti alat sudah cukup.",
+  usulan: "Angka di surat dibekukan saat terbit dan memakai harga acuan, bukan penawaran setempat.",
 };
 
 const SKEMA = {
@@ -79,30 +77,6 @@ function wajibKode(kode: string | undefined): string {
 
 export async function faktaRingkasan(halaman: HalamanRingkasan, kode?: string): Promise<Fakta> {
   const catatan_wajib = CATATAN_WAJIB[halaman];
-
-  if (halaman === "timemachine") {
-    const bt = await getBacktest();
-    const cap = (s: string) =>
-      bt.metrik.find((m) => m.tahunUji === TAHUN_UJI && m.unit === "desa" && m.metrik === "capture_20" && m.strategi === s)?.nilai;
-    const paparan = cap("paparan");
-    const acak = cap("acak");
-    const kohort = (nama: string) => bt.grup.find((g) => g.grup === nama && g.strata === "semua");
-    const kohortTeks = (nama: string) => {
-      const g = kohort(nama);
-      return g ? `${formatAngka(g.nTerpapar2026)} dari ${formatAngka(g.nDesa)} desa` : "belum ada";
-    };
-    return {
-      tahun_uji: String(TAHUN_UJI),
-      uji_a: bt.gerbang.a ? "lulus" : "tidak lulus",
-      uji_b: bt.gerbang.b ? "lulus" : "tidak lulus",
-      kesimpulan_2026: kesimpulanBacktest(bt.metrik, TAHUN_UJI),
-      capture_20_paparan: paparan === undefined ? "belum ada" : formatPersen(paparan),
-      capture_20_acak: acak === undefined ? "belum ada" : formatPersen(acak),
-      kohort_tampak_aman: kohortTeks("tampak_aman"),
-      kohort_aktif: kohortTeks("aktif"),
-      catatan_wajib,
-    };
-  }
 
   const k = wajibKode(kode);
   const card = await getDesaCard(k);
@@ -162,7 +136,10 @@ export async function faktaRingkasan(halaman: HalamanRingkasan, kode?: string): 
   // prioritas dan anggaran. Kolom catatan keputusan tidak dibaca sama sekali.
   const pr = await getPrioritas(k);
   const keputusan: KeputusanMap = Object.fromEntries(pr.keputusan.map((x) => [keyBaris(x), { keputusan: x.keputusan }]));
-  const dana = ringkasAnggaran(pr, hasil, catalog, pr.paguRp, keputusan);
+  // Sama seperti layar: baris yang sudah masuk surat dihitung sudah ada, dan sisa anggaran jadi dasar saran baru.
+  const siap = tambahTerkunci(hasil, pr.terkunci ?? [], catalog);
+  const paguBebas = Math.max(0, pr.paguRp - (pr.terkunciRp ?? 0));
+  const dana = ringkasAnggaran(pr, siap, catalog, paguBebas, keputusan);
   const rk = ringkasKeputusan(pr.terpilih, keputusan);
   const barisTerpilih = pr.terpilih.map((b) => {
     const c = catalog.find((x) => x.kode === b.itemKode);
@@ -173,13 +150,13 @@ export async function faktaRingkasan(halaman: HalamanRingkasan, kode?: string): 
   if (halaman === "anggaran") {
     return {
       pagu: formatRupiah(pr.paguRp),
-      skor: formatSkor(hasil.skor),
+      sisa_anggaran: formatRupiah(paguBebas),
+      terkunci_rp: formatRupiah(dana.terkunciRp),
+      terkunci_jumlah: formatAngka(dana.jumlahTerkunci),
+      terkunci_persen: pr.paguRp > 0 ? formatPersen(dana.terkunciRp / pr.paguRp) : "0%",
+      skor: formatSkor(siap.skor),
       skor_sesudah: formatSkor(pr.skorSesudah),
-      skor_naik: formatSkor(Math.max(pr.skorSesudah - hasil.skor, 0)),
-      disetujui_rp: formatRupiah(dana.disetujuiRp),
-      disetujui_jumlah: formatAngka(dana.jumlahDisetujui),
-      disetujui_persen: pr.paguRp > 0 ? formatPersen(dana.disetujuiRp / pr.paguRp) : "0%",
-      sisa_anggaran: formatRupiah(dana.sisaRp),
+      skor_naik: formatSkor(Math.max(pr.skorSesudah - siap.skor, 0)),
       kurang_rp: formatRupiah(dana.kekurangan),
       kebutuhan_rp: formatRupiah(dana.kebutuhan),
       cukup: dana.cukup ? "ya" : "tidak",
@@ -215,8 +192,9 @@ export async function faktaRingkasan(halaman: HalamanRingkasan, kode?: string): 
     skor: formatSkor(hasil.skor),
     skor_sesudah: formatSkor(pr.skorSesudah),
     skor_disetujui: formatSkor(dana.skorDisetujui),
-    sisa_anggaran: formatRupiah(dana.sisaRp),
-    keputusan: `${rk.setuju} disetujui, ${rk.tunda} ditunda, ${rk.tolak} ditolak, ${rk.belum} belum diputuskan`,
+    disetujui_rp: formatRupiah(dana.disetujuiRp),
+    sisa_anggaran: formatRupiah(dana.sisaSementara),
+    keputusan: `${rk.setuju} disetujui, ${rk.tolak} ditolak, ${rk.belum + rk.tunda} belum diputuskan`,
     jumlah_terpilih: formatAngka(pr.terpilih.length),
     terpilih: barisTerpilih,
     jumlah_tidak_terpilih: formatAngka(pr.tidakTerdanai.length),
@@ -307,10 +285,10 @@ export function templateRingkasan(halaman: HalamanRingkasan, f: Fakta): { judul:
       const judul = berlebih
         ? `Anggaran ${teks(f, "pagu")} jauh di atas kebutuhan ${teks(f, "kebutuhan_rp")}.`
         : `Belanja ${teks(f, "disetujui_rp")} dari anggaran ${teks(f, "pagu")} menaikkan skor dari ${teks(f, "skor")} menjadi ${teks(f, "skor_sesudah")}.`;
-      const satu = `${teks(f, "disetujui_jumlah", "0")} belanja disetujui (${teks(f, "disetujui_rp")}); sisa anggaran ${teks(f, "sisa_anggaran")}.`;
+      const satu = `Surat usulan sudah memakai ${teks(f, "terkunci_rp")} untuk ${teks(f, "terkunci_jumlah", "0")} belanja; sisa anggaran ${teks(f, "sisa_anggaran")}.`;
       const cak = larik(f, "cakupan")[0];
       const dua = berlebih
-        ? `Sisa ${teks(f, "sisa_anggaran")} tidak terpakai untuk alat pemadam; periksa lagi angkanya.`
+        ? `Sisa ${teks(f, "sisa_anggaran")} masih jauh di atas kebutuhan alat; periksa lagi angkanya.`
         : (cak ? `Cakupan ${cak}. ` : "") +
           (teks(f, "cukup") === "ya"
             ? "Anggaran sudah cukup untuk semua alat yang harganya diketahui."
@@ -327,32 +305,8 @@ export function templateRingkasan(halaman: HalamanRingkasan, f: Fakta): { judul:
           : `${jumlahSurat} surat sudah diterbitkan; yang terakhir ke ${teks(f, "kanal_terakhir", "belum ada")}, berisi ${teks(f, "alat_surat_terakhir", "0")} alat.`;
       return { judul, butir: [satu, dua, catatan] };
     }
-    case "timemachine": {
-      const kes = teks(f, "kesimpulan_2026", "Hasil uji belum tersedia.");
-      // Kalimat pertama kesimpulan menjadi judul; sisanya (bila ada) menjadi butir pertama.
-      const titik = kes.indexOf(". ");
-      const judul = titik > 0 ? kes.slice(0, titik + 1) : kes;
-      const sisa = titik > 0 ? kes.slice(titik + 2) : "";
-      const pap = teks(f, "capture_20_paparan", "belum ada");
-      const satu =
-        sisa ||
-        (pap === "belum ada"
-          ? `Angka uji ${teks(f, "tahun_uji")} belum tersedia.`
-          : `Pada uji ${teks(f, "tahun_uji")}, peringkat riwayat menangkap ${pap} dan urutan acak ${teks(f, "capture_20_acak", "belum ada")}.`);
-      const kohort = teks(f, "kohort_tampak_aman", "belum ada");
-      const dua =
-        `Gerbang data: uji A ${teks(f, "uji_a", "belum ada")}, uji B ${teks(f, "uji_b", "belum ada")}.` +
-        (kohort === "belum ada" ? "" : ` Desa yang tampak aman sebelumnya, terdeteksi pada ${teks(f, "tahun_uji")}: ${kohort}.`);
-      return { judul, butir: [satu, dua, catatan] };
-    }
   }
 }
-
-/** Tambahan aturan per halaman; hanya memuat hal yang tidak berlaku umum. */
-const PETUNJUK: Partial<Record<HalamanRingkasan, string>> = {
-  timemachine:
-    "Judul berisi hasil uji terpenting, bukan peringatan: sebut angka tangkapan dan pembanding terbaik. Sebut angka kohort tampak aman bila ada. Kata ramalan cukup di catatan_wajib, jangan di judul.",
-};
 
 const ATURAN =
   "Kamu menulis ringkasan satu halaman aplikasi kesiapan karhutla desa untuk perangkat desa. " +
@@ -381,7 +335,7 @@ export async function getRingkasan(halaman: HalamanRingkasan, kode?: string): Pr
   const kunci = `${halaman}:${JSON.stringify(fakta)}`;
   const ada = cache.get(kunci);
   if (ada) return ada;
-  const mentah = await tulisJson(`${ATURAN} Halaman: ${halaman}. ${PETUNJUK[halaman] ?? ""}`, `FAKTA\n${JSON.stringify(fakta)}`, SKEMA);
+  const mentah = await tulisJson(`${ATURAN} Halaman: ${halaman}.`, `FAKTA\n${JSON.stringify(fakta)}`, SKEMA);
   if (mentah) {
     try {
       const j = JSON.parse(mentah) as { judul: string; butir: string[] };

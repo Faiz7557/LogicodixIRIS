@@ -1,7 +1,7 @@
 import type { InStatement } from "@libsql/client";
 import { rankPriorities } from "@/lib/engine/priority";
-import { PAGU_DEFAULT, PAGU_MAKS, barisDisetujui, keyBaris, type KeputusanMap } from "@/lib/prioritas";
-import type { Aksi, CatalogItem, Keputusan, PrioritasPayload, PriorityRow } from "@/lib/types";
+import { PAGU_DEFAULT, PAGU_MAKS, barisDisetujui, keyBaris, tambahTerkunci, totalBiaya, type KeputusanMap } from "@/lib/prioritas";
+import type { Aksi, BarisTerkunci, CatalogItem, Keputusan, PrioritasPayload, PriorityRow } from "@/lib/types";
 import { auditStatement } from "./audit";
 import { db } from "./db";
 import { getHargaEfektif, getTargetEfektif } from "./efektif";
@@ -25,17 +25,58 @@ export async function getPagu(kode: string): Promise<number> {
   return r ? Number(r.pagu_rp) : PAGU_DEFAULT;
 }
 
+/**
+ * Baris belanja dari semua surat usulan alat desa ini, urut dari yang terlama. Surat permohonan anggaran
+ * tidak punya baris. Baris rusak atau tak dikenal diabaikan supaya satu surat lama tidak merusak layar.
+ */
+export async function getTerkunci(kode: string): Promise<BarisTerkunci[]> {
+  const rows = await q("SELECT id, baris_json, created_at FROM usulan WHERE desa_kode = ? ORDER BY id", [kode]);
+  const hasil: BarisTerkunci[] = [];
+  for (const r of rows) {
+    let baris: unknown;
+    try {
+      baris = JSON.parse(String(r.baris_json));
+    } catch {
+      continue;
+    }
+    if (!Array.isArray(baris)) continue;
+    for (const b of baris as (Partial<PriorityRow> & { sumberHarga?: unknown })[]) {
+      if (typeof b?.itemKode !== "string" || !AKSI.includes(b.aksi as Aksi)) continue;
+      const qty = Number(b.qty);
+      const biayaRp = Number(b.biayaRp);
+      if (!Number.isFinite(qty) || qty <= 0 || !Number.isFinite(biayaRp)) continue;
+      hasil.push({
+        itemKode: b.itemKode,
+        aksi: b.aksi as Aksi,
+        qty,
+        biayaRp,
+        usulanId: Number(r.id),
+        tanggal: String(r.created_at),
+        ...(typeof b.sumberHarga === "string" ? { sumberHarga: b.sumberHarga } : {}),
+      });
+    }
+  }
+  return hasil;
+}
+
 export async function getPrioritas(kode: string): Promise<PrioritasPayload> {
-  const [readiness, prices, catalog, paguRp, keputusan] = await Promise.all([
+  const [kesiapan, prices, catalog, paguRp, keputusan, terkunci] = await Promise.all([
     getKesiapan(kode),
     getHargaEfektif(kode),
     katalogEfektif(kode),
     getPagu(kode),
     q("SELECT item_kode, aksi, keputusan, catatan FROM keputusan WHERE desa_kode = ? ORDER BY item_kode, aksi", [kode]),
+    getTerkunci(kode),
   ]);
-  const hasil = rankPriorities({ catalog, readiness, prices, paguRp });
+  // Yang sudah masuk surat dianggap sudah dibeli: saran baru dihitung dari sisanya, dengan sisa anggaran.
+  const terkunciRp = totalBiaya(terkunci);
+  const readiness = tambahTerkunci(kesiapan, terkunci, catalog);
+  const hasil = rankPriorities({ catalog, readiness, prices, paguRp: Math.max(0, paguRp - terkunciRp) });
   return {
     ...hasil,
+    paguRp,
+    terkunci,
+    terkunciRp,
     keputusan: keputusan.map((r) => ({
       itemKode: String(r.item_kode),
       aksi: String(r.aksi) as Aksi,
