@@ -1,7 +1,7 @@
 import type { InArgs, Row } from "@libsql/client";
 import type { MetricRow } from "@/lib/backtest";
 import type {
-  CatalogItem, DesaCard, DesaGambut, DesaHit, HargaRow, KeputusanGerbang, PaketRow, Tier,
+  CatalogItem, DesaCard, DesaGambut, DesaHit, DesaTahun, HargaRow, KeputusanGerbang, PaketRow, Tier,
 } from "@/lib/types";
 import { db } from "./db";
 import { HttpError } from "./http";
@@ -80,6 +80,27 @@ async function gerbangPenuh(): Promise<Backtest["gerbang"]> {
 
 export async function getGerbang(): Promise<KeputusanGerbang> {
   return (await gerbangPenuh()).keputusan;
+}
+
+/** Desa jangkar kisah beranda: Kali Bandung, Kubu Raya (HDX 6112070019; Mongabay 31 Agu 2026). */
+export const KODE_JANGKAR = "6112070019";
+
+/** Riwayat deteksi satelit desa jangkar 2020-2026, atau `null` bila desa itu tidak ada di DB (mis. DB uji). */
+export async function getRiwayatJangkar(): Promise<DesaTahun[] | null> {
+  const [d] = await q("SELECT kode FROM desa WHERE kode = ?", [KODE_JANGKAR]);
+  if (!d) return null;
+  const rows = await q(
+    "SELECT tahun, n_det, det_days, terpapar FROM desa_tahun WHERE kode = ? AND tahun BETWEEN 2020 AND 2026 ORDER BY tahun",
+    [KODE_JANGKAR],
+  );
+  // Tahun tanpa baris dihitung nol supaya batang beranda selalu tujuh.
+  return Array.from({ length: 7 }, (_, i) => {
+    const tahun = 2020 + i;
+    const r = rows.find((x) => Number(x.tahun) === tahun);
+    return r
+      ? { tahun, nDet: Number(r.n_det), detDays: Number(r.det_days), terpapar: Number(r.terpapar) === 1 }
+      : { tahun, nDet: 0, detDays: 0, terpapar: false };
+  });
 }
 
 export async function getDesaCard(kode: string): Promise<DesaCard | null> {
