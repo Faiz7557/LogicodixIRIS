@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { jawabOpenAI as jawab } from "@/test/openaiUji";
 import { useTestDb } from "@/test/testDb";
+import { db } from "./db";
 import { getDesaCard } from "./queries";
 import { faktaRingkasan, getRingkasan, kosongkanCacheRingkasan, templateRingkasan, validasiRingkasan } from "./ringkasan";
 
@@ -97,6 +98,45 @@ describe("faktaRingkasan", () => {
   });
   it("kode kosong untuk halaman berdesa 400", async () => {
     await expect(faktaRingkasan("kesiapan")).rejects.toMatchObject({ status: 400 });
+  });
+});
+
+describe("ringkasan kesiapan menyebut dua sisi", () => {
+  useTestDb();
+
+  // Peta gudang menghitung angka "kurang"; fakta dan template harus memuat angka yang sama.
+  const isiInventaris = () =>
+    db().batch([
+      { sql: "INSERT INTO inventaris_item (desa_kode, item_kode, total, berfungsi, updated_by, updated_at) VALUES (?,?,?,?,?,?)", args: [KODE_UJI, "pompa_jinjing", 1, 1, 1, "2026-11-13T00:00:00.000Z"] },
+      { sql: "INSERT INTO inventaris_item (desa_kode, item_kode, total, berfungsi, updated_by, updated_at) VALUES (?,?,?,?,?,?)", args: [KODE_UJI, "selang_keluar", 10, 3, 1, "2026-11-13T00:00:00.000Z"] },
+      { sql: "INSERT INTO inventaris_item (desa_kode, item_kode, total, berfungsi, updated_by, updated_at) VALUES (?,?,?,?,?,?)", args: [KODE_UJI, "sumur_bor", 5, 2, 1, "2026-11-13T00:00:00.000Z"] },
+    ]);
+
+  it("fakta memuat angka kurang di samping angka berfungsi", async () => {
+    await isiInventaris();
+    const f = await faktaRingkasan("kesiapan", KODE_UJI);
+    expect(f.item).toEqual([
+      "Pompa jinjing: 1 dari 1 unit berfungsi, paket minimum terpenuhi",
+      "Selang keluar: 3 dari 10 buah berfungsi, kurang 7",
+      "Sumur bor: 2 dari 5 titik berfungsi, kurang 3",
+    ]);
+  });
+
+  it("pengaman menerima angka kurang dari fakta dan menolak angka lain", async () => {
+    await isiInventaris();
+    const f = await faktaRingkasan("kesiapan", KODE_UJI);
+    const judul = "Selang keluar paling genting.";
+    const lain = ["Skor kesiapan sebagian siap.", "Periksa sumur bor."];
+    expect(validasiRingkasan({ judul, butir: ["Selang keluar kurang 7.", ...lain] }, f).ok).toBe(true);
+    expect(validasiRingkasan({ judul, butir: ["Selang keluar kurang 8.", ...lain] }, f).pelanggaran).toEqual(["angka:8"]);
+  });
+
+  it("template kesiapan menyalin angka kurang dari fakta", async () => {
+    await isiInventaris();
+    const f = await faktaRingkasan("kesiapan", KODE_UJI);
+    const t = templateRingkasan("kesiapan", f);
+    expect(t.butir[1]).toContain("kurang 7; Sumur bor: 2 dari 5 titik berfungsi, kurang 3");
+    expect(validasiRingkasan(t, f)).toEqual({ ok: true, pelanggaran: [] });
   });
 });
 

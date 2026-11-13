@@ -123,7 +123,11 @@ export async function faktaRingkasan(halaman: HalamanRingkasan, kode?: string): 
         const satuan = catalog.find((x) => x.kode === it.itemKode)?.satuan ?? "";
         const nama = namaItem(catalog, it.itemKode);
         if (it.belumDiisi) return `${nama}: belum dicatat, paket minimum ${formatAngka(it.target)} ${satuan}`;
-        return `${nama}: ${formatAngka(it.berfungsi)} berfungsi dari ${formatAngka(it.target)} ${satuan}`;
+        // Dua sisi sekaligus: angka yang berfungsi dan angka yang kurang. Label peta memakai sisi "kurang",
+        // jadi fakta harus memuatnya supaya ringkasan tidak menyebut hal yang berlawanan tanpa angka pembanding.
+        const ada = `${formatAngka(it.berfungsi)} dari ${formatAngka(it.target)} ${satuan} berfungsi`;
+        const kurang = Math.max(it.target - it.berfungsi, 0);
+        return kurang > 0 ? `${nama}: ${ada}, kurang ${formatAngka(kurang)}` : `${nama}: ${ada}, paket minimum terpenuhi`;
       }),
       catatan_wajib,
     };
@@ -241,6 +245,7 @@ export function templateRingkasan(halaman: HalamanRingkasan, f: Fakta): { judul:
 const ATURAN =
   "Kamu menulis ringkasan satu halaman aplikasi kesiapan karhutla desa untuk perangkat desa. " +
   "Pakai hanya angka yang ada di FAKTA dan salin persis seperti tertulis. Jangan menghitung, membulatkan, atau menambah angka, tahun, nama, maupun sebab. " +
+  'Untuk alat, pisahkan angka yang berfungsi dan angka yang kurang. Bila FAKTA menulis "kurang N", sebut kekurangan itu sebagai "kurang N", jangan menukarnya dengan angka yang berfungsi. ' +
   'Sebut desa sebagai "desa ini". Tulis "deteksi satelit", bukan "kebakaran". Jangan menyatakan desa aman. Jangan menyebut siapa yang membakar atau dari mana api berasal. ' +
   "Bahasa Indonesia baku yang sederhana, tanpa markdown. " +
   "judul: satu hal terpenting, paling banyak 20 kata. butir: tepat tiga kalimat pendek; kalimat ketiga adalah langkah pertama yang bisa dilakukan. " +
