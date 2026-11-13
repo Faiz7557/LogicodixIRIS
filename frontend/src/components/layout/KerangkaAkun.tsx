@@ -1,13 +1,12 @@
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
-import { DemoBanner } from "@/components/layout/DemoBanner";
 import { NavAkun } from "@/components/layout/NavAkun";
 import { getCatalog, getDesaCard, getKesiapan } from "@/lib/dataSource";
 import type { Akun, Peran } from "@/lib/types";
 import { getSesiAkun } from "@/server/auth";
 
 /*
- * Kerangka halaman berakun: sidebar bergrup pertanyaan (laptop) atau menu bawah (HP), banner, lalu isi.
+ * Kerangka halaman berakun: sidebar bergrup pertanyaan (laptop) atau menu bawah (HP), lalu isi.
  * Dipakai layout (akun) dan Kartu Paparan saat pengguna sudah masuk, supaya keduanya terasa satu dasbor.
  * Pola tata letak diadaptasi dari referensi Sparekit.
  */
@@ -15,7 +14,7 @@ const PERAN_LABEL: Record<Peran, string> = { desa: "Sekretaris desa", mpa: "Ketu
 
 /**
  * Akses halaman berakun untuk desa `kode`: tanpa sesi menuju /masuk, desa lain 404.
- * Tiap desa punya MPA dan sekdes sendiri, jadi akun hanya membuka desanya sendiri (termasuk akun demo).
+ * Tiap desa punya MPA dan sekdes sendiri, jadi akun hanya membuka desanya sendiri.
  */
 export async function aksesDesa(kode: string): Promise<Akun> {
   const akun = await getSesiAkun();
@@ -31,19 +30,11 @@ export function KerangkaAkun({ kode, children }: { kode: Promise<string>; childr
         <Navigasi kode={kode} />
       </Suspense>
       <div className="min-w-0">
-        <Suspense fallback={<div className="h-11 border-b border-line" />}>
-          <Banner kode={kode} />
-        </Suspense>
         {/* ruang untuk navigasi bawah di HP */}
         <div className="pb-24 md:pb-0">{children}</div>
       </div>
     </div>
   );
-}
-
-async function Banner({ kode: kodeP }: { kode: Promise<string> }) {
-  const akun = await aksesDesa(await kodeP);
-  return akun.isDemo ? <DemoBanner /> : null;
 }
 
 async function Navigasi({ kode: kodeP }: { kode: Promise<string> }) {

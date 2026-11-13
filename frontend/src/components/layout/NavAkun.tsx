@@ -37,7 +37,7 @@ const kelompok: Kelompok[] = [
   {
     tanya: "Bisa dipercaya?",
     items: [
-      { href: (k) => `/desa/${k}`, label: "Bukti satelit", peran: ["mpa", "desa"], icon: <IconSatelit />, aktifSampai: "persis" },
+      { href: (k) => `/desa/${k}`, label: "Informasi detail", peran: ["mpa", "desa"], icon: <IconSatelit />, aktifSampai: "persis" },
       { href: () => "/time-machine", label: "Time Machine", peran: ["mpa", "desa"], icon: <IconWaktu /> },
       { href: () => "/data", label: "Sumber dan batasan", peran: ["mpa", "desa"], icon: <IconData /> },
     ],
@@ -82,9 +82,10 @@ export function NavAkun({ r }: { r: RingkasanNav }) {
       <aside className="no-print hidden md:block">
         <nav
           aria-label="Menu desa"
-          className="sticky top-0 flex max-h-dvh min-h-[calc(100dvh-3rem)] flex-col gap-5 overflow-y-auto border-r border-line bg-surface/60 px-3 py-5"
+          className="sticky top-[45px] flex h-[calc(100dvh-45px)] flex-col border-r border-line bg-surface/60"
         >
-          <div className="space-y-4">
+          {/* Hanya menu yang bergulir; akun, keluar, kartu akun, dan kartu skor tetap di bawah. */}
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-3 pb-3 pt-5">
             {kelompok.map((g) => {
               const tampil = g.items.filter(punya);
               if (tampil.length === 0) return null;
@@ -117,7 +118,18 @@ export function NavAkun({ r }: { r: RingkasanNav }) {
             })}
           </div>
 
-          <div className="mt-auto space-y-3">
+          <div className="shrink-0 space-y-3 border-t border-line px-3 pb-5 pt-3">
+            {/* Halaman akun: data akun dan ganti password. */}
+            <Link
+              href={`/desa/${r.kode}/akun`}
+              aria-current={pathname === `/desa/${r.kode}/akun` ? "page" : undefined}
+              className={`flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-sm ${
+                pathname === `/desa/${r.kode}/akun` ? "bg-[#f7e3d8] font-semibold text-ink" : "text-muted hover:bg-paper hover:text-ink"
+              }`}
+            >
+              <IconAkun />
+              Akun dan password
+            </Link>
             <TombolKeluar className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm text-muted hover:bg-paper hover:text-ink disabled:opacity-60" ikon={<IconKeluar />} />
             <div className="flex items-center gap-3 rounded-2xl border border-line bg-paper p-3">
               <span aria-hidden="true" className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#f7e3d8] text-sm font-bold text-ember">
@@ -295,6 +307,14 @@ function IconData() {
     <svg {...ikon}>
       <ellipse cx="12" cy="6" rx="7" ry="3" />
       <path d="M5 6v6c0 1.700 3.100 3 7 3s7-1.300 7-3V6M5 12v6c0 1.700 3.100 3 7 3s7-1.300 7-3v-6" />
+    </svg>
+  );
+}
+function IconAkun() {
+  return (
+    <svg {...ikon}>
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 20c1.5-3.5 4.5-5 8-5s6.5 1.5 8 5" />
     </svg>
   );
 }

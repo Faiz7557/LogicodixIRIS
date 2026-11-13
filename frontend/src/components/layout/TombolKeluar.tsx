@@ -1,13 +1,13 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { api } from "@/lib/api-client";
 
 /** Keluar dari sesi: POST /api/auth/keluar, lalu kembali ke Beranda. */
 export function TombolKeluar({ className, ikon }: { className?: string; ikon?: React.ReactNode }) {
   const router = useRouter();
-  const [sibuk, setSibuk] = useState(false);
+  const [sibuk, mulai] = useTransition();
   const [galat, setGalat] = useState<string | null>(null);
 
   return (
@@ -15,17 +15,17 @@ export function TombolKeluar({ className, ikon }: { className?: string; ikon?: R
       <button
         type="button"
         disabled={sibuk}
-        onClick={async () => {
-          setSibuk(true);
+        onClick={() => {
           setGalat(null);
-          try {
-            await api<void>("/api/auth/keluar", { method: "POST" });
-            router.replace("/");
-            router.refresh();
-          } catch (e) {
-            setGalat(e instanceof Error ? e.message : "Gagal keluar. Coba lagi.");
-            setSibuk(false);
-          }
+          mulai(async () => {
+            try {
+              await api<void>("/api/auth/keluar", { method: "POST" });
+              router.refresh();
+              router.replace("/");
+            } catch (e) {
+              setGalat(e instanceof Error ? e.message : "Gagal keluar. Coba lagi.");
+            }
+          });
         }}
         className={className}
       >
