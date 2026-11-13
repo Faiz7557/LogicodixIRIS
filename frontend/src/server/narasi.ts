@@ -3,37 +3,67 @@ import { modelPenulis, tulisJson } from "./llm";
 import { KATA_TERLARANG } from "./ringkasan";
 
 /*
- * Narasi usulan (TRD §7, plan 09 Task C4). Dokumen ditandatangani perangkat desa, jadi model sama sekali tidak
- * melihat angka maupun nama: model hanya menerima nama placeholder, kanal, dan label kualitatif status.
+ * Isi surat usulan (TRD §7, plan 09 Task C4). Surat adalah proposal resmi yang dicetak dan diajukan, jadi isinya
+ * hanya permohonan dengan bahasa formal: tanpa skor kesiapan, status, mata rantai terlemah, atau riwayat satelit.
+ * Model sama sekali tidak melihat angka maupun nama: model hanya menerima nama placeholder dan kanal.
  * Keluaran model berisi {{placeholder}}; server memeriksanya, lalu mengisi nilai fakta. Gagal apa pun: template.
  * Tanpa `OPENAI_API_KEY`, narasi selalu memakai template.
  */
 
 export type FaktaNarasi = Record<string, string>;
 
-const ASUMSI =
-  "Target, bobot, dan sebagian harga adalah asumsi tim, bukan standar yang mengikat desa, dan dokumen ini wajib ditinjau manusia.";
-
+/** Fakta yang boleh muncul di isi surat pengadaan. Fakta lain (skor, status, paparan) tidak dimuat di surat. */
+export const FAKTA_SURAT = ["desa", "kecamatan", "kabupaten", "total_usulan"];
 /** Placeholder yang wajib ada di setiap narasi AI. */
-const WAJIB = ["desa", "skor", "total_usulan"];
+const WAJIB = ["desa", "total_usulan"];
 const PLACEHOLDER = /\{\{\s*([a-z_]+)\s*\}\}/g;
 const WILAYAH_KARANGAN = /\b(Desa|Kecamatan|Kabupaten|Provinsi)\s+[A-Z]/;
+/** Hal teknis aplikasi yang tidak dimuat di surat resmi. */
+const BUKAN_ISI_SURAT = ["skor", "satelit", "mata rantai", "paparan"];
 
+/** Paragraf harapan surat pengadaan alat, menurut penerima. */
+const HARAPAN: Record<Kanal, string> = {
+  apbdes_perubahan:
+    "Kami mohon kiranya usulan ini dapat dibahas dalam Musyawarah Desa dan ditetapkan sebagai pos belanja pada Perubahan Anggaran Pendapatan dan Belanja Desa, sesuai ketentuan penggunaan Dana Desa yang berlaku.",
+  bpbd: "Melalui surat ini kami mengharapkan adanya bantuan dari Pemerintah Kabupaten melalui Badan Penanggulangan Bencana Daerah, sehingga sarana pemadaman desa dapat dilengkapi sebelum musim kemarau berikutnya.",
+  daops:
+    "Melalui surat ini kami mengharapkan adanya bantuan dari Daerah Operasi Manggala Agni, sehingga sarana pemadaman desa dapat dilengkapi sebelum musim kemarau berikutnya.",
+  csr: "Melalui surat ini kami mengharapkan adanya dukungan dari perusahaan Bapak/Ibu, sehingga sarana pemadaman desa dapat dilengkapi sebelum musim kemarau berikutnya.",
+};
+
+/**
+ * Isi surat pengadaan alat, tanpa salam pembuka dan penutup: kop, "Kepada Yth.", "Dengan hormat,",
+ * tabel alat, dan penutup disusun oleh dokumen. Paragraf dipisah baris kosong.
+ */
 export function renderTemplate(f: FaktaNarasi, kanal: Kanal): string {
-  const inti = `Skor kesiapan ${f.desa} saat ini ${f.skor} (${f.status}); mata rantai terlemah adalah ${f.rantai_terlemah}. Belanja yang diusulkan senilai ${f.total_usulan} menaikkan skor menjadi ${f.skor_sesudah}. Riwayat menunjukkan desa ini terdeteksi satelit pada ${f.paparan}.`;
-  switch (kanal) {
-    case "apbdes_perubahan":
-      return `Kepada Yth. Musyawarah Desa ${f.desa}. Kami mengusulkan pos belanja kesiapan karhutla senilai ${f.total_usulan}, mengacu pada ketentuan fokus penggunaan Dana Desa yang berlaku pada Tahun Anggaran 2027. ${inti} ${ASUMSI}`;
-    case "bpbd":
-      return `Kepada Yth. Kepala BPBD Kabupaten ${f.kabupaten}. Kami menyampaikan paparan dan kesenjangan kesiapan ${f.desa}, ${f.kecamatan}. ${inti} Kami memohon pertimbangan dukungan sebesar ${f.total_usulan}. ${ASUMSI}`;
-    case "daops":
-      return `Kepada Yth. Kepala Daops Manggala Agni. Kami menyampaikan kondisi alat dan kesiapan regu ${f.desa}. ${inti} Kami memohon pertimbangan dukungan alat senilai ${f.total_usulan}. ${ASUMSI}`;
-    case "csr":
-      return `Kepada Yth. pimpinan perusahaan di sekitar ${f.desa}. Kami menyampaikan daftar barang kesiapan karhutla senilai ${f.total_usulan}. ${inti} ${ASUMSI}`;
-  }
+  return [
+    `Dalam rangka meningkatkan kesiapsiagaan ${f.desa}, Kecamatan ${f.kecamatan}, Kabupaten ${f.kabupaten} dalam menghadapi kebakaran hutan dan lahan pada musim kemarau, bersama ini kami mengajukan permohonan pengadaan alat pemadam kebakaran dengan nilai keseluruhan sebesar ${f.total_usulan}.`,
+    HARAPAN[kanal],
+  ].join("\n\n");
 }
 
-/** Pemeriksaan TRD §7: hanya placeholder yang dikenal, tanpa digit, tanpa nama wilayah karangan, placeholder wajib lengkap. */
+const PIHAK: Record<Kanal, string> = {
+  apbdes_perubahan: "Pemerintah Desa melalui Perubahan Anggaran Pendapatan dan Belanja Desa",
+  bpbd: "Pemerintah Kabupaten melalui Badan Penanggulangan Bencana Daerah",
+  daops: "Daerah Operasi Manggala Agni",
+  csr: "perusahaan Bapak/Ibu",
+};
+
+/**
+ * Isi proposal permohonan bantuan anggaran (bukan pengadaan alat): sejumlah uang untuk sarana pemadaman.
+ * Selalu template, tanpa AI: angka dan terbilang harus persis. Paragraf dipisah baris kosong.
+ */
+export function renderPermohonanAnggaran(f: FaktaNarasi, kanal: Kanal): string {
+  return [
+    `Dalam rangka meningkatkan kesiapsiagaan ${f.desa}, Kecamatan ${f.kecamatan}, Kabupaten ${f.kabupaten} dalam menghadapi kebakaran hutan dan lahan pada musim kemarau, bersama ini kami sampaikan proposal permohonan bantuan anggaran untuk pengadaan dan pemeliharaan sarana pemadaman kebakaran Tahun Anggaran ${f.tahun_anggaran} sebesar ${f.jumlah} (${f.terbilang}).`,
+    `Melalui proposal ini kami mengharapkan adanya bantuan dari ${PIHAK[kanal]}, sehingga sarana pemadaman desa dapat dilengkapi sebelum musim kemarau berikutnya.`,
+  ].join("\n\n");
+}
+
+/**
+ * Pemeriksaan TRD §7: hanya placeholder yang dikenal, tanpa digit, tanpa nama wilayah karangan, placeholder wajib lengkap,
+ * dan tanpa hal teknis aplikasi (skor, satelit) yang bukan isi surat resmi.
+ */
 export function validateNarrative(text: string, allowed: string[]): { ok: boolean; violations: string[] } {
   const v: string[] = [];
   if (!text.trim()) v.push("kosong");
@@ -47,6 +77,7 @@ export function validateNarrative(text: string, allowed: string[]): { ok: boolea
   if (/[*#`]/.test(luar)) v.push("format");
   const kecil = luar.toLowerCase();
   for (const k of KATA_TERLARANG) if (kecil.includes(k)) v.push(`kata:${k}`);
+  for (const k of BUKAN_ISI_SURAT) if (kecil.includes(k)) v.push(`bukan_isi:${k}`);
   return { ok: v.length === 0, violations: v };
 }
 
@@ -55,10 +86,10 @@ export function renderNarrative(text: string, facts: Record<string, string>): st
 }
 
 const PENERIMA: Record<Kanal, string> = {
-  apbdes_perubahan: "Musyawarah Desa, untuk usulan pos belanja pada APBDes Perubahan",
+  apbdes_perubahan: "Musyawarah Desa, untuk usulan pos belanja pada Perubahan APBDes",
   bpbd: "Kepala BPBD kabupaten (nama kabupaten ada di {{kabupaten}})",
   daops: "Kepala Daops Manggala Agni",
-  csr: "pimpinan perusahaan pemegang izin di sekitar desa",
+  csr: "pimpinan perusahaan di sekitar desa",
 };
 
 const SKEMA = {
@@ -68,13 +99,15 @@ const SKEMA = {
 
 function aturan(allowed: string[]): string {
   return (
-    "Kamu menulis satu paragraf surat usulan kesiapan karhutla dari pemerintah desa, dalam Bahasa Indonesia baku yang sopan dan ringkas, tanpa markdown. " +
+    "Kamu menulis isi surat resmi pemerintah desa berupa permohonan pengadaan alat pemadam kebakaran hutan dan lahan, dalam Bahasa Indonesia baku dan formal seperti surat dinas, tanpa markdown. " +
+    'Jangan menulis salam pembuka atau penutup ("Kepada Yth.", "Dengan hormat", "Demikian", "terima kasih"); sistem menambahkannya. ' +
+    "Tulis dua paragraf yang dipisah satu baris kosong: paragraf pertama menyampaikan maksud permohonan dan nilai keseluruhannya, paragraf kedua menyampaikan harapan bantuan dari penerima. " +
     "Kamu tidak tahu angka atau nama apa pun. Tulis setiap nilai hanya sebagai placeholder {{nama}}, persis dari daftar ini: " +
     allowed.map((a) => `{{${a}}}`).join(", ") +
-    ". Wajib memakai {{desa}}, {{skor}}, dan {{total_usulan}}. Placeholder {{desa}} sudah memuat kata \"Desa\", jadi jangan menulis \"Desa {{desa}}\". " +
+    '. Wajib memakai {{desa}} dan {{total_usulan}}. Placeholder {{desa}} sudah memuat kata "Desa", jadi jangan menulis "Desa {{desa}}". ' +
     "Jangan menulis angka atau digit apa pun, jangan mengarang nama desa, kecamatan, kabupaten, atau orang. " +
-    'Tulis "deteksi satelit", bukan "kebakaran". Jangan menyebut siapa yang membakar, jangan menjanjikan hektare terselamatkan, jangan menyatakan desa aman. ' +
-    "Paling banyak lima kalimat. Jangan menulis pernyataan asumsi; sistem menambahkannya."
+    "Jangan menyebut skor, status kesiapan, data satelit, atau istilah teknis aplikasi. Jangan menyebut siapa yang membakar dan jangan menjanjikan hektare terselamatkan. " +
+    "Paling banyak empat kalimat."
   );
 }
 
@@ -82,16 +115,18 @@ export async function generateNarrative(
   facts: FaktaNarasi,
   kanal: Kanal,
 ): Promise<{ teks: string; sumber: "ai" | "template"; model: string | null }> {
-  const allowed = Object.keys(facts);
-  // Hanya nama placeholder, kanal, dan label kualitatif yang dikirim. Nilai fakta lain tidak pernah keluar dari server.
-  const user = `KANAL: ${kanal}\nPENERIMA: ${PENERIMA[kanal]}\nSTATUS KESIAPAN (label): ${facts.status ?? "tidak diketahui"}`;
+  // Isi surat hanya memakai fakta surat; skor, status, dan paparan tidak dikirim ke model dan tidak boleh dipakai.
+  const fakta = Object.fromEntries(FAKTA_SURAT.filter((k) => k in facts).map((k) => [k, facts[k]]));
+  const allowed = Object.keys(fakta);
+  // Hanya nama placeholder dan kanal yang dikirim. Nilai fakta tidak pernah keluar dari server.
+  const user = `KANAL: ${kanal}\nPENERIMA: ${PENERIMA[kanal]}`;
   const mentah = await tulisJson(aturan(allowed), user, SKEMA);
   if (mentah) {
     try {
       const { teks } = JSON.parse(mentah) as { teks?: unknown };
       if (typeof teks === "string") {
         const v = validateNarrative(teks, allowed);
-        if (v.ok) return { teks: `${renderNarrative(teks.trim(), facts)} ${ASUMSI}`, sumber: "ai", model: modelPenulis() };
+        if (v.ok) return { teks: renderNarrative(teks.trim(), fakta), sumber: "ai", model: modelPenulis() };
         console.warn("[narasi] ditolak:", kanal, v.violations.join(","));
       }
     } catch {
