@@ -40,7 +40,7 @@ export const KONFIGURASI: Record<string, KonfigurasiModel> = {
     radius: [0.85, 3.4],
     lantaiY: 0,
     tombol: { buka: "Gelar selang", tutup: "Gulung selang" },
-    saatBuka: "Selang tergelar sepanjang 20 meter, berisi air, dan menyemburkan air dari nozel.",
+    saatBuka: "Selang tergelar sepanjang 30 meter, berisi air, dan menyemburkan air dari nozel.",
   },
   sumur_bor: {
     bangun: bangunSumurBor,

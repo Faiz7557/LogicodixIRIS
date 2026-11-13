@@ -20,7 +20,7 @@ function statusItem(coverage: number): Status {
 
 // Keterangan khusus tiap item, ditulis sebagai fakta paket, bukan klaim dampak.
 const CATATAN_ITEM: Record<string, string> = {
-  selang_keluar: "Panjang dihitung dengan asumsi 20 m per buah.",
+  selang_keluar: "Panjang dihitung dengan asumsi 30 m per buah (satu roll).",
   sumur_bor: "Hanya dihitung untuk desa yang memiliki lahan gambut.",
   pompa_jinjing: "Pompa yang rusak dihitung terpisah dari yang berfungsi.",
 };

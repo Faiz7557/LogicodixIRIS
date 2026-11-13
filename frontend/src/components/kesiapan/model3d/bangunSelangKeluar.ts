@@ -2,13 +2,13 @@ import * as THREE from "three";
 import type { Bagian, ModelPompa } from "./bangunPompaJinjing";
 
 /*
- * Model 3D prosedural selang keluar (selang kanvas pemadam, lay-flat, 20 m per buah), digulung rapat
+ * Model 3D prosedural selang keluar (selang kanvas pemadam, lay-flat, 30 m per buah), digulung rapat
  * seperti saat disimpan. "Buka" menggelar selang: gulungan menggelinding ke depan dan meninggalkan
  * selang pipih di tanah (bukan sekadar animasi geser), lalu nozel tersambung, selang menggembung
  * berisi air, dan air menyembur. Satuan 1 kira-kira 40 cm; panjang selang dipadatkan supaya muat di layar.
  */
 
-const L = 5.2; // panjang selang di adegan (mewakili 20 m)
+const L = 5.2; // panjang selang di adegan (mewakili 30 m)
 const LEBAR = 0.17; // lebar selang pipih
 const TEBAL = 0.034; // tebal selang pipih
 const R0 = 0.1; // jari-jari lubang tengah gulungan
@@ -249,7 +249,7 @@ export function bangunSelangKeluar(): ModelPompa {
   geoSelang.setIndex(indeks);
   const selang = new THREE.Mesh(geoSelang, mat.kanvas);
   selang.castShadow = selang.receiveShadow = true;
-  selang.userData.label = "Selang kanvas 20 m (pipih saat kosong)";
+  selang.userData.label = "Selang kanvas 30 m (pipih saat kosong)";
 
   const gSelang = new THREE.Group();
   gSelang.name = "Selang kanvas";

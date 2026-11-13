@@ -10,6 +10,6 @@ PARAMS: dict[str, tuple[str, str]] = {
     "gate_min_exposed": ("30", "parameter"),
     "gate_min_ratio_aktif": ("0.6", "parameter"),
     "kec_min_share": ("0.5", "parameter"),
-    "panjang_per_buah_m": ("20", "asumsi_tim"),
+    "panjang_per_buah_m": ("30", "asumsi_tim"),
     "ext_years": ("2015,2019,2023,2026", "parameter"),
 }
