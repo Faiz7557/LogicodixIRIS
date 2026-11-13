@@ -145,6 +145,8 @@ function isiUji(): InStatement[] {
         sql: "INSERT INTO desa_tahun (kode, tahun, n_det, det_days, terpapar) VALUES (?,?,?,?,?)",
         args: [d.kode, t, kena ? 6 : 0, kena ? 3 : 0, kena ? 1 : 0],
       });
+      // Data uji: semua hari deteksi tahun terpapar jatuh di September.
+      if (kena) s.push({ sql: "INSERT INTO desa_bulan (kode, tahun, bulan, n_det, det_days) VALUES (?,?,9,6,3)", args: [d.kode, t] });
     }
     if (!kec.has(w.kec)) kec.set(w.kec, { idx: [] });
     kec.get(w.kec)!.idx.push(i);

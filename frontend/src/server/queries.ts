@@ -82,6 +82,20 @@ export async function getGerbang(): Promise<KeputusanGerbang> {
   return (await gerbangPenuh()).keputusan;
 }
 
+/** Hari deteksi per bulan (12 angka) per tahun dari `desa_bulan`. Bulan tanpa baris berarti nol. */
+async function bulanPerTahun(kode: string, dari: number, sampai: number): Promise<Map<number, number[]>> {
+  const rows = await q("SELECT tahun, bulan, det_days FROM desa_bulan WHERE kode = ? AND tahun BETWEEN ? AND ?", [kode, dari, sampai]);
+  const peta = new Map<number, number[]>();
+  for (const r of rows) {
+    const t = Number(r.tahun);
+    if (!peta.has(t)) peta.set(t, nolBulan());
+    peta.get(t)![Number(r.bulan) - 1] = Number(r.det_days);
+  }
+  return peta;
+}
+
+const nolBulan = () => Array<number>(12).fill(0);
+
 /** Desa jangkar kisah beranda: Kali Bandung, Kubu Raya (HDX 6112070019; Mongabay 31 Agu 2026). */
 export const KODE_JANGKAR = "6112070019";
 
@@ -89,17 +103,17 @@ export const KODE_JANGKAR = "6112070019";
 export async function getRiwayatJangkar(): Promise<DesaTahun[] | null> {
   const [d] = await q("SELECT kode FROM desa WHERE kode = ?", [KODE_JANGKAR]);
   if (!d) return null;
-  const rows = await q(
-    "SELECT tahun, n_det, det_days, terpapar FROM desa_tahun WHERE kode = ? AND tahun BETWEEN 2020 AND 2026 ORDER BY tahun",
-    [KODE_JANGKAR],
-  );
+  const [rows, bulan] = await Promise.all([
+    q("SELECT tahun, n_det, det_days, terpapar FROM desa_tahun WHERE kode = ? AND tahun BETWEEN 2020 AND 2026 ORDER BY tahun", [KODE_JANGKAR]),
+    bulanPerTahun(KODE_JANGKAR, 2020, 2026),
+  ]);
   // Tahun tanpa baris dihitung nol supaya batang beranda selalu tujuh.
   return Array.from({ length: 7 }, (_, i) => {
     const tahun = 2020 + i;
     const r = rows.find((x) => Number(x.tahun) === tahun);
     return r
-      ? { tahun, nDet: Number(r.n_det), detDays: Number(r.det_days), terpapar: Number(r.terpapar) === 1 }
-      : { tahun, nDet: 0, detDays: 0, terpapar: false };
+      ? { tahun, nDet: Number(r.n_det), detDays: Number(r.det_days), terpapar: Number(r.terpapar) === 1, bulan: bulan.get(tahun) ?? nolBulan() }
+      : { tahun, nDet: 0, detDays: 0, terpapar: false, bulan: nolBulan() };
   });
 }
 
@@ -109,8 +123,9 @@ export async function getDesaCard(kode: string): Promise<DesaCard | null> {
     [kode],
   );
   if (!d) return null;
-  const [strip, [p], [k], ext, gerbang] = await Promise.all([
+  const [strip, bulan, [p], [k], ext, gerbang] = await Promise.all([
     q("SELECT tahun, n_det, det_days, terpapar FROM desa_tahun WHERE kode = ? AND tahun BETWEEN 2012 AND 2026 ORDER BY tahun", [kode]),
+    bulanPerTahun(kode, 2012, 2026),
     q("SELECT * FROM desa_paparan WHERE kode = ? AND mode = 'live'", [kode]),
     q("SELECT * FROM kecamatan_paparan WHERE kec_kode = ? AND mode = 'live'", [d.kec_kode]),
     metaNilai("ext_years"),
@@ -127,6 +142,7 @@ export async function getDesaCard(kode: string): Promise<DesaCard | null> {
     tahunEkstrem: ext ? ext.split(",").map(Number).filter(Number.isFinite) : [],
     strip: strip.map((r) => ({
       tahun: Number(r.tahun), nDet: Number(r.n_det), detDays: Number(r.det_days), terpapar: Number(r.terpapar) === 1,
+      bulan: bulan.get(Number(r.tahun)) ?? nolBulan(),
     })),
     paparan: {
       mode: "live",

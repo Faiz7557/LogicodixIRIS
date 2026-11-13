@@ -89,3 +89,30 @@ def test_village_without_detection_gets_zero_rows():
 
 def test_sensor_summary_keeps_sensor_and_source(mixed_det):
     assert set(sensor_summary(mixed_det).columns) == {"tahun", "satellite", "sumber", "n_det"}
+
+
+def test_desa_month_counts_days_per_month_and_matches_year():
+    from pipeline.firms import desa_month
+
+    a = pd.DataFrame({
+        "kode": ["A", "A", "A", "A", "B"],
+        "tanggal": ["2019-08-01", "2019-08-01", "2019-09-30", "2019-09-02", "2026-01-15"],
+        "tahun": [2019, 2019, 2019, 2019, 2026],
+    })
+    m = desa_month(a, [2019, 2026])
+    assert m.to_dict("records") == [
+        {"kode": "A", "tahun": 2019, "bulan": 8, "n_det": 2, "det_days": 1},
+        {"kode": "A", "tahun": 2019, "bulan": 9, "n_det": 2, "det_days": 2},
+        {"kode": "B", "tahun": 2026, "bulan": 1, "n_det": 1, "det_days": 1},
+    ]
+    y = desa_year(a, ["A", "B"], [2019, 2026], 2)
+    per_tahun = m.groupby(["kode", "tahun"])[["n_det", "det_days"]].sum()
+    for r in y[y.n_det > 0].itertuples():
+        assert tuple(per_tahun.loc[(r.kode, r.tahun)]) == (r.n_det, r.det_days)
+
+
+def test_desa_month_drops_years_outside_range():
+    from pipeline.firms import desa_month
+
+    a = pd.DataFrame({"kode": ["A"], "tanggal": ["2011-12-31"], "tahun": [2011]})
+    assert desa_month(a, [2019]).empty

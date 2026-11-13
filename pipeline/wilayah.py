@@ -38,8 +38,11 @@ def _strip_prefix(s: pd.Series) -> pd.Series:
     return s.where(~s.str.startswith(PCODE_PREFIX), s.str[len(PCODE_PREFIX):])
 
 
-def load_desa(path: str, prov_codes: list[str], where: str | None = None) -> gpd.GeoDataFrame:
-    raw = gpd.read_file(path, **({"where": where} if where else {}))
+def load_desa(path: str, prov_codes: list[str], where: str | None = None,
+              layer: str | None = None) -> gpd.GeoDataFrame:
+    """`layer` untuk berkas berlapis seperti HDX `idn_admin_boundaries.gdb.zip` (lapis `idn_admin4`)."""
+    opsi = {**({"where": where} if where else {}), **({"layer": layer} if layer else {})}
+    raw = gpd.read_file(path, **opsi)
     lookup = {str(c).lower(): c for c in raw.columns}
     kolom = {k: next((lookup[x.lower()] for x in cand if x.lower() in lookup), None)
              for k, cand in HDX_COLS.items()}

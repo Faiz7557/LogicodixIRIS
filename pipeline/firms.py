@@ -66,6 +66,21 @@ def desa_year(assigned, kode_list, years, min_det_days: int) -> pd.DataFrame:
     return out[["kode", "tahun", "n_det", "det_days", "terpapar"]]
 
 
+def desa_month(assigned, years) -> pd.DataFrame:
+    """Satu baris per (kode, tahun, bulan) yang punya deteksi. Bulan tanpa deteksi tidak ditulis.
+
+    Bulan dibaca dari `acq_date` FIRMS. Hari deteksi dihitung per bulan, jadi jumlah 12 bulan
+    sama dengan `det_days` di `desa_year` (satu tanggal hanya jatuh di satu bulan).
+    """
+    a = assigned[assigned["tahun"].isin(list(years))]
+    a = a.assign(bulan=a["tanggal"].str[5:7].astype(int))
+    out = (a.groupby(["kode", "tahun", "bulan"])
+           .agg(n_det=("tanggal", "size"), det_days=("tanggal", "nunique"))
+           .reset_index())
+    out[["tahun", "bulan", "n_det", "det_days"]] = out[["tahun", "bulan", "n_det", "det_days"]].astype(int)
+    return out[["kode", "tahun", "bulan", "n_det", "det_days"]]
+
+
 def sensor_summary(det) -> pd.DataFrame:
     return (det.groupby(["tahun", "satellite", "sumber"]).size()
             .rename("n_det").reset_index())

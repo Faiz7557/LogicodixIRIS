@@ -18,5 +18,13 @@ describe("queries", () => {
     await expect(searchDesa("ka")).rejects.toMatchObject({ status: 503, kode: "data_belum_ada" });
   });
   it("kartu memuat strip 2012-2026", async () => { expect((await getDesaCard("TINGGI"))!.strip).toHaveLength(15); });
+  it("strip memuat 12 bulan dari desa_bulan, jumlahnya sama dengan hari per tahun", async () => {
+    const strip = (await getDesaCard("TINGGI"))!.strip;
+    for (const s of strip) {
+      expect(s.bulan).toHaveLength(12);
+      expect(s.bulan.reduce((a, b) => a + b, 0)).toBe(s.detDays);
+    }
+    expect(strip.some((s) => s.bulan[8] > 0)).toBe(true);
+  });
   it("riwayat jangkar null di DB uji", async () => { expect(await getRiwayatJangkar()).toBeNull(); });
 });

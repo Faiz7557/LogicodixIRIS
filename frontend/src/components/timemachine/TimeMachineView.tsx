@@ -76,7 +76,7 @@ export function TimeMachineView({ data }: { data: Backtest }) {
 
           <h2 className="mt-10 text-2xl font-semibold tracking-[-0.02em]">Untuk yang ingin lebih detail</h2>
           <p className="mt-1 max-w-[62ch] text-sm text-muted">Uji tambahan: apakah desa yang terlihat tenang bertahun-tahun benar-benar aman?</p>
-          <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_24rem]">
+          <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1fr)_24rem]">
             <KartuKohort grup={data.grup} />
             <KartuGerbang grup={data.grup} gerbang={data.gerbang} />
           </div>

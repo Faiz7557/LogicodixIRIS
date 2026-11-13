@@ -10,7 +10,7 @@ import { getBacktest } from "@/server/queries";
 export const metadata: Metadata = { title: "Time Machine" };
 
 /*
- * Publik: halaman biasa. Sudah masuk: tampil di kerangka dasbor desa, sama seperti Bukti satelit.
+ * Publik: halaman biasa. Sudah masuk: tampil di kerangka dasbor desa, sama seperti Informasi detail.
  * Sesi dan hasil backtest dibaca di dalam Suspense; cadangannya keadaan kosong supaya pengunjung tidak menunggu.
  */
 export default function TimeMachinePage() {
