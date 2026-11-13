@@ -257,6 +257,8 @@ export function kosongkanCacheRingkasan(): void {
 
 export async function getRingkasan(halaman: HalamanRingkasan, kode?: string): Promise<Ringkasan> {
   const fakta = await faktaRingkasan(halaman, kode);
+  // Muncul di terminal `make dev`. Isinya persis yang dikirim ke model; tanpa nama wilayah.
+  if (process.env.NODE_ENV !== "production") console.log("[ringkasan]", halaman, JSON.stringify(fakta));
   const kunci = `${halaman}:${JSON.stringify(fakta)}`;
   const ada = cache.get(kunci);
   if (ada) return ada;
