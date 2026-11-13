@@ -12,7 +12,6 @@ import { PenutupAjakan } from "@/components/beranda/gerak/PenutupAjakan";
 import { Kontur } from "@/components/beranda/Kontur";
 import { Sorotan } from "@/components/beranda/Sorotan";
 import { SearchBox } from "@/components/paparan/SearchBox";
-import { TEKS_BELUM_DIUJI } from "@/components/ui/PernyataanAsumsi";
 import { LANGKAH, PERAN, STATISTIK } from "@/content/beranda";
 import { getGerbang } from "@/lib/dataSource";
 import { countTampakAman, getRiwayatJangkar } from "@/server/queries";
@@ -21,7 +20,6 @@ import { bolehTagline } from "@/lib/kalimat";
 /*
  * Beranda / pengantar (App Flow v2 §3.1), bergaya hero dengan kartu pencarian mengambang.
  * Tagline hanya tampil bila gerbang data memutuskan `pertahankan`; angka "tampak aman" disembunyikan bila `buang`.
- * Teks wajib: "Berbasis data publik, belum diuji pengguna." (Design Brief v2 §12).
  */
 export const instant = false;
 
@@ -42,14 +40,9 @@ export default async function BerandaPage() {
         <Kontur />
         <KotakLahan />
         <div className="hero-angkat mx-auto max-w-[1040px] px-4 pb-20 pt-10 text-center sm:pt-14">
-          <p className="mx-auto inline-flex max-w-full items-center gap-2 rounded-2xl border border-line bg-surface px-3 py-1.5 text-left text-sm font-semibold shadow-sm sm:rounded-full">
-            <span aria-hidden="true" className="size-2 rounded-full bg-warn" />
-            {TEKS_BELUM_DIUJI}
-          </p>
-
           <h1
             id="judul"
-            className="mx-auto mt-5 max-w-[20ch] text-balance text-4xl font-semibold leading-[1.1] tracking-tight sm:text-5xl md:max-w-[28ch] md:text-6xl"
+            className="mx-auto max-w-[20ch] text-balance text-4xl font-semibold leading-[1.1] tracking-tight sm:text-5xl md:max-w-[28ch] md:text-6xl"
           >
             Susun belanja kesiapan desa{" "}
             <span

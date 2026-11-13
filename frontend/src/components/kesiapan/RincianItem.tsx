@@ -206,6 +206,11 @@ export function RincianItem({
                     ? `Perkiraan biaya perbaikan ${formatRupiah(biayaPerbaiki)} (${formatAngka(hasil.rusak)} × ${formatRupiah(perbaiki!.hargaRp)}).`
                     : "Belum ada harga perbaikan bersumber."
               }
+              tautan={
+                peran === "desa" && hasil.rusak > 0 && biayaPerbaiki === null
+                  ? { href: `/desa/${kode}/prioritas?isi=${item.kode}:perbaiki`, teks: "Isi harga perbaikan" }
+                  : undefined
+              }
             />
           ) : (
             // Item tanpa keadaan rusak: kartu ini menunjukkan cadangan di atas paket minimum.
@@ -226,6 +231,7 @@ export function RincianItem({
             nilai={biayaBeli !== null ? formatRupiah(biayaBeli) : "–"}
             label="Perkiraan biaya menambah"
             catatan={beli ? `${formatAngka(kurang)} × ${formatRupiah(beli.hargaRp)}. Sumber: ${beli.sumber}` : "Belum ada harga bersumber untuk item ini."}
+            tautan={peran === "desa" && !beli && kurang > 0 ? { href: `/desa/${kode}/prioritas?isi=${item.kode}:beli`, teks: "Isi harga beli" } : undefined}
           />
           {/* Harga satuan dengan tanggal hari ini (berganti sendiri tiap hari). Sumber dan tanggal cek tetap ditulis:
               ini harga acuan dokumen, bukan harga pasar harian. */}
@@ -321,6 +327,7 @@ function KartuAngka({
   satuan,
   label,
   catatan,
+  tautan,
   gelap = false,
 }: {
   ikon: React.ReactNode;
@@ -328,6 +335,8 @@ function KartuAngka({
   satuan?: string;
   label: React.ReactNode;
   catatan?: string;
+  /** Tombol ke formulir harga bila harga belum ada (harga tanpa sumber diisi desa di layar Keputusan). */
+  tautan?: { href: string; teks: string };
   gelap?: boolean;
 }) {
   return (
@@ -351,6 +360,16 @@ function KartuAngka({
         <span className={`mt-1 block text-sm font-semibold ${gelap ? "text-white/90" : ""}`}>{label}</span>
       </p>
       {catatan ? <p className={`mt-auto text-sm ${gelap ? "text-white/70" : "text-muted"}`}>{catatan}</p> : null}
+      {tautan ? (
+        <Link
+          href={tautan.href}
+          className={`inline-flex min-h-11 items-center justify-center rounded-xl border px-4 text-sm font-semibold ${
+            gelap ? "border-white/30 bg-white text-ink hover:bg-white/90" : "border-ember/40 bg-ember-soft text-ember hover:bg-ember-soft/70"
+          }`}
+        >
+          {tautan.teks}
+        </Link>
+      ) : null}
     </div>
   );
 }

@@ -8,7 +8,9 @@ import type { Bagian, ModelPompa } from "./bangunPompaJinjing";
  * berisi air, dan air menyembur. Satuan 1 kira-kira 40 cm; panjang selang dipadatkan supaya muat di layar.
  */
 
-const L = 5.2; // panjang selang di adegan (mewakili 30 m)
+/** Panjang satu buah selang (satu roll), sama dengan meta `panjang_per_buah_m`. */
+const PANJANG_M = 30;
+const L = 7.8; // panjang selang di adegan: 5,2 satuan per 20 m (dipadatkan), jadi 30 m = 7,8
 const LEBAR = 0.17; // lebar selang pipih
 const TEBAL = 0.034; // tebal selang pipih
 const R0 = 0.1; // jari-jari lubang tengah gulungan
@@ -58,7 +60,7 @@ function teksturKanvas(): { warna: THREE.CanvasTexture; bump: THREE.CanvasTextur
   x.fillStyle = "#f1efe8";
   x.fillRect(0, h * 0.18, w, 5);
   x.font = "bold 22px sans-serif";
-  x.fillText("SELANG PEMADAM · 2,5\" · 20 M", 24, h * 0.42);
+  x.fillText(`SELANG PEMADAM · 2,5" · ${PANJANG_M} M`, 24, h * 0.42);
 
   const [cb, y] = buat();
   y.fillStyle = "#808080";
@@ -271,11 +273,11 @@ export function bangunSelangKeluar(): ModelPompa {
   const { titik: air, seragam } = semburan();
   akar.add(air);
 
-  const penanda = [5, 10, 15, 20].map((m) => {
+  const penanda = [5, 10, 15, 20, 25, 30].map((m) => {
     const s = penandaJarak(`${m} m`);
-    s.position.set(X0 + (m / 20) * L, 0.2, 0.28);
+    s.position.set(X0 + (m / PANJANG_M) * L, 0.2, 0.28);
     akar.add(s);
-    return { s, jarak: (m / 20) * L };
+    return { s, jarak: (m / PANJANG_M) * L };
   });
 
   // Titik dan bingkai sepanjang selang, dipakai ulang tiap pembaruan (tanpa alokasi di loop).

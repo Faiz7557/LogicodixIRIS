@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { BilahAksi, kelasAksiUtama } from "@/components/ui/BilahAksi";
 import { EmptyState } from "@/components/ui/PageState";
 import { formatRupiah, formatSkor } from "@/lib/format";
 import { keyBaris, totalBiaya } from "@/lib/prioritas";
+import type { Aksi } from "@/lib/types";
 import { RingkasKeputusan } from "./GrafikPrioritas";
 import { KepalaPrioritas } from "./KepalaPrioritas";
 import { PanelPaketHarga, type Edit } from "./PanelPaketHarga";
@@ -22,15 +24,21 @@ export function PrioritasView(data: DataPrioritas) {
   const { kode, namaDesa, catalog } = data;
   const p = usePrioritas(data);
   const { hasil, keputusan, ringkas, disetujui, pagu } = p;
-  const [edit, setEdit] = useState<Edit>(null);
-  const [panelBuka, setPanelBuka] = useState(false);
+  // Tautan dari layar lain (mis. kartu "Perlu diperbaiki" di Kesiapan): ?isi=<item>:<aksi> membuka formulir harga.
+  const isi = useSearchParams().get("isi");
+  const [edit, setEdit] = useState<Edit>(() => editDariTautan(isi, catalog.map((c) => c.kode)));
   const panelRef = useRef<HTMLDivElement>(null);
 
-  function bukaIsiHarga(itemKode: string) {
-    setEdit({ jenis: "harga", itemKode, aksi: "beli" });
-    setPanelBuka(true);
+  function bukaIsiHarga(itemKode: string, aksi: Aksi = "beli") {
+    setEdit({ jenis: "harga", itemKode, aksi });
     requestAnimationFrame(() => panelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
   }
+
+  // Formulir dari tautan sudah terbuka sejak render pertama; tinggal digulir ke panelnya.
+  const dariTautan = useRef(edit !== null);
+  useEffect(() => {
+    if (dariTautan.current) panelRef.current?.scrollIntoView({ block: "start" });
+  }, []);
 
   return (
     <div className="mx-auto max-w-[1120px] px-4 py-6 pb-32 md:px-8 md:py-8 md:pb-8">
@@ -177,8 +185,6 @@ export function PrioritasView(data: DataPrioritas) {
           harga={p.harga}
           edit={edit}
           setEdit={setEdit}
-          buka={panelBuka}
-          setBuka={setPanelBuka}
           onSimpanTarget={async (itemKode, target, alasan) => {
             if (await p.simpanTarget(itemKode, target, alasan)) setEdit(null);
           }}
@@ -206,4 +212,11 @@ export function PrioritasView(data: DataPrioritas) {
       </BilahAksi>
     </div>
   );
+}
+
+/** `?isi=pompa_jinjing:perbaiki` -> formulir harga item itu. Nilai tak dikenal diabaikan. */
+function editDariTautan(isi: string | null, kodeItem: string[]): Edit {
+  const [itemKode, aksi] = (isi ?? "").split(":");
+  if (!kodeItem.includes(itemKode) || (aksi !== "beli" && aksi !== "perbaiki")) return null;
+  return { jenis: "harga", itemKode, aksi };
 }

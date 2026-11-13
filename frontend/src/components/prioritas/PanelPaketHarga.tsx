@@ -20,8 +20,6 @@ export function PanelPaketHarga({
   harga,
   edit,
   setEdit,
-  buka,
-  setBuka,
   onSimpanTarget,
   onSimpanHarga,
 }: {
@@ -30,19 +28,15 @@ export function PanelPaketHarga({
   harga: HargaRow[];
   edit: Edit;
   setEdit: (e: Edit) => void;
-  buka: boolean;
-  setBuka: (b: boolean) => void;
   onSimpanTarget: (itemKode: string, target: number, alasan: string) => void;
   onSimpanHarga: (itemKode: string, aksi: Aksi, hargaRp: number, sumber: string) => void;
 }) {
   return (
-    <details
-      id="panel-paket-harga"
-      open={buka}
-      onToggle={(e) => setBuka((e.currentTarget as HTMLDetailsElement).open)}
-      className="rounded-card border border-line bg-surface"
-    >
-      <summary className="flex min-h-12 cursor-pointer items-center px-4 font-bold">Paket minimum dan harga</summary>
+    // Selalu terbuka: target dan harga adalah dasar saran belanja, jadi tidak disembunyikan.
+    <section id="panel-paket-harga" aria-labelledby="judul-paket-harga" className="rounded-card border border-line bg-surface">
+      <h2 id="judul-paket-harga" className="flex min-h-12 items-center px-4 font-bold">
+        Paket minimum dan harga
+      </h2>
       <div className="space-y-4 border-t border-line px-4 py-4">
         <AssumptionNote>Target, bobot, dan sebagian harga bukan standar yang mengikat desa. Desa boleh mengubahnya dengan alasan.</AssumptionNote>
         <ul className="grid gap-3 md:grid-cols-2">
@@ -94,7 +88,7 @@ export function PanelPaketHarga({
           })}
         </ul>
       </div>
-    </details>
+    </section>
   );
 }
 

@@ -36,8 +36,9 @@ export const KONFIGURASI: Record<string, KonfigurasiModel> = {
     bangun: bangunSelangKeluar,
     buangBersama: buangBahanSelang,
     arahKamera: new THREE.Vector3(-1.2, 1.25, 2.6).normalize(),
-    target: [new THREE.Vector3(-2.35, 0.22, 0.15), new THREE.Vector3(0.35, 0.3, 0)],
-    radius: [0.85, 3.4],
+    // Selang 30 m (L = 7,8 di adegan, ujung kiri x = -3,9): kamera tertutup menyorot gulungan, terbuka menampung seluruh selang.
+    target: [new THREE.Vector3(-3.65, 0.25, 0.15), new THREE.Vector3(0.35, 0.3, 0)],
+    radius: [1.05, 5.1],
     lantaiY: 0,
     tombol: { buka: "Gelar selang", tutup: "Gulung selang" },
     saatBuka: "Selang tergelar sepanjang 30 meter, berisi air, dan menyemburkan air dari nozel.",
