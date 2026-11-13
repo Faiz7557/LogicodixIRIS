@@ -97,26 +97,34 @@ export function PrioritasView(data: DataPrioritas) {
         </section>
       ) : null}
 
-      {/* Ringkasan: pagu yang dipakai (diisi di langkah 1) dan keputusan desa sejauh ini. */}
+      {/* Ringkasan: anggaran sementara (anggaran dikurangi yang disetujui) dan keputusan desa sejauh ini. */}
       <div className="mt-6 grid gap-4 md:grid-cols-2">
         <section aria-labelledby="ringkas-pagu" className="flex flex-col rounded-panel border border-line bg-surface p-5 shadow-card">
           <h2 id="ringkas-pagu" className="font-bold">
-            Anggaran belanja
+            Anggaran sementara
           </h2>
+          <p className="text-sm text-muted">Berkurang setiap belanja disetujui. Tunda dan tolak tidak mengurangi anggaran.</p>
           <dl className="mt-3 grid grid-cols-[repeat(auto-fit,minmax(9.5rem,1fr))] gap-3">
             <div>
               <dt className="text-sm text-muted">Anggaran</dt>
               <dd className="tabular text-lg font-semibold leading-tight">{formatRupiah(pagu)}</dd>
             </div>
             <div>
-              <dt className="text-sm text-muted">Dipakai</dt>
-              <dd className="tabular text-lg font-semibold leading-tight">{formatRupiah(hasil.terpakaiRp)}</dd>
+              <dt className="text-sm text-muted">Disetujui</dt>
+              <dd className="tabular text-lg font-semibold leading-tight">
+                {p.disetujuiRp > 0 ? <span aria-hidden="true">− </span> : null}
+                {formatRupiah(p.disetujuiRp)}
+              </dd>
             </div>
             <div>
-              <dt className="text-sm text-muted">Skor</dt>
+              <dt className="text-sm text-muted">Sisa anggaran</dt>
+              <dd className="tabular text-lg font-semibold leading-tight text-ember">{formatRupiah(p.sisaSementara)}</dd>
+            </div>
+            <div>
+              <dt className="text-sm text-muted">Skor bila yang disetujui dibeli</dt>
               <dd className="tabular text-lg font-semibold leading-tight">
                 {formatSkor(p.skorSekarang)} <span aria-hidden="true">→</span>
-                <span className="sr-only">menjadi</span> <span className="text-ember">{formatSkor(hasil.skorSesudah)}</span>
+                <span className="sr-only">menjadi</span> <span className="text-ember">{formatSkor(p.skorDisetujui)}</span>
               </dd>
             </div>
           </dl>

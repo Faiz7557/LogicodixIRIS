@@ -119,17 +119,21 @@ export function PaguView(data: DataPrioritas) {
             />
             <KartuKpi
               urut={1}
-              label="Dipakai untuk belanja"
-              nilai={hasil.terpakaiRp}
+              label="Sudah disetujui"
+              nilai={p.disetujuiRp}
               format={formatRupiah}
-              tambahan={`${pagu > 0 ? Math.round((hasil.terpakaiRp / pagu) * 100) : 0}% dari anggaran`}
+              tambahan={
+                p.disetujui.length > 0
+                  ? `${formatAngka(p.disetujui.length)} belanja, ${pagu > 0 ? Math.round((p.disetujuiRp / pagu) * 100) : 0}% dari anggaran`
+                  : "belum ada yang disetujui di langkah 2"
+              }
             />
             <KartuKpi
               urut={2}
-              label="Sisa anggaran"
-              nilai={p.sisa}
+              label="Sisa anggaran sementara"
+              nilai={p.sisaSementara}
               format={formatRupiah}
-              tambahan={p.sisa > 0 ? "belum terpakai" : "anggaran habis terpakai"}
+              tambahan={p.disetujuiRp > 0 ? `anggaran ${formatRupiah(pagu)} dikurangi yang disetujui` : "berkurang setiap belanja disetujui"}
             />
             <KartuKpi
               urut={3}

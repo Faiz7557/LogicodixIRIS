@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  anggaranSementara,
   barisDisetujui,
   itemTermurah,
   kalimatPrioritas,
@@ -7,8 +8,10 @@ import {
   keyBaris,
   parsePagu,
   ringkasKeputusan,
+  skorSetelahDisetujui,
   totalBiaya,
 } from "./prioritas";
+import type { PriorityRow } from "./types";
 import { mockCatalog, mockHarga, mockReadiness } from "@/test/fixtures";
 import { rankPriorities } from "./engine/priority";
 
@@ -70,5 +73,29 @@ describe("keputusan", () => {
   it("ringkasan dan total biaya", () => {
     expect(ringkasKeputusan(hasil.terpilih, {})).toEqual({ setuju: 0, tolak: 0, tunda: 0, belum: hasil.terpilih.length });
     expect(totalBiaya(hasil.terpilih)).toBe(hasil.terpakaiRp);
+  });
+});
+
+describe("anggaran sementara", () => {
+  const baris = (itemKode: string, aksi: PriorityRow["aksi"], qty: number, biayaRp: number): PriorityRow => ({ itemKode, aksi, qty, biayaRp, alasan: "" });
+  const selang2 = baris("selang_keluar", "beli", 2, 13_338_000);
+
+  it("anggaran berkurang sebesar yang disetujui", () => {
+    expect(anggaranSementara(15_000_000, [selang2])).toEqual({ disetujuiRp: 13_338_000, sisaRp: 1_662_000 });
+  });
+  it("tanpa persetujuan sisa sama dengan anggaran", () => {
+    expect(anggaranSementara(15_000_000, [])).toEqual({ disetujuiRp: 0, sisaRp: 15_000_000 });
+  });
+  it("sisa tidak pernah negatif", () => {
+    expect(anggaranSementara(10_000_000, [selang2]).sisaRp).toBe(0);
+  });
+  it("skor hanya dari yang disetujui", () => {
+    // pompa 1/1, selang 3/10, sumur 2/5 -> 56,7. Selang +2 -> (20+10+8)/60 = 63,3.
+    expect(skorSetelahDisetujui(mockReadiness, mockCatalog, [])).toBe(56.7);
+    expect(skorSetelahDisetujui(mockReadiness, mockCatalog, [selang2])).toBe(63.3);
+  });
+  it("perbaikan dan pembelian item yang sama dijumlah, cakupan dibatasi 100%", () => {
+    expect(skorSetelahDisetujui(mockReadiness, mockCatalog, [selang2, baris("selang_keluar", "perbaiki", 1, 1)])).toBe(66.7);
+    expect(skorSetelahDisetujui(mockReadiness, mockCatalog, [baris("selang_keluar", "beli", 20, 1)])).toBe(80);
   });
 });
