@@ -19,11 +19,14 @@ export function KartuPaparan({
   paparan,
   jumlahTahun,
   tahun,
+  adaBulan = true,
 }: {
   paparan: DesaPaparan;
   jumlahTahun: number;
   /** Tahun yang sedang dipilih di grafik riwayat. */
   tahun: TahunDasbor;
+  /** false bila DB belum punya tabel desa_bulan: bilah per bulan disembunyikan. */
+  adaBulan?: boolean;
 }) {
   const baris = [
     { label: "Tahun kering ekstrem terdeteksi", k: paparan.kExt, n: paparan.nExt, arsir: "arsir-ember" },
@@ -52,7 +55,7 @@ export function KartuPaparan({
       </div>
 
       {/* Rincian tahun yang dipilih di grafik riwayat; mengisi sisa tinggi kartu. */}
-      <RincianTahun d={tahun} />
+      <RincianTahun d={tahun} adaBulan={adaBulan} />
 
       <dl className="space-y-3.5">
         {baris.map((b, i) => (

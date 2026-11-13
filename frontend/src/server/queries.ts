@@ -82,9 +82,18 @@ export async function getGerbang(): Promise<KeputusanGerbang> {
   return (await gerbangPenuh()).keputusan;
 }
 
-/** Hari deteksi per bulan (12 angka) per tahun dari `desa_bulan`. Bulan tanpa baris berarti nol. */
-async function bulanPerTahun(kode: string, dari: number, sampai: number): Promise<Map<number, number[]>> {
-  const rows = await q("SELECT tahun, bulan, det_days FROM desa_bulan WHERE kode = ? AND tahun BETWEEN ? AND ?", [kode, dari, sampai]);
+/**
+ * Hari deteksi per bulan (12 angka) per tahun dari `desa_bulan`. Bulan tanpa baris berarti nol.
+ * `null` bila tabel `desa_bulan` belum ada (DB lama sebelum tabel itu dibuat): halaman tetap jalan tanpa tampilan bulanan.
+ */
+async function bulanPerTahun(kode: string, dari: number, sampai: number): Promise<Map<number, number[]> | null> {
+  let rows: Row[];
+  try {
+    rows = await q("SELECT tahun, bulan, det_days FROM desa_bulan WHERE kode = ? AND tahun BETWEEN ? AND ?", [kode, dari, sampai]);
+  } catch (e) {
+    if (e instanceof HttpError && e.status === 503) return null;
+    throw e;
+  }
   const peta = new Map<number, number[]>();
   for (const r of rows) {
     const t = Number(r.tahun);
@@ -112,8 +121,8 @@ export async function getRiwayatJangkar(): Promise<DesaTahun[] | null> {
     const tahun = 2020 + i;
     const r = rows.find((x) => Number(x.tahun) === tahun);
     return r
-      ? { tahun, nDet: Number(r.n_det), detDays: Number(r.det_days), terpapar: Number(r.terpapar) === 1, bulan: bulan.get(tahun) ?? nolBulan() }
-      : { tahun, nDet: 0, detDays: 0, terpapar: false, bulan: nolBulan() };
+      ? { tahun, nDet: Number(r.n_det), detDays: Number(r.det_days), terpapar: Number(r.terpapar) === 1, bulan: bulan ? (bulan.get(tahun) ?? nolBulan()) : null }
+      : { tahun, nDet: 0, detDays: 0, terpapar: false, bulan: bulan ? nolBulan() : null };
   });
 }
 
@@ -142,7 +151,7 @@ export async function getDesaCard(kode: string): Promise<DesaCard | null> {
     tahunEkstrem: ext ? ext.split(",").map(Number).filter(Number.isFinite) : [],
     strip: strip.map((r) => ({
       tahun: Number(r.tahun), nDet: Number(r.n_det), detDays: Number(r.det_days), terpapar: Number(r.terpapar) === 1,
-      bulan: bulan.get(Number(r.tahun)) ?? nolBulan(),
+      bulan: bulan ? (bulan.get(Number(r.tahun)) ?? nolBulan()) : null,
     })),
     paparan: {
       mode: "live",

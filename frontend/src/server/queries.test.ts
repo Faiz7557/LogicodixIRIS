@@ -1,6 +1,6 @@
 import { createClient } from "@libsql/client";
 import { describe, expect, it } from "vitest";
-import { setDb } from "./db";
+import { db, setDb } from "./db";
 import { getDesaCard, getGerbang, getRiwayatJangkar, searchDesa } from "./queries";
 import { useTestDb } from "@/test/testDb";
 
@@ -22,9 +22,15 @@ describe("queries", () => {
     const strip = (await getDesaCard("TINGGI"))!.strip;
     for (const s of strip) {
       expect(s.bulan).toHaveLength(12);
-      expect(s.bulan.reduce((a, b) => a + b, 0)).toBe(s.detDays);
+      expect(s.bulan!.reduce((a, b) => a + b, 0)).toBe(s.detDays);
     }
-    expect(strip.some((s) => s.bulan[8] > 0)).toBe(true);
+    expect(strip.some((s) => s.bulan![8] > 0)).toBe(true);
+  });
+  it("DB lama tanpa desa_bulan: kartu tetap ada, bulan null", async () => {
+    await db().execute("DROP TABLE desa_bulan");
+    const card = await getDesaCard("TINGGI");
+    expect(card!.strip).toHaveLength(15);
+    expect(card!.strip.every((s) => s.bulan === null)).toBe(true);
   });
   it("riwayat jangkar null di DB uji", async () => { expect(await getRiwayatJangkar()).toBeNull(); });
 });

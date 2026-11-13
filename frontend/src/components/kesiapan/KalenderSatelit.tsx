@@ -24,13 +24,14 @@ export function KalenderSatelit({
   tahunEkstrem: number[];
   paparan: DesaPaparan;
 }) {
-  if (strip.length === 0) return null;
+  // Tanpa tabel desa_bulan (DB lama) kalender disembunyikan, bukan diisi angka buatan.
+  if (strip.length === 0 || strip.some((s) => s.bulan === null)) return null;
   const awal = strip[0].tahun;
   const akhir = strip[strip.length - 1].tahun;
 
   const data: TahunSatelit[] = strip.map((s) => {
     const ekstrem = tahunEkstrem.includes(s.tahun);
-    return { tahun: s.tahun, hari: s.detDays, ekstrem, bulan: s.bulan };
+    return { tahun: s.tahun, hari: s.detDays, ekstrem, bulan: s.bulan ?? [] };
   });
 
   const terdeteksi = strip.filter((s) => s.terpapar);
