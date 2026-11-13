@@ -3,7 +3,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ApiError, api } from "@/lib/api-client";
 import { formatRupiah, formatSkor } from "@/lib/format";
-import { barisDisetujui, kalimatPrioritas, keadaanPagu, keyBaris, ringkasKeputusan, totalBiaya, type KeputusanMap } from "@/lib/prioritas";
+import {
+  anggaranSementara,
+  barisDisetujui,
+  kalimatPrioritas,
+  keadaanPagu,
+  keyBaris,
+  ringkasKeputusan,
+  skorSetelahDisetujui,
+  totalBiaya,
+  type KeputusanMap,
+} from "@/lib/prioritas";
 import type { Aksi, CatalogItem, HargaRow, Keputusan, KeputusanRow, PaketRow, PrioritasPayload, ReadinessResult } from "@/lib/types";
 
 /** Jeda tulis pagu (Design Brief: PaguControl) dan jeda catatan agar satu ketukan tidak jadi satu permintaan. */
@@ -55,6 +65,23 @@ export function usePrioritas({ kode, catalog, awal, kesiapan, paket: paketAwal, 
   const terkonfirmasi = useRef(petaKeputusan(awal.keputusan));
   const nomorPagu = useRef(0);
   const penundaCatatan = useRef(new Map<string, CatatanTertunda>());
+
+  // Data server bisa berganti tanpa hook ini dibuat ulang: setelah router.refresh, atau saat kembali ke halaman
+  // yang disimpan Next. Ikuti data terbaru (mis. inventaris baru dicatat) daripada angka saat pertama dibuka.
+  const [dariServer, setDariServer] = useState({ awal, kesiapan, paketAwal, hargaAwal });
+  if (dariServer.awal !== awal || dariServer.kesiapan !== kesiapan || dariServer.paketAwal !== paketAwal || dariServer.hargaAwal !== hargaAwal) {
+    setDariServer({ awal, kesiapan, paketAwal, hargaAwal });
+    setHasil(awal);
+    setReadiness(kesiapan);
+    setPaket(paketAwal);
+    setHarga(hargaAwal);
+    setPagu(awal.paguRp);
+  }
+  // Dasar pembalikan ikut data server terbaru; dijalankan sebelum efek tulis pagu di bawah.
+  useEffect(() => {
+    paguServer.current = awal.paguRp;
+    terkonfirmasi.current = petaKeputusan(awal.keputusan);
+  }, [awal]);
 
   const terapkan = useCallback((p: PrioritasPayload) => {
     setHasil(p);
@@ -224,10 +251,13 @@ export function usePrioritas({ kode, catalog, awal, kesiapan, paket: paketAwal, 
 
   const ringkas = ringkasKeputusan(hasil.terpilih, keputusan);
   const disetujui = barisDisetujui(hasil.terpilih, keputusan);
+  const sementara = anggaranSementara(pagu, disetujui);
   // Satu kalimat keadaan untuk penunjuk tiga langkah.
   const ringkasLangkah: [string, string, string] = [
-    `Pagu ${formatRupiah(pagu)}, skor ${formatSkor(skorSekarang)} → ${formatSkor(hasil.skorSesudah)}`,
-    hasil.terpilih.length > 0 ? `${hasil.terpilih.length} saran, ${ringkas.belum} belum diputuskan` : "Belum ada saran untuk pagu ini",
+    disetujui.length > 0
+      ? `Anggaran ${formatRupiah(pagu)}, sisa sementara ${formatRupiah(sementara.sisaRp)}`
+      : `Anggaran ${formatRupiah(pagu)}, skor ${formatSkor(skorSekarang)} → ${formatSkor(hasil.skorSesudah)}`,
+    hasil.terpilih.length > 0 ? `${hasil.terpilih.length} saran, ${ringkas.belum} belum diputuskan` : "Belum ada saran untuk anggaran ini",
     disetujui.length > 0 ? `${disetujui.length} disetujui, ${formatRupiah(totalBiaya(disetujui))}` : "Setujui minimal satu saran",
   ];
 
@@ -249,6 +279,12 @@ export function usePrioritas({ kode, catalog, awal, kesiapan, paket: paketAwal, 
     kalimat: kalimatPrioritas(pagu, skorSekarang, hasil, harga, catalog),
     ringkas,
     disetujui,
+    /** Total belanja yang disetujui; mengurangi anggaran sementara. */
+    disetujuiRp: sementara.disetujuiRp,
+    /** Anggaran dikurangi belanja yang disetujui. */
+    sisaSementara: sementara.sisaRp,
+    /** Skor bila hanya yang disetujui dibeli atau diperbaiki. */
+    skorDisetujui: skorSetelahDisetujui(readiness, catalog, disetujui),
     nama,
     satuan,
     sumberHarga,

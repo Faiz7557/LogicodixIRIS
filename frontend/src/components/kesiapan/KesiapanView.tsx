@@ -13,7 +13,7 @@ import {
 import type { CatalogItem, DesaCard, HargaRow, Peran, ReadinessResult, ReferensiPergub } from "@/lib/types";
 import { KalenderSatelit } from "./KalenderSatelit";
 import { KotakPetaGudang } from "./model3d/KotakPetaGudang";
-import { KartuDana, KartuLebih, KartuSkor, TanganiDulu, barisTindakan } from "./RingkasanGudang";
+import { KartuLebih, KartuSkor, TanganiDulu, barisTindakan } from "./RingkasanGudang";
 
 /**
  * Layar Kesiapan Desa (hero, App Flow v2 §3.7). Satu kesimpulan dalam satu kalimat, lalu buktinya.
@@ -93,7 +93,7 @@ export function KesiapanView({
             </p>
           ) : null}
 
-          {/* Peta gudang (pola peta kilang Sparekit): alat saja; dana operasi bukan barang di gudang. */}
+          {/* Peta gudang (pola peta kilang Sparekit): hanya item yang punya keadaan rusak. */}
           <section aria-labelledby="peta-gudang" className="mt-6">
             <h2 id="peta-gudang" className="sr-only">
               Peta gudang alat
@@ -131,8 +131,8 @@ export function KesiapanView({
           <div className="mt-4">
             <TanganiDulu kode={kode} baris={baris} />
           </div>
-          {/* Tiga kartu sejajar: skor, dana operasi (pengganti grafik bulanan Sparekit), cadangan. */}
-          <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {/* Dua kartu sejajar: skor dan cadangan. */}
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
             <KartuSkor
               skor={hasil.skor}
               status={hasil.status}
@@ -142,10 +142,7 @@ export function KesiapanView({
               kode={kode}
               bisaPrioritas={bisaSusunPrioritas(peran)}
             />
-            <KartuDana kode={kode} it={items.find((it) => it.itemKode === "dana_operasi")} hargaRows={harga} />
-            <div className="grid md:col-span-2 xl:col-span-1">
-              <KartuLebih kode={kode} items={items} hargaRows={harga} />
-            </div>
+            <KartuLebih kode={kode} items={items} hargaRows={harga} />
           </div>
 
           {/* Pengganti kalender Sparekit: riwayat deteksi satelit desa. */}

@@ -15,7 +15,9 @@ import {
 import { mockCatalog } from "@/test/fixtures";
 
 const pompa = mockCatalog.find((c) => c.kode === "pompa_jinjing")!;
-const dana = mockCatalog.find((c) => c.kode === "dana_operasi")!;
+// Item sintetis tanpa keadaan rusak (satu kolom): katalog nyata tidak punya, tetapi logikanya tetap ada.
+const tanpaRusak = { ...pompa, kode: "item_tanpa_rusak", nama: "Item tanpa rusak", punyaRusak: false };
+const katalogUji = [...mockCatalog, tanpaRusak];
 const kosong = { total: "", berfungsi: "", catatan: "" };
 
 describe("bacaAngka", () => {
@@ -60,9 +62,9 @@ describe("validasiBaris", () => {
     expect(validasiBaris(pompa, { ...kosong, total: "2" }).berfungsi).toBe(PESAN.berfungsiKosong);
     expect(validasiBaris(pompa, { ...kosong, berfungsi: "1" }).total).toBe(PESAN.totalKosong);
   });
-  it("dana operasi hanya memeriksa satu kolom", () => {
-    expect(validasiBaris(dana, { ...kosong, berfungsi: "2" })).toEqual({});
-    expect(validasiBaris(dana, { ...kosong, berfungsi: "x" }).berfungsi).toBe(PESAN.angka);
+  it("item tanpa rusak hanya memeriksa satu kolom", () => {
+    expect(validasiBaris(tanpaRusak, { ...kosong, berfungsi: "2" })).toEqual({});
+    expect(validasiBaris(tanpaRusak, { ...kosong, berfungsi: "x" }).berfungsi).toBe(PESAN.angka);
   });
   it("catatan tidak boleh memuat nomor telepon atau NIK", () => {
     expect(catatanMemuatPribadi("hubungi 0812-3456-7890")).toBe(true);
@@ -73,9 +75,9 @@ describe("validasiBaris", () => {
 });
 
 describe("susunPayload", () => {
-  it("dana operasi: total disamakan dengan berfungsi", () => {
-    const state: FormState = { dana_operasi: { ...kosong, berfungsi: "2" } };
-    expect(susunPayload(mockCatalog, state).baris).toEqual([{ itemKode: "dana_operasi", total: 2, berfungsi: 2 }]);
+  it("item tanpa rusak: total disamakan dengan berfungsi", () => {
+    const state: FormState = { item_tanpa_rusak: { ...kosong, berfungsi: "2" } };
+    expect(susunPayload(katalogUji, state).baris).toEqual([{ itemKode: "item_tanpa_rusak", total: 2, berfungsi: 2 }]);
   });
   it("baris kosong dilewati sehingga boleh simpan sebagian", () => {
     const state: FormState = { pompa_jinjing: { total: "2", berfungsi: "1", catatan: " satu rusak " } };
@@ -96,12 +98,12 @@ describe("susunPayload", () => {
 });
 
 describe("awalForm dan berubah", () => {
-  it("memuat data tersimpan; dana operasi hanya kolom berfungsi", () => {
-    const f = awalForm(mockCatalog, [
-      { itemKode: "dana_operasi", total: 1, berfungsi: 1 },
+  it("memuat data tersimpan; item tanpa rusak hanya kolom berfungsi", () => {
+    const f = awalForm(katalogUji, [
+      { itemKode: "item_tanpa_rusak", total: 1, berfungsi: 1 },
       { itemKode: "selang_keluar", total: 3, berfungsi: 3, catatan: "dua sambungan" },
     ]);
-    expect(f.dana_operasi).toEqual({ total: "", berfungsi: "1", catatan: "" });
+    expect(f.item_tanpa_rusak).toEqual({ total: "", berfungsi: "1", catatan: "" });
     expect(f.selang_keluar).toEqual({ total: "3", berfungsi: "3", catatan: "dua sambungan" });
     expect(f.sumur_bor).toEqual(kosong);
   });
@@ -127,7 +129,7 @@ describe("selaraskan (berfungsi tidak melebihi total)", () => {
     const k = { total: "", berfungsi: "5", catatan: "" };
     expect(selaraskan(pompa, k, "berfungsi")).toBe(k);
     const d = { total: "1", berfungsi: "3", catatan: "" };
-    expect(selaraskan(dana, d, "berfungsi")).toBe(d);
+    expect(selaraskan(tanpaRusak, d, "berfungsi")).toBe(d);
   });
 });
 
@@ -144,6 +146,6 @@ describe("ikutTotal (berfungsi mengikuti total bila sebelumnya sama)", () => {
   });
   it("membiarkan total kosong dan item tanpa rusak", () => {
     expect(ikutTotal(pompa, sama, { ...sama, total: "" }).berfungsi).toBe("3");
-    expect(ikutTotal(dana, sama, { ...sama, total: "5" }).berfungsi).toBe("3");
+    expect(ikutTotal(tanpaRusak, sama, { ...sama, total: "5" }).berfungsi).toBe("3");
   });
 });

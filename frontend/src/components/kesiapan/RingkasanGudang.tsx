@@ -22,7 +22,12 @@ type Baris = {
 
 const harga = (rows: HargaRow[], kode: string, aksi: "beli" | "perbaiki") => rows.find((h) => h.itemKode === kode && h.aksi === aksi)?.hargaRp ?? null;
 
-/** Baris tindakan terurut dari item paling genting (urutan `items` sudah dari kesenjangan terbesar). */
+/**
+ * Baris tindakan terurut dari item paling genting (urutan `items` sudah dari kesenjangan terbesar).
+ * Ukurannya sama dengan mesin prioritas (engine/priority.ts): kekurangan = target dikurangi yang berfungsi;
+ * unit rusak diperbaiki dulu sampai menutup kekurangan, sisanya baru dibeli. Unit rusak tanpa harga perbaikan
+ * ikut dibeli. Unit rusak di luar kekurangan tidak dimasukkan karena paket minimum sudah terpenuhi tanpanya.
+ */
 export function barisTindakan(items: ItemView[], catalog: CatalogItem[], hargaRows: HargaRow[]): Baris[] {
   const out: Baris[] = [];
   for (const it of items) {
@@ -34,28 +39,32 @@ export function barisTindakan(items: ItemView[], catalog: CatalogItem[], hargaRo
       continue;
     }
     const kurang = Math.max(it.target - it.berfungsi, 0);
-    if (kurang > 0) {
+    if (kurang === 0) continue;
+    const hPerbaiki = harga(hargaRows, it.itemKode, "perbaiki");
+    const perbaiki = alat && hPerbaiki !== null ? Math.min(it.rusak, kurang) : 0;
+    const beli = kurang - perbaiki;
+    const keadaan = alat ? `Ada ${formatAngka(it.berfungsi)}, butuh ${n(it.target)}` : `Tersedia ${formatAngka(it.berfungsi)}, butuh ${n(it.target)}`;
+    if (perbaiki > 0) {
+      out.push({
+        kunci: `${it.itemKode}:perbaiki`,
+        kode: it.itemKode,
+        nama: it.nama,
+        keadaan: `${keadaan}, ${n(it.rusak)} rusak`,
+        aksi: `Perbaiki ${n(perbaiki)}`,
+        biaya: perbaiki * (hPerbaiki ?? 0),
+        ragam: "rusak",
+      });
+    }
+    if (beli > 0) {
       const h = harga(hargaRows, it.itemKode, "beli");
       out.push({
         kunci: `${it.itemKode}:beli`,
         kode: it.itemKode,
         nama: it.nama,
-        keadaan: alat ? `Ada ${formatAngka(it.berfungsi)}, butuh ${n(it.target)}` : `Tersedia ${formatAngka(it.berfungsi)}, butuh ${n(it.target)}`,
-        aksi: alat ? `Beli ${n(kurang)}` : `Tambah dana ${n(kurang)}`,
-        biaya: h === null ? null : kurang * h,
+        keadaan: perbaiki > 0 ? `Masih kurang ${n(beli)} setelah diperbaiki` : keadaan,
+        aksi: alat ? `Beli ${n(beli)}` : `Tambah dana ${n(beli)}`,
+        biaya: h === null ? null : beli * h,
         ragam: "kurang",
-      });
-    }
-    if (alat && it.rusak > 0) {
-      const h = harga(hargaRows, it.itemKode, "perbaiki");
-      out.push({
-        kunci: `${it.itemKode}:perbaiki`,
-        kode: it.itemKode,
-        nama: it.nama,
-        keadaan: `${n(it.rusak)} rusak`,
-        aksi: `Perbaiki ${n(it.rusak)}`,
-        biaya: h === null ? null : it.rusak * h,
-        ragam: "rusak",
       });
     }
   }
@@ -72,7 +81,7 @@ export function TanganiDulu({ kode, baris }: { kode: string; baris: Baris[] }) {
         <p className="text-sm text-muted">Urut dari item paling genting</p>
       </div>
       {baris.length === 0 ? (
-        <p className="border-t border-line px-5 py-4 text-muted md:px-6">Tidak ada yang mendesak. Semua item paket minimum terpenuhi dan tidak ada yang rusak.</p>
+        <p className="border-t border-line px-5 py-4 text-muted md:px-6">Tidak ada yang mendesak. Semua item paket minimum sudah terpenuhi.</p>
       ) : (
         <ul className="divide-y divide-surface border-t border-line">
           {baris.map((b) => (
@@ -240,69 +249,13 @@ export function KartuSkor({
       <div className="min-h-5 flex-1" />
       <BarisAngka
         isi={[
-          { label: "item kurang", nilai: formatAngka(itemKurang) },
-          { label: "item rusak", nilai: formatAngka(rusak) },
+          { label: "perlu dibeli", nilai: formatAngka(itemKurang) },
+          { label: "perlu diperbaiki", nilai: formatAngka(rusak) },
           { label: "perlu biaya", nilai: rupiahRingkas(totalBiaya) },
         ]}
       />
-      {bisaPrioritas ? <TautanBawah href={`/desa/${kode}/prioritas/pagu`}>Isi pagu</TautanBawah> : <TautanBawah href={`/desa/${kode}`}>Lihat bukti paparan</TautanBawah>}
+      {bisaPrioritas ? <TautanBawah href={`/desa/${kode}/prioritas/pagu`}>Isi anggaran</TautanBawah> : <TautanBawah href={`/desa/${kode}`}>Lihat bukti paparan</TautanBawah>}
     </section>
-  );
-}
-
-/** Dana operasi (pengganti grafik bulanan Sparekit): satu kotak per minggu. Seluruh kartu menuju halaman Biaya operasi. */
-export function KartuDana({ kode, it, hargaRows }: { kode: string; it: ItemView | undefined; hargaRows: HargaRow[] }) {
-  if (!it) return null;
-  const ada = it.belumDiisi ? 0 : Math.max(it.berfungsi, 0);
-  const kurang = Math.max(it.target - ada, 0);
-  const h = harga(hargaRows, it.itemKode, "beli");
-  const sel = Math.max(it.target, ada);
-  const MAKS_SEL = 24;
-
-  return (
-    <Link
-      href={`/desa/${kode}/kesiapan/${it.itemKode}`}
-      aria-labelledby="dana-kartu"
-      className={`group ${kelasKartu} transition-[border-color,box-shadow] hover:border-ink/40 hover:shadow-md`}
-    >
-      <Kepala
-        id="dana-kartu"
-        judul="Biaya operasi pemadaman"
-        kanan={
-          <Lencana ragam={it.belumDiisi ? "netral" : kurang > 0 ? "kurang" : "ok"}>
-            {it.belumDiisi ? "Belum dicatat" : kurang > 0 ? `Kurang ${formatAngka(kurang)} ${it.satuan}` : "Terpenuhi"}
-          </Lencana>
-        }
-      />
-      <AngkaBesar nilai={formatAngka(ada)} keterangan={`dari ${formatAngka(it.target)} ${it.satuan} operasi`} />
-
-      <AreaVisual keterangan="Satu kotak satu minggu. Biru berarti dananya sudah ada.">
-        {sel > 0 && sel <= MAKS_SEL ? (
-          <ol aria-label={`${formatAngka(ada)} dari ${formatAngka(it.target)} ${it.satuan} sudah ada dananya`} className={`grid gap-2 ${sel <= 12 ? "grid-cols-4" : "grid-cols-6"}`}>
-            {Array.from({ length: sel }, (_, i) => (
-              <li
-                key={i}
-                aria-hidden="true"
-                className={`flex items-center justify-center rounded-lg font-semibold ${sel <= 12 ? "h-10 text-sm" : "h-7 text-xs"} ${
-                  i < ada ? "bg-water text-white" : "border-2 border-dashed border-line-2 text-muted"
-                }`}
-              >
-                {i + 1}
-              </li>
-            ))}
-          </ol>
-        ) : null}
-      </AreaVisual>
-
-      <div className="min-h-5 flex-1" />
-      <BarisAngka
-        isi={[
-          { label: "dana tersedia", nilai: h !== null ? rupiahRingkas(ada * h) : "–" },
-          { label: "masih dibutuhkan", nilai: kurang === 0 ? "Tidak ada" : h !== null ? rupiahRingkas(kurang * h) : "–", ragam: kurang > 0 ? "kurang" : undefined },
-        ]}
-      />
-      <TautanBawah>Lihat biaya operasi</TautanBawah>
-    </Link>
   );
 }
 

@@ -1,5 +1,4 @@
 kode,nama,satuan,bobot,kritis,bisa_dibeli,punya_rusak,hanya_gambut,urutan
-dana_operasi,Biaya operasi pemadaman,minggu,15,1,1,0,0,1
-pompa_jinjing,Pompa jinjing,unit,20,1,1,1,0,2
-selang_keluar,Selang keluar,buah,20,1,1,1,0,3
-sumur_bor,Sumur bor,titik,20,1,1,1,1,4
+pompa_jinjing,Pompa jinjing,unit,20,1,1,1,0,1
+selang_keluar,Selang keluar,buah,20,1,1,1,0,2
+sumur_bor,Sumur bor,titik,20,1,1,1,1,3

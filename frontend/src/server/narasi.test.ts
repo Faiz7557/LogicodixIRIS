@@ -19,8 +19,8 @@ const FACTS = {
 };
 
 const KANAL: Kanal[] = ["apbdes_perubahan", "bpbd", "daops", "csr"];
-const allowed = ["desa", "skor", "total_usulan"];
-const AI_BAIK = "{{desa}} memiliki skor {{skor}} dan mengusulkan {{total_usulan}}.";
+const allowed = ["desa", "kecamatan", "kabupaten", "total_usulan"];
+const AI_BAIK = "Bersama ini {{desa}} mengajukan permohonan pengadaan alat pemadam senilai {{total_usulan}}.";
 
 beforeEach(() => {
   vi.spyOn(console, "warn").mockImplementation(() => {});
@@ -33,18 +33,26 @@ afterEach(() => {
 });
 
 describe("renderTemplate", () => {
-  it("memuat fakta dan asumsi", () => {
+  it("memuat fakta, tanpa salam dan tanpa pernyataan asumsi", () => {
     for (const k of KANAL) {
       const t = renderTemplate(FACTS, k);
       expect(t).toContain(FACTS.desa);
       expect(t).toContain(FACTS.total_usulan);
-      expect(t).toContain("asumsi tim");
+      expect(t).not.toContain("Kepada Yth");
+      expect(t).not.toContain("asumsi tim");
+    }
+  });
+
+  it("surat resmi tanpa skor, status, dan data satelit", () => {
+    for (const k of KANAL) {
+      const t = renderTemplate(FACTS, k).toLowerCase();
+      for (const kata of ["skor", "satelit", "mata rantai", FACTS.skor, FACTS.status, FACTS.paparan]) expect(t).not.toContain(kata.toLowerCase());
     }
   });
 
   it("APBDes memakai rumusan netral", () => {
     const t = renderTemplate(FACTS, "apbdes_perubahan");
-    expect(t).toContain("berlaku pada Tahun Anggaran 2027");
+    expect(t).toContain("sesuai ketentuan penggunaan Dana Desa yang berlaku");
     expect(t).not.toContain("berdasarkan Permendesa");
   });
 
@@ -55,22 +63,27 @@ describe("renderTemplate", () => {
 
 describe("validateNarrative", () => {
   it("menerima placeholder saja", () => {
-    expect(validateNarrative("{{desa}} memiliki skor {{skor}} dan butuh {{total_usulan}}.", allowed).ok).toBe(true);
+    expect(validateNarrative(AI_BAIK, allowed).ok).toBe(true);
+  });
+  it("menolak skor dan data satelit di surat", () => {
+    expect(validateNarrative("{{desa}} mengajukan {{total_usulan}} karena skor kesiapannya rendah.", allowed).ok).toBe(false);
+    expect(validateNarrative("{{desa}} mengajukan {{total_usulan}} sesuai deteksi satelit.", allowed).ok).toBe(false);
+    expect(validateNarrative("{{desa}} {{skor}} {{total_usulan}}", allowed).ok).toBe(false);
   });
   it("menolak digit", () => {
-    expect(validateNarrative("{{desa}} {{skor}} {{total_usulan}} butuh 5 pompa.", allowed).ok).toBe(false);
+    expect(validateNarrative("{{desa}} {{total_usulan}} butuh 5 pompa.", allowed).ok).toBe(false);
   });
   it("menolak placeholder asing", () => {
-    expect(validateNarrative("{{desa}} {{skor}} {{total_usulan}} {{palsu}}", allowed).ok).toBe(false);
+    expect(validateNarrative("{{desa}} {{total_usulan}} {{palsu}}", allowed).ok).toBe(false);
   });
   it("menolak nama wilayah karangan", () => {
-    expect(validateNarrative("{{desa}} {{skor}} {{total_usulan}} di Kecamatan Sukamaju.", allowed).ok).toBe(false);
+    expect(validateNarrative("{{desa}} {{total_usulan}} di Kecamatan Sukamaju.", allowed).ok).toBe(false);
   });
   it("menolak placeholder wajib hilang", () => {
     expect(validateNarrative("{{desa}} siap.", allowed).ok).toBe(false);
   });
   it("menolak kata terlarang", () => {
-    expect(validateNarrative("{{desa}} {{skor}} {{total_usulan}}, penyebab api diketahui.", allowed).ok).toBe(false);
+    expect(validateNarrative("{{desa}} {{total_usulan}}, penyebab api diketahui.", allowed).ok).toBe(false);
   });
 });
 
@@ -95,6 +108,14 @@ describe("generateNarrative", () => {
     vi.stubGlobal("fetch", vi.fn(async () => { throw new Error("putus"); }));
     expect((await generateNarrative(FACTS, "daops")).sumber).toBe("template");
   });
+  it("model tidak diberi placeholder skor", async () => {
+    vi.stubEnv("OPENAI_API_KEY", "kunci-uji");
+    const f = jawab(JSON.stringify({ teks: "{{desa}} skornya {{skor}}, mengajukan {{total_usulan}}." }));
+    vi.stubGlobal("fetch", f);
+    const n = await generateNarrative(FACTS, "bpbd");
+    expect(n.sumber).toBe("template");
+    expect(badanPanggilan(f)).not.toContain("{{skor}}");
+  });
   it("prompt tidak memuat nilai fakta", async () => {
     vi.stubEnv("OPENAI_API_KEY", "kunci-uji");
     const f = jawab(JSON.stringify({ teks: AI_BAIK }));
@@ -105,13 +126,12 @@ describe("generateNarrative", () => {
       expect(terkirim).not.toContain(nilai);
     }
   });
-  it("teks ai dirender dengan nilai fakta dan pernyataan asumsi tetap ada", async () => {
+  it("teks ai dirender dengan nilai fakta, tanpa tambahan pernyataan asumsi", async () => {
     vi.stubEnv("OPENAI_API_KEY", "kunci-uji");
     vi.stubEnv("OPENAI_MODEL_RINGKASAN", "model-uji");
     vi.stubGlobal("fetch", jawab(JSON.stringify({ teks: AI_BAIK })));
     const n = await generateNarrative(FACTS, "bpbd");
     expect(n).toMatchObject({ sumber: "ai", model: "model-uji" });
-    expect(n.teks).toContain("Desa Uji D memiliki skor 41,7 dan mengusulkan Rp12.179.000.");
-    expect(n.teks).toContain("asumsi tim");
+    expect(n.teks).toBe("Bersama ini Desa Uji D mengajukan permohonan pengadaan alat pemadam senilai Rp12.179.000.");
   });
 });

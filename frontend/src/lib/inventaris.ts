@@ -109,7 +109,7 @@ export function adaGalat(g: GalatBaris): boolean {
   return Boolean(g.total || g.berfungsi || g.catatan);
 }
 
-/** Isian awal dari data tersimpan. Dana operasi: total disamakan dengan berfungsi (Schema §4). */
+/** Isian awal dari data tersimpan. Item tanpa keadaan rusak: total disamakan dengan berfungsi (Schema §4). */
 export function awalForm(catalog: CatalogItem[], tersimpan: InventoryRow[]): FormState {
   const byKode = new Map(tersimpan.map((r) => [r.itemKode, r]));
   const state: FormState = {};
@@ -134,7 +134,7 @@ export interface HasilSusun {
 
 /**
  * Susun muatan simpan. Baris kosong dilewati (boleh simpan sebagian).
- * Dana operasi: total = berfungsi. Jika ada galat, `baris` tetap berisi baris valid tetapi tidak boleh dikirim.
+ * Item tanpa keadaan rusak: total = berfungsi. Jika ada galat, `baris` tetap berisi baris valid tetapi tidak boleh dikirim.
  */
 export function susunPayload(catalog: CatalogItem[], state: FormState): HasilSusun {
   const baris: InventoryInput[] = [];

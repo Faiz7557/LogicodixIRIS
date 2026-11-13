@@ -14,7 +14,7 @@ const JEDA = 70;
  * "mewujud" (blur + skala, bukan sekadar pudar). Penghitung naik bersamaan dan dibandingkan dengan
  * yang diharapkan bila desa dipilih acak. Gerak dikurangi: langsung terbuka tanpa jeda.
  */
-export function BukaAmplop({ teratas, lajuDasar }: { teratas: Backtest["teratas"]; lajuDasar: number | null }) {
+export function BukaAmplop({ teratas, lajuDasar, tahunUji = 2026 }: { teratas: Backtest["teratas"]; lajuDasar: number | null; tahunUji?: number }) {
   const [buka, setBuka] = useState(false);
   const kena = teratas.filter((d) => d.terpapar2026).length;
   const hitung = useAngkaNaik(buka ? kena : 0, Math.min(teratas.length * JEDA + 300, 1700));
@@ -25,8 +25,8 @@ export function BukaAmplop({ teratas, lajuDasar }: { teratas: Backtest["teratas"
       <div className="flex flex-wrap items-start justify-between gap-4">
         <KepalaKartu
           id="amplop"
-          judul={`${teratas.length} desa teratas menurut peringkat beku`}
-          keterangan="Disusun dari data sampai 31 Desember 2025, sebelum satu pun deteksi 2026 dilihat."
+          judul={`Peragaan: ${teratas.length} desa yang kami tebak paling rawan`}
+          keterangan={`Daftar ini disusun dari data sampai 31 Desember ${tahunUji - 1}. Tekan "Buka ${tahunUji}" untuk melihat berapa yang benar-benar terdeteksi api.`}
         />
         <div className="flex items-center gap-4">
           <p aria-live="polite" className="text-right">
@@ -35,8 +35,8 @@ export function BukaAmplop({ teratas, lajuDasar }: { teratas: Backtest["teratas"
               <span className="text-lg text-muted"> / {teratas.length}</span>
             </span>
             <span className="text-xs text-muted">
-              {buka ? "terdeteksi pada 2026" : "hasil masih tertutup"}
-              {buka && harapanAcak !== null ? ` · acak ±${formatAngka(harapanAcak, 1)}` : ""}
+              {buka ? `terdeteksi api pada ${tahunUji}` : "hasil masih tertutup"}
+              {buka && harapanAcak !== null ? ` · kalau menebak asal, sekitar ${formatAngka(harapanAcak, 1)}` : ""}
             </span>
           </p>
           <button
@@ -50,7 +50,7 @@ export function BukaAmplop({ teratas, lajuDasar }: { teratas: Backtest["teratas"
             <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
               {buka ? <path d="M4 10l8 6 8-6M4 10v9h16v-9M4 10l8-6 8 6" /> : <path d="M4 7h16v12H4zM4 7l8 6 8-6" />}
             </svg>
-            {buka ? "Tutup lagi" : "Buka 2026"}
+            {buka ? "Tutup lagi" : `Buka ${tahunUji}`}
           </button>
         </div>
       </div>
@@ -86,7 +86,7 @@ export function BukaAmplop({ teratas, lajuDasar }: { teratas: Backtest["teratas"
                     {d.terpapar2026 ? <circle cx="12" cy="12" r="5" fill="currentColor" /> : null}
                     <circle cx="12" cy="12" r="9" />
                   </svg>
-                  {buka ? (d.terpapar2026 ? "Terdeteksi 2026" : "Tidak terdeteksi") : "Tertutup"}
+                  {buka ? (d.terpapar2026 ? "Ada api" : "Tidak ada api") : "Tertutup"}
                 </span>
                 {/* Lapisan embun: menutupi hasil sampai dibuka. */}
                 <span
@@ -110,7 +110,7 @@ export function BukaAmplop({ teratas, lajuDasar }: { teratas: Backtest["teratas"
       <p className="sr-only">
         {buka
           ? teratas.map((d, i) => `${i + 1}. ${d.nama}: ${d.terpapar2026 ? "terdeteksi" : "tidak terdeteksi"}`).join(". ")
-          : "Hasil 2026 masih tertutup. Tekan Buka 2026."}
+          : `Hasil ${tahunUji} masih tertutup. Tekan Buka ${tahunUji}.`}
       </p>
     </section>
   );

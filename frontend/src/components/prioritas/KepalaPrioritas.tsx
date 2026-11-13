@@ -2,7 +2,7 @@ import Link from "next/link";
 import { RingkasanAi } from "@/components/ui/RingkasanAi";
 
 const LANGKAH = [
-  { judul: "Pagu", pendek: "Pagu", href: (k: string) => `/desa/${k}/prioritas/pagu` },
+  { judul: "Isi anggaran", pendek: "Anggaran", href: (k: string) => `/desa/${k}/prioritas/pagu` },
   { judul: "Putuskan saran", pendek: "Keputusan", href: (k: string) => `/desa/${k}/prioritas` },
   { judul: "Terbitkan usulan", pendek: "Usulan", href: (k: string) => `/desa/${k}/usulan` },
 ] as const;

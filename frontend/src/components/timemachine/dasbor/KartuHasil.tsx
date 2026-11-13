@@ -1,7 +1,7 @@
 "use client";
 
 import { useAngkaNaik } from "@/components/paparan/dasbor/dasar";
-import { NAMA_STRATEGI, type MetricRow, type Strategi } from "@/lib/backtest";
+import { NAMA_RAMAH, type MetricRow, type Strategi } from "@/lib/backtest";
 import { formatAngka } from "@/lib/format";
 
 const PEMBANDING: Strategi[] = ["persistensi", "total_riwayat", "gambut"];
@@ -23,9 +23,9 @@ export function KartuHasil({ rows, tahunUji }: { rows: MetricRow[]; tahunUji: nu
   const tampilKali = useAngkaNaik(kali);
 
   const garis = [
-    { s: "paparan" as const, label: "Peringkat paparan", warna: "#ffb38a", lebar: 2.5 },
-    { s: terbaik.s, label: `Pembanding terbaik (${NAMA_STRATEGI[terbaik.s]})`, warna: "#9ec5ff", lebar: 1.5 },
-    { s: "acak" as const, label: "Acak", warna: "rgba(255,255,255,.45)", lebar: 1.5, putus: true },
+    { s: "paparan" as const, label: NAMA_RAMAH.paparan, warna: "#ffb38a", lebar: 2.5 },
+    { s: terbaik.s, label: `Tebakan sederhana terbaik (${NAMA_RAMAH[terbaik.s].toLowerCase()})`, warna: "#9ec5ff", lebar: 1.5 },
+    { s: "acak" as const, label: NAMA_RAMAH.acak, warna: "rgba(255,255,255,.45)", lebar: 1.5, putus: true },
   ];
   const titik = (s: Strategi) => (["capture_10", "capture_20", "capture_30"] as const).map((m) => ambil(s, m));
   const X = [12, 100, 188];
@@ -43,7 +43,7 @@ export function KartuHasil({ rows, tahunUji }: { rows: MetricRow[]; tahunUji: nu
       </svg>
 
       <h2 id="hasil" className="relative text-sm font-semibold text-white/80">
-        Hasil uji {tahunUji}
+        Nilai tebakan kami di uji {tahunUji}
       </h2>
       <p className="relative mt-3 flex flex-wrap items-center gap-3">
         <span className="tabular text-6xl font-semibold leading-none tracking-[-0.04em]">{formatAngka(Math.round(tampil))}%</span>
@@ -53,20 +53,23 @@ export function KartuHasil({ rows, tahunUji }: { rows: MetricRow[]; tahunUji: nu
           <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
             <path d={selisih > 0 ? "M12 19V5M6 11l6-6 6 6" : "M12 5v14M6 13l6 6 6-6"} />
           </svg>
-          {selisih > 0 ? `unggul ${selisih} poin` : selisih === 0 ? "seri" : `kalah ${-selisih} poin`}
+          {selisih > 0 ? `unggul ${selisih} poin dari tebakan sederhana` : selisih === 0 ? "seri dengan tebakan sederhana" : `kalah ${-selisih} poin dari tebakan sederhana`}
         </span>
       </p>
-      <p className="relative mt-2 text-sm text-white/80">desa yang kemudian terdeteksi sudah ada di 20% teratas peringkat</p>
+      <p className="relative mt-2 text-sm text-white/80">
+        dari semua desa yang akhirnya terdeteksi api, segini yang sudah ada di <strong className="text-white">20% teratas daftar kami</strong>
+      </p>
 
       <dl className="relative mt-4 grid grid-cols-2 gap-3 border-t border-white/15 pt-4 text-sm">
         <div>
-          <dt className="text-white/60">Dibanding acak</dt>
-          <dd className="tabular text-xl font-semibold">{formatAngka(tampilKali, 1)}× lebih baik</dd>
+          <dt className="text-white/60">Dibanding tebak asal (20%)</dt>
+          <dd className="tabular text-xl font-semibold">{formatAngka(tampilKali, 1)}× lebih jitu</dd>
         </div>
         <div>
-          <dt className="text-white/60">Pembanding terbaik</dt>
-          <dd className="text-xl font-semibold capitalize">
-            {NAMA_STRATEGI[terbaik.s]} <span className="tabular text-white/70">{Math.round(terbaik.v * 100)}%</span>
+          <dt className="text-white/60">Tebakan sederhana terbaik</dt>
+          <dd className="text-xl font-semibold">
+            <span className="block text-sm font-semibold leading-tight">{NAMA_RAMAH[terbaik.s]}</span>
+            <span className="tabular text-white/70">{Math.round(terbaik.v * 100)}%</span>
           </dd>
         </div>
       </dl>

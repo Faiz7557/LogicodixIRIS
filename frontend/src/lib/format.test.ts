@@ -46,7 +46,7 @@ describe("format", () => {
   });
 
   it("keterangan meter berlabel turunan", () => {
-    expect(keteranganMeter(3)).toBe("≈60 m pada asumsi 20 m per buah");
+    expect(keteranganMeter(3)).toBe("≈90 m pada asumsi 30 m per buah");
     expect(keteranganMeter(10, 30)).toBe("≈300 m pada asumsi 30 m per buah");
   });
 

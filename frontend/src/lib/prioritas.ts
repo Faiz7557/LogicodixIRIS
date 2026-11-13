@@ -2,8 +2,9 @@
  * Logika tampilan layar Prioritas (App Flow v2 §3.8). Fungsi murni.
  * Urutan dan skor datang dari mesin backend; di sini hanya pagu, keadaan, kalimat, dan keputusan.
  */
+import { round1, skorDari } from "./engine/readiness";
 import { formatRupiah, formatSkor } from "./format";
-import type { Aksi, CatalogItem, Keputusan, PriceRow, PriorityResult, PriorityRow } from "./types";
+import type { Aksi, CatalogItem, Keputusan, PriceRow, PriorityResult, PriorityRow, ReadinessResult } from "./types";
 
 export const PAGU_DEFAULT = 15_000_000;
 export const PAGU_MAKS = 1_000_000_000;
@@ -19,12 +20,8 @@ export function parsePagu(mentah: string): number {
   return Math.min(Number(angka), PAGU_MAKS);
 }
 
-/** Item yang bukan barang: dananya disediakan, bukan dibeli (supaya tidak terbaca "membeli dana"). */
-const BUKAN_BARANG = new Set(["dana_operasi"]);
-
-export function namaAksi(aksi: Aksi, itemKode?: string): string {
-  if (aksi === "beli") return itemKode && BUKAN_BARANG.has(itemKode) ? "Sediakan" : "Beli";
-  return "Perbaiki";
+export function namaAksi(aksi: Aksi): string {
+  return aksi === "beli" ? "Beli" : "Perbaiki";
 }
 
 export function itemTermurah(harga: PriceRow[], catalog: CatalogItem[]): { nama: string; hargaRp: number; aksi: Aksi } | null {
@@ -49,15 +46,15 @@ export function kalimatPrioritas(paguRp: number, skorSekarang: number, hasil: Pr
     case "tanpaHarga":
       return "Belum ada harga. Isi harga dari penawaran setempat.";
     case "nol":
-      return "Isi pagu untuk melihat urutan.";
+      return "Isi anggaran untuk melihat urutan belanja.";
     case "kurang": {
       const t = itemTermurah(harga, catalog);
       return t
-        ? `Pagu belum cukup untuk satu item. Item termurah: ${t.nama}, ${formatRupiah(t.hargaRp)}.`
-        : "Pagu belum cukup untuk satu item.";
+        ? `Anggaran belum cukup untuk satu alat pun. Yang termurah: ${t.nama}, ${formatRupiah(t.hargaRp)}.`
+        : "Anggaran belum cukup untuk satu alat pun.";
     }
     default:
-      return `Dengan pagu ${formatRupiah(paguRp)}, skor kesiapan naik dari ${formatSkor(skorSekarang)} menjadi ${formatSkor(hasil.skorSesudah)}.`;
+      return `Dengan anggaran ${formatRupiah(paguRp)}, skor kesiapan naik dari ${formatSkor(skorSekarang)} menjadi ${formatSkor(hasil.skorSesudah)}.`;
   }
 }
 
@@ -81,6 +78,26 @@ export function ringkasKeputusan(terpilih: PriorityRow[], keputusan: KeputusanMa
 
 export function totalBiaya(baris: PriorityRow[]): number {
   return baris.reduce((s, r) => s + r.biayaRp, 0);
+}
+
+/**
+ * Anggaran sementara: anggaran dikurangi belanja yang sudah disetujui. Tunda dan tolak tidak mengurangi.
+ * Hanya informasi; urutan saran tetap dihitung dari anggaran penuh supaya saran tidak bergeser tiap kali menyetujui.
+ */
+export function anggaranSementara(paguRp: number, disetujui: PriorityRow[]): { disetujuiRp: number; sisaRp: number } {
+  const disetujuiRp = totalBiaya(disetujui);
+  return { disetujuiRp, sisaRp: Math.max(0, paguRp - disetujuiRp) };
+}
+
+/** Skor kesiapan bila hanya baris yang disetujui dibeli atau diperbaiki (perbaikan dan pembelian sama-sama menambah alat berfungsi). */
+export function skorSetelahDisetujui(readiness: ReadinessResult, catalog: CatalogItem[], disetujui: PriorityRow[]): number {
+  const tambah = new Map<string, number>();
+  for (const r of disetujui) tambah.set(r.itemKode, (tambah.get(r.itemKode) ?? 0) + r.qty);
+  const sesudah = readiness.items.map((i) => ({
+    itemKode: i.itemKode,
+    coverage: i.target > 0 ? Math.min((i.berfungsi + (tambah.get(i.itemKode) ?? 0)) / i.target, 1) : i.coverage,
+  }));
+  return round1(skorDari(sesudah, catalog));
 }
 
 export const ALASAN_MIN = 5;

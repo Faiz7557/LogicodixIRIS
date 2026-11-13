@@ -35,7 +35,7 @@ export interface CatalogItem {
   bobot: number;
   kritis: boolean;
   bisaDibeli: boolean;
-  /** false untuk dana_operasi: hanya satu stepper, total = berfungsi (Schema §4). */
+  /** false: item tanpa keadaan rusak, hanya satu stepper, total = berfungsi (Schema §4). */
   punyaRusak: boolean;
   hanyaGambut: boolean;
 }
@@ -156,6 +156,8 @@ export interface DesaTahun {
   nDet: number;
   detDays: number;
   terpapar: boolean;
+  /** Hari deteksi per bulan, Januari sampai Desember (tabel `desa_bulan`, dari tanggal deteksi FIRMS). Jumlahnya = detDays. */
+  bulan: number[];
 }
 
 export interface DesaPaparan {

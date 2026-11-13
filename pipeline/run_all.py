@@ -15,14 +15,14 @@ import pandas as pd
 try:  # `python -m pipeline.run_all` dari akar repo
     from pipeline.backtest import blind_spot_groups, backtest_fold, gate
     from pipeline.export import build_db, json_meta, load_manual, meta_frame
-    from pipeline.firms import assign_to_desa, desa_year, load_detections, sensor_summary
+    from pipeline.firms import assign_to_desa, desa_month, desa_year, load_detections, sensor_summary
     from pipeline.paparan import exposure, kecamatan_exposure, shrink_desa
     from pipeline.params import PARAMS
     from pipeline.wilayah import load_desa, peat_fraction, simplify_geom
 except ImportError:  # `python pipeline/run_all.py`
     from backtest import blind_spot_groups, backtest_fold, gate
     from export import build_db, json_meta, load_manual, meta_frame
-    from firms import assign_to_desa, desa_year, load_detections, sensor_summary
+    from firms import assign_to_desa, desa_month, desa_year, load_detections, sensor_summary
     from paparan import exposure, kecamatan_exposure, shrink_desa
     from params import PARAMS
     from wilayah import load_desa, peat_fraction, simplify_geom
@@ -220,6 +220,7 @@ def main() -> None:
         "desa": desa.drop(columns="geometry"),
         "desa_gambut": gambut,
         "desa_tahun": dy,
+        "desa_bulan": desa_month(assigned, YEARS),
         "desa_paparan": semua,
         "kecamatan_paparan": kec,
         "backtest_metric": metrik,

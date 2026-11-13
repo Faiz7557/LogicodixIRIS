@@ -43,5 +43,5 @@ async function Isi({ params }: { params: Promise<{ kode: string; id: string }> }
     if (e instanceof HttpError && e.status === 404) notFound();
     throw e;
   }
-  return <DokumenLoader kode={kode} usulan={usulan} isDemo={akun.isDemo} />;
+  return <DokumenLoader kode={kode} usulan={usulan} />;
 }

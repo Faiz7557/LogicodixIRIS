@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useRef, useState, useTransition } from "react";
 import { ApiError, api } from "@/lib/api-client";
 import type { Akun } from "@/lib/types";
 
@@ -16,25 +17,28 @@ export function MasukForm() {
   const [sandi, setSandi] = useState("");
   const [lihat, setLihat] = useState(false);
   const [galat, setGalat] = useState("");
-  const [memproses, setMemproses] = useState(false);
+  // Transisi: "sedang masuk" berakhir sendiri setelah pindah halaman, tidak tertahan saat kembali ke /masuk.
+  const [memproses, mulai] = useTransition();
   const refUser = useRef<HTMLInputElement>(null);
 
-  async function kirim(e: React.FormEvent) {
+  function kirim(e: React.FormEvent) {
     e.preventDefault();
-    setMemproses(true);
     setGalat("");
-    try {
-      const { akun } = await api<{ akun: Akun }>("/api/auth/masuk", {
-        method: "POST",
-        json: { username: username.trim(), password: sandi },
-      });
-      router.push(`/desa/${akun.desaKode}/kesiapan`);
-    } catch (err) {
-      // 401 "Username atau password salah.", 429 "Coba lagi dalam 15 menit." (App Flow §3.5)
-      setGalat(err instanceof ApiError ? err.message : "Terjadi galat. Coba lagi.");
-      setMemproses(false);
-      refUser.current?.focus();
-    }
+    mulai(async () => {
+      try {
+        const { akun } = await api<{ akun: Akun }>("/api/auth/masuk", {
+          method: "POST",
+          json: { username: username.trim(), password: sandi },
+        });
+        // Kerangka (menu, tombol Masuk/Keluar) dan halaman yang tersimpan di peramban dimuat ulang dengan sesi baru.
+        router.refresh();
+        router.push(`/desa/${akun.desaKode}/kesiapan`);
+      } catch (err) {
+        // 401 "Username atau password salah.", 429 "Coba lagi dalam 15 menit." (App Flow §3.5)
+        setGalat(err instanceof ApiError ? err.message : "Terjadi galat. Coba lagi.");
+        refUser.current?.focus();
+      }
+    });
   }
 
   const kelasInput = `mt-1 min-h-12 w-full rounded-card border bg-surface px-3 text-base ${galat ? "border-danger" : "border-line"}`;
@@ -106,17 +110,12 @@ export function MasukForm() {
         </button>
       </form>
 
-      <aside className="mt-8 rounded-card border border-line bg-surface px-4 py-3 text-sm">
-        <p className="font-semibold">Akun demonstrasi (data uji)</p>
-        <ul className="mt-1 list-disc pl-5 text-muted">
-          <li>
-            <code>demo-mpa</code>: ketua MPA, hanya Kesiapan dan Alat.
-          </li>
-          <li>
-            <code>demo-sekdes</code>: sekdes, semua layar desa.
-          </li>
-        </ul>
-      </aside>
+      <p className="mt-6 text-center text-sm text-muted">
+        Belum punya akun?{" "}
+        <Link href="/daftar" className="font-semibold text-water underline underline-offset-2">
+          Daftar akun desa
+        </Link>
+      </p>
     </div>
   );
 }

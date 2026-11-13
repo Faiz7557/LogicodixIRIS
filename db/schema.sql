@@ -117,6 +117,17 @@ CREATE TABLE desa_tahun (
   PRIMARY KEY (kode, tahun)
 );
 
+-- Sebaran per bulan dari tanggal deteksi FIRMS (acq_date). Hanya bulan yang punya deteksi;
+-- bulan yang tidak ada barisnya berarti nol. Jumlah 12 bulan = desa_tahun.det_days.
+CREATE TABLE desa_bulan (
+  kode TEXT NOT NULL REFERENCES desa(kode),
+  tahun INTEGER NOT NULL,
+  bulan INTEGER NOT NULL CHECK (bulan BETWEEN 1 AND 12),
+  n_det INTEGER NOT NULL CHECK (n_det > 0),
+  det_days INTEGER NOT NULL CHECK (det_days BETWEEN 1 AND 31),
+  PRIMARY KEY (kode, tahun, bulan)
+);
+
 CREATE TABLE desa_paparan (
   kode TEXT NOT NULL REFERENCES desa(kode),
   mode TEXT NOT NULL CHECK (mode IN ('frozen','live')),

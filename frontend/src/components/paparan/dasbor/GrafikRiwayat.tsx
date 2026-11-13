@@ -3,13 +3,13 @@
 import { useRef } from "react";
 import { formatAngka } from "@/lib/format";
 import { NAMA_BULAN, NAMA_BULAN_PENDEK } from "@/lib/satelitBulanan";
-import { KepalaKartu, LencanaDemo, METRIK, batasRapi, kelasKartu, nilaiDari, type Metrik, type TahunDasbor } from "./dasar";
+import { KepalaKartu, METRIK, batasRapi, kelasKartu, nilaiDari, type Metrik, type TahunDasbor } from "./dasar";
 
 /**
  * Grafik utama: satu batang per tahun (pola grafik Payments pada referensi).
  * Batang berarsir = tahun terdeteksi, abu = ada titik tapi di bawah ambang, garis = nol.
  * Tahun kering ekstrem diberi latar pasir dan label tebal. Satu tahun selalu terpilih:
- * klik atau panah kiri/kanan memindahkan pilihan, tooltip ikut bergeser, rincian di bawah ikut berubah.
+ * klik atau panah kiri/kanan memindahkan pilihan, tooltip ikut bergeser, rincian di kartu Paparan ikut berubah.
  * Tahun di luar rentang diredupkan, bukan dibuang, supaya sumbu tidak meloncat.
  */
 export function GrafikRiwayat({
@@ -44,7 +44,7 @@ export function GrafikRiwayat({
   const posKiri = Math.min(Math.max(((iPilih + 0.5) / data.length) * 100, 9), 91);
 
   return (
-    <section aria-labelledby="riwayat" className={kelasKartu}>
+    <section aria-labelledby="riwayat" className={`${kelasKartu} flex flex-col`}>
       <KepalaKartu
         id="riwayat"
         judul="Riwayat deteksi satelit"
@@ -64,18 +64,22 @@ export function GrafikRiwayat({
         }
       />
 
-      <div className="mt-4 grid grid-cols-[2.25rem_minmax(0,1fr)] gap-2">
-        {/* Sumbu nilai */}
-        <div aria-hidden="true" className="tabular relative h-52 text-right text-xs text-faint">
+      {/* Grafik mengisi sisa tinggi kartu supaya sejajar dengan kartu Paparan di sebelahnya. */}
+      <div className="mt-4 grid min-h-0 flex-1 grid-cols-[2.25rem_minmax(0,1fr)] gap-2">
+        {/* Sumbu nilai; jarak bawahnya setinggi baris label tahun. */}
+        <div aria-hidden="true" className="flex flex-col">
+        <div className="tabular relative min-h-52 flex-1 text-right text-xs text-faint">
           {[1, 0.5, 0].map((f) => (
             <span key={f} className="absolute right-0 -translate-y-1/2" style={{ top: `${(1 - f) * 100}%` }}>
               {formatAngka(atas * f)}
             </span>
           ))}
         </div>
+        <span className="invisible mt-1.5 text-xs">0</span>
+        </div>
 
-        <div>
-          <div className="relative h-52">
+        <div className="flex flex-col">
+          <div className="relative min-h-52 flex-1">
             {[1, 0.5].map((f) => (
               <span key={f} aria-hidden="true" className="absolute inset-x-0 border-t border-dashed border-line" style={{ top: `${(1 - f) * 100}%` }} />
             ))}
@@ -152,21 +156,23 @@ export function GrafikRiwayat({
           </div>
         </div>
       </div>
-
-      <RincianTahun d={dipilih} />
     </section>
   );
 }
 
-/** Rincian tahun terpilih: status, dua angka, dan sebaran per bulan (demo). */
-function RincianTahun({ d }: { d: TahunDasbor }) {
+/**
+ * Rincian tahun yang dipilih di grafik riwayat: status, dua angka, dan sebaran per bulan dari data satelit.
+ * Tersusun tegak supaya muat di kartu Paparan yang sempit, dan mengisi sisa tinggi kartu.
+ */
+export function RincianTahun({ d }: { d: TahunDasbor }) {
   const maks = Math.max(...d.bulan, 1);
   const puncak = d.bulan.indexOf(Math.max(...d.bulan));
   return (
-    <div aria-live="polite" className="mt-5 grid gap-4 rounded-xl bg-surface-2 p-4 md:grid-cols-[minmax(0,15rem)_minmax(0,1fr)] md:gap-6">
+    <div aria-live="polite" className="flex min-h-0 flex-1 flex-col gap-4 rounded-2xl bg-surface-2 p-4">
       <div>
-        <p className="flex flex-wrap items-center gap-2">
-          <span className="tabular text-2xl font-semibold tracking-tight">{d.tahun}</span>
+        <p className="text-xs text-muted">Tahun yang dipilih di grafik</p>
+        <p key={d.tahun} className="muncul mt-1 flex flex-wrap items-center gap-2">
+          <span className="tabular text-3xl font-semibold leading-none tracking-[-0.02em]">{d.tahun}</span>
           <span
             className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${d.terpapar ? "bg-ember-soft text-ember" : "bg-surface text-muted ring-1 ring-line"}`}
           >
@@ -181,21 +187,20 @@ function RincianTahun({ d }: { d: TahunDasbor }) {
         <dl className="mt-3 grid grid-cols-2 gap-3">
           <div>
             <dt className="text-xs text-muted">Hari deteksi</dt>
-            <dd className="tabular text-xl font-semibold">{formatAngka(d.hari)}</dd>
+            <dd className="tabular text-2xl font-semibold">{formatAngka(d.hari)}</dd>
           </div>
           <div>
             <dt className="text-xs text-muted">Titik api</dt>
-            <dd className="tabular text-xl font-semibold">{formatAngka(d.titik)}</dd>
+            <dd className="tabular text-2xl font-semibold">{formatAngka(d.titik)}</dd>
           </div>
         </dl>
       </div>
 
-      <figure className="min-w-0">
+      <figure className="flex min-h-0 min-w-0 flex-1 flex-col">
         <figcaption className="flex items-center justify-between gap-2 text-xs text-muted">
           <span>{d.hari > 0 ? `Hari deteksi per bulan, puncak ${NAMA_BULAN[puncak]}` : "Tidak ada hari deteksi tahun ini"}</span>
-          <LencanaDemo />
         </figcaption>
-        <div className="mt-2 flex h-16 items-end gap-1">
+        <div className="mt-2 flex min-h-16 flex-1 items-end gap-1">
           {d.bulan.map((b, i) => (
             <span key={i} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1">
               <span

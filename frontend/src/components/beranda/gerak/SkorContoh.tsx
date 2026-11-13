@@ -2,12 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 
-const AWAL = 65.3;
-const AKHIR = 70.7;
+const AWAL = 56.7;
+const AKHIR = 63.3;
 const fmt = (n: number) => n.toFixed(1).replace(".", ",");
 
 /**
- * Skor contoh data uji yang berhitung dari 65,3 ke 70,7 saat masuk layar, dengan bilah tipis
+ * Skor contoh data uji yang berhitung dari 56,7 ke 63,3 saat masuk layar, dengan bilah tipis
  * yang memanjang. Nilai akhir sudah ada di HTML; gerak dikurangi: langsung nilai akhir.
  */
 export function SkorContoh() {
@@ -44,11 +44,11 @@ export function SkorContoh() {
   return (
     <div ref={el} className="rounded-xl bg-paper px-4 py-3 text-center">
       <p className="text-xs font-bold uppercase tracking-wide text-muted">Contoh data uji</p>
-      <p className="tabular text-3xl font-bold" aria-label="Skor dari 65,3 menjadi 70,7">
-        <span className="text-muted">65,3</span> <span aria-hidden="true">→</span> <span aria-hidden="true">{fmt(nilai)}</span>
+      <p className="tabular text-3xl font-bold" aria-label={`Skor dari ${fmt(AWAL)} menjadi ${fmt(AKHIR)}`}>
+        <span className="text-muted">{fmt(AWAL)}</span> <span aria-hidden="true">→</span> <span aria-hidden="true">{fmt(nilai)}</span>
       </p>
       <span aria-hidden="true" className="mx-auto mt-1 block h-1 w-full max-w-[11rem] overflow-hidden rounded-full bg-line">
-        <span className="block h-full rounded-full bg-ember" style={{ width: `${65.3 + naik * 5.4}%` }} />
+        <span className="block h-full rounded-full bg-ember" style={{ width: `${AWAL + naik * (AKHIR - AWAL)}%` }} />
       </span>
       <p className="mt-1 text-xs text-muted">pagu Rp15.000.000, 2 selang</p>
     </div>

@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { BilahAksi, kelasAksiUtama } from "@/components/ui/BilahAksi";
 import { EmptyState } from "@/components/ui/PageState";
 import { formatRupiah, formatSkor } from "@/lib/format";
 import { keyBaris, totalBiaya } from "@/lib/prioritas";
+import type { Aksi } from "@/lib/types";
 import { RingkasKeputusan } from "./GrafikPrioritas";
 import { KepalaPrioritas } from "./KepalaPrioritas";
 import { PanelPaketHarga, type Edit } from "./PanelPaketHarga";
@@ -22,15 +24,21 @@ export function PrioritasView(data: DataPrioritas) {
   const { kode, namaDesa, catalog } = data;
   const p = usePrioritas(data);
   const { hasil, keputusan, ringkas, disetujui, pagu } = p;
-  const [edit, setEdit] = useState<Edit>(null);
-  const [panelBuka, setPanelBuka] = useState(false);
+  // Tautan dari layar lain (mis. kartu "Perlu diperbaiki" di Kesiapan): ?isi=<item>:<aksi> membuka formulir harga.
+  const isi = useSearchParams().get("isi");
+  const [edit, setEdit] = useState<Edit>(() => editDariTautan(isi, catalog.map((c) => c.kode)));
   const panelRef = useRef<HTMLDivElement>(null);
 
-  function bukaIsiHarga(itemKode: string) {
-    setEdit({ jenis: "harga", itemKode, aksi: "beli" });
-    setPanelBuka(true);
+  function bukaIsiHarga(itemKode: string, aksi: Aksi = "beli") {
+    setEdit({ jenis: "harga", itemKode, aksi });
     requestAnimationFrame(() => panelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
   }
+
+  // Formulir dari tautan sudah terbuka sejak render pertama; tinggal digulir ke panelnya.
+  const dariTautan = useRef(edit !== null);
+  useEffect(() => {
+    if (dariTautan.current) panelRef.current?.scrollIntoView({ block: "start" });
+  }, []);
 
   return (
     <div className="mx-auto max-w-[1120px] px-4 py-6 pb-32 md:px-8 md:py-8 md:pb-8">
@@ -69,7 +77,7 @@ export function PrioritasView(data: DataPrioritas) {
           <div className="mt-3">
             <EmptyState
               title={p.keadaan === "kurang" ? "Belum ada belanja yang muat." : p.keadaan === "tanpaHarga" ? "Belum ada harga." : "Belum ada urutan."}
-              action={{ href: `/desa/${kode}/prioritas/pagu`, label: "Isi pagu" }}
+              action={{ href: `/desa/${kode}/prioritas/pagu`, label: "Isi anggaran" }}
             >
               {p.kalimat}
             </EmptyState>
@@ -97,26 +105,34 @@ export function PrioritasView(data: DataPrioritas) {
         </section>
       ) : null}
 
-      {/* Ringkasan: pagu yang dipakai (diisi di langkah 1) dan keputusan desa sejauh ini. */}
+      {/* Ringkasan: anggaran sementara (anggaran dikurangi yang disetujui) dan keputusan desa sejauh ini. */}
       <div className="mt-6 grid gap-4 md:grid-cols-2">
         <section aria-labelledby="ringkas-pagu" className="flex flex-col rounded-panel border border-line bg-surface p-5 shadow-card">
           <h2 id="ringkas-pagu" className="font-bold">
-            Pagu belanja
+            Anggaran sementara
           </h2>
+          <p className="text-sm text-muted">Berkurang setiap belanja disetujui. Tunda dan tolak tidak mengurangi anggaran.</p>
           <dl className="mt-3 grid grid-cols-[repeat(auto-fit,minmax(9.5rem,1fr))] gap-3">
             <div>
-              <dt className="text-sm text-muted">Pagu</dt>
+              <dt className="text-sm text-muted">Anggaran</dt>
               <dd className="tabular text-lg font-semibold leading-tight">{formatRupiah(pagu)}</dd>
             </div>
             <div>
-              <dt className="text-sm text-muted">Terpakai</dt>
-              <dd className="tabular text-lg font-semibold leading-tight">{formatRupiah(hasil.terpakaiRp)}</dd>
+              <dt className="text-sm text-muted">Disetujui</dt>
+              <dd className="tabular text-lg font-semibold leading-tight">
+                {p.disetujuiRp > 0 ? <span aria-hidden="true">− </span> : null}
+                {formatRupiah(p.disetujuiRp)}
+              </dd>
             </div>
             <div>
-              <dt className="text-sm text-muted">Skor</dt>
+              <dt className="text-sm text-muted">Sisa anggaran</dt>
+              <dd className="tabular text-lg font-semibold leading-tight text-ember">{formatRupiah(p.sisaSementara)}</dd>
+            </div>
+            <div>
+              <dt className="text-sm text-muted">Skor bila yang disetujui dibeli</dt>
               <dd className="tabular text-lg font-semibold leading-tight">
                 {formatSkor(p.skorSekarang)} <span aria-hidden="true">→</span>
-                <span className="sr-only">menjadi</span> <span className="text-ember">{formatSkor(hasil.skorSesudah)}</span>
+                <span className="sr-only">menjadi</span> <span className="text-ember">{formatSkor(p.skorDisetujui)}</span>
               </dd>
             </div>
           </dl>
@@ -124,7 +140,7 @@ export function PrioritasView(data: DataPrioritas) {
             href={`/desa/${kode}/prioritas/pagu`}
             className="group mt-auto inline-flex min-h-11 items-center gap-1.5 self-start pt-3 text-sm font-semibold text-ember"
           >
-            Ubah pagu di langkah 1
+            Ubah anggaran di langkah 1
             <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-hover:translate-x-0.5">
               <path d="M5 12h14M13 6l6 6-6 6" />
             </svg>
@@ -169,8 +185,6 @@ export function PrioritasView(data: DataPrioritas) {
           harga={p.harga}
           edit={edit}
           setEdit={setEdit}
-          buka={panelBuka}
-          setBuka={setPanelBuka}
           onSimpanTarget={async (itemKode, target, alasan) => {
             if (await p.simpanTarget(itemKode, target, alasan)) setEdit(null);
           }}
@@ -198,4 +212,11 @@ export function PrioritasView(data: DataPrioritas) {
       </BilahAksi>
     </div>
   );
+}
+
+/** `?isi=pompa_jinjing:perbaiki` -> formulir harga item itu. Nilai tak dikenal diabaikan. */
+function editDariTautan(isi: string | null, kodeItem: string[]): Edit {
+  const [itemKode, aksi] = (isi ?? "").split(":");
+  if (!kodeItem.includes(itemKode) || (aksi !== "beli" && aksi !== "perbaiki")) return null;
+  return { jenis: "harga", itemKode, aksi };
 }

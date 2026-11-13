@@ -168,7 +168,7 @@ body {
 }
 
 /*
- * Dasbor Bukti satelit. Kurva gerak meniru pegas teredam kritis (tanpa pantulan):
+ * Dasbor Informasi detail. Kurva gerak meniru pegas teredam kritis (tanpa pantulan):
  * cepat di awal, mendarat halus. Transisi CSS memulai ulang dari nilai yang sedang tampil,
  * jadi mengganti filter di tengah animasi tidak meloncat.
  */
@@ -364,6 +364,14 @@ body {
   }
   .no-print {
     display: none !important;
+  }
+  /* Surat usulan: penutup + tanda tangan tidak dipecah ke dua halaman; tabel tidak memotong baris. */
+  .surat-penutup {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  article tr {
+    break-inside: avoid;
   }
 }
 

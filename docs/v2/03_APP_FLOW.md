@@ -105,7 +105,7 @@ Input username dan password. Berhasil menuju `/desa/[kode]/kesiapan`. Gagal: "Us
 
 ### 3.6 Catat Alat `/desa/[kode]/inventaris`
 
-Formulir satu kolom per item. Item dengan `punya_rusak = 0` (`dana_operasi`) hanya memiliki satu stepper. Item lain memiliki stepper total dan berfungsi. Tombol simpan menempel di bawah.
+Formulir satu kolom per item. Item dengan `punya_rusak = 0` hanya memiliki satu stepper (saat ini tidak ada item seperti itu di katalog). Item lain memiliki stepper total dan berfungsi. Tombol simpan menempel di bawah.
 
 Selang tampil sebagai `3 / 10 buah`, dengan keterangan kecil `≈60 m pada asumsi 20 m per buah`.
 

@@ -2,21 +2,21 @@
 
 import { useState } from "react";
 import { KepalaKartu, Segmen, kelasKartu } from "@/components/paparan/dasbor/dasar";
-import { NAMA_STRATEGI, type Metrik, type MetricRow, type Strategi } from "@/lib/backtest";
+import { NAMA_RAMAH, type Metrik, type MetricRow, type Strategi } from "@/lib/backtest";
 import { MetricTable } from "../MetricTable";
 
 const STRATEGI: Strategi[] = ["paparan", "persistensi", "total_riwayat", "gambut", "acak"];
 const UKURAN: { nilai: Metrik; label: string }[] = [
-  { nilai: "capture_10", label: "Tangkap 10%" },
-  { nilai: "capture_20", label: "20%" },
-  { nilai: "capture_30", label: "30%" },
-  { nilai: "roc_auc", label: "ROC-AUC" },
+  { nilai: "capture_10", label: "10% teratas" },
+  { nilai: "capture_20", label: "20% teratas" },
+  { nilai: "capture_30", label: "30% teratas" },
+  { nilai: "roc_auc", label: "Skor menyeluruh" },
 ];
 const KET: Record<Metrik, string> = {
-  capture_10: "Dari semua desa yang kemudian terdeteksi, berapa persen ada di 10% teratas.",
-  capture_20: "Dari semua desa yang kemudian terdeteksi, berapa persen ada di 20% teratas.",
-  capture_30: "Dari semua desa yang kemudian terdeteksi, berapa persen ada di 30% teratas.",
-  roc_auc: "Peluang desa yang terdeteksi diurutkan di atas desa yang tidak. 0,5 = sama dengan acak.",
+  capture_10: "Lihat 10% desa teratas dari daftar tiap cara. Dari semua desa yang akhirnya terdeteksi api, berapa persen ada di situ? Makin tinggi makin jitu.",
+  capture_20: "Lihat 20% desa teratas dari daftar tiap cara. Dari semua desa yang akhirnya terdeteksi api, berapa persen ada di situ? Makin tinggi makin jitu.",
+  capture_30: "Lihat 30% desa teratas dari daftar tiap cara. Dari semua desa yang akhirnya terdeteksi api, berapa persen ada di situ? Makin tinggi makin jitu.",
+  roc_auc: "Skor menyeluruh (ROC-AUC): peluang desa yang terdeteksi api diurutkan lebih atas daripada desa yang tidak. 0,50 sama dengan menebak asal, 1,00 sempurna.",
   pr_auc: "",
 };
 const TINGGI = 52;
@@ -39,7 +39,7 @@ export function PapanPeringkat({ rows, tahunUji }: { rows: MetricRow[]; tahunUji
 
   return (
     <section aria-labelledby="peringkat" className={`${kelasKartu} flex flex-col`} style={{ animationDelay: "120ms" }}>
-      <KepalaKartu id="peringkat" judul="Papan peringkat cara mengurutkan desa" keterangan={KET[ukuran]} />
+      <KepalaKartu id="peringkat" judul="Adu tebakan: cara mana paling jitu?" keterangan={KET[ukuran]} />
       <div className="mt-3">
         <Segmen label="Ukuran" pilihan={UKURAN} nilai={ukuran} onPilih={setUkuran} />
       </div>
@@ -63,9 +63,7 @@ export function PapanPeringkat({ rows, tahunUji }: { rows: MetricRow[]; tahunUji
               style={{ height: TINGGI, transform: `translateY(${i * TINGGI}px)` }}
             >
               <span className={`tabular flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${juara ? "bg-ink text-white" : "bg-surface-2"}`}>{i + 1}</span>
-              <span className={`w-[6.5rem] shrink-0 truncate text-sm capitalize ${kita ? "font-semibold text-ember" : ""}`}>
-                {kita ? "Paparan (kita)" : NAMA_STRATEGI[s]}
-              </span>
+              <span className={`w-[6.5rem] shrink-0 text-xs leading-tight ${kita ? "font-semibold text-ember" : ""}`}>{NAMA_RAMAH[s]}</span>
               <span aria-hidden="true" className="relative h-3 flex-1 overflow-hidden rounded-full bg-surface-2">
                 <span
                   className={`absolute inset-y-0 left-0 rounded-full transition-[width] duration-700 [transition-timing-function:var(--pegas)] ${kita ? "arsir-ember" : s === "acak" ? "bg-line-2" : "arsir-air"}`}

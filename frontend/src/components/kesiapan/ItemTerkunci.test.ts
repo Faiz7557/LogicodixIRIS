@@ -1,10 +1,13 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { FormInventaris } from "@/components/inventaris/FormInventaris";
 import { ALASAN_TERKUNCI_GAMBUT, itemTerkunci } from "@/lib/kesiapan";
 import { mockCatalog } from "@/test/fixtures";
 import { KartuTerkunci } from "./ItemTerkunci";
+
+// FormInventaris memanggil router.refresh setelah simpan; render statis di sini tidak punya router Next.
+vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: () => {}, push: () => {}, replace: () => {} }) }));
 
 describe("item terkunci (sumur bor di desa tanpa gambut)", () => {
   it("mengunci item khusus gambut hanya bila desa tidak bergambut", () => {

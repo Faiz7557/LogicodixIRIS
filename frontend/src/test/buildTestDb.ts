@@ -119,7 +119,7 @@ function isiUji(): InStatement[] {
     ["gate_min_exposed", "30", "parameter"],
     ["gate_min_ratio_aktif", "0.6", "parameter"],
     ["kec_min_share", "0.5", "parameter"],
-    ["panjang_per_buah_m", "20", "asumsi_tim"],
+    ["panjang_per_buah_m", "30", "asumsi_tim"],
     ["ext_years", "2015,2019,2023,2026", "parameter"],
   ];
   for (const m of meta) s.push({ sql: "INSERT INTO meta (kunci, nilai, label) VALUES (?,?,?)", args: m });
@@ -145,6 +145,8 @@ function isiUji(): InStatement[] {
         sql: "INSERT INTO desa_tahun (kode, tahun, n_det, det_days, terpapar) VALUES (?,?,?,?,?)",
         args: [d.kode, t, kena ? 6 : 0, kena ? 3 : 0, kena ? 1 : 0],
       });
+      // Data uji: semua hari deteksi tahun terpapar jatuh di September.
+      if (kena) s.push({ sql: "INSERT INTO desa_bulan (kode, tahun, bulan, n_det, det_days) VALUES (?,?,9,6,3)", args: [d.kode, t] });
     }
     if (!kec.has(w.kec)) kec.set(w.kec, { idx: [] });
     kec.get(w.kec)!.idx.push(i);

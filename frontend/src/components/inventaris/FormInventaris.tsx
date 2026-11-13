@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { GambarItem } from "@/components/kesiapan/GambarItem";
 import { KartuTerkunci } from "@/components/kesiapan/ItemTerkunci";
@@ -52,9 +53,14 @@ export function FormInventaris({
   /** Item yang belum terbuka untuk desa ini (mis. sumur bor di desa tanpa gambut): tampil tanpa isian. */
   terkunci?: CatalogItem[];
 }) {
+  const router = useRouter();
   const awal = useMemo(() => awalForm(catalog, tersimpan), [catalog, tersimpan]);
   const [form, setForm] = useState<FormState>(awal);
   const [dasar, setDasar] = useState<FormState>(awal); // keadaan terakhir yang tersimpan
+  // Data tersimpan dari server bisa berganti tanpa komponen ini dibuat ulang (router.refresh, atau halaman
+  // yang disimpan Next saat kembali). Isian yang belum disimpan dibiarkan; selain itu ikut data terbaru.
+  const [awalTerakhir, setAwalTerakhir] = useState(awal);
+  const [terakhirTerakhir, setTerakhirTerakhir] = useState(terakhir);
   const [disentuh, setDisentuh] = useState<Record<string, boolean>>({});
   const [sudahCobaSimpan, setSudahCobaSimpan] = useState(false);
   const [fase, setFase] = useState<Fase>("diam");
@@ -64,6 +70,17 @@ export function FormInventaris({
   const [sorot, setSorot] = useState<string | null>(null);
 
   const kotor = berubah(dasar, form);
+  if (awal !== awalTerakhir) {
+    setAwalTerakhir(awal);
+    if (!kotor && berubah(dasar, awal)) {
+      setForm(awal);
+      setDasar(awal);
+    }
+  }
+  if (terakhir !== terakhirTerakhir) {
+    setTerakhirTerakhir(terakhir);
+    if (terakhir) setInfo(terakhir);
+  }
 
   useEffect(() => {
     onNilai?.(form);
@@ -130,6 +147,8 @@ export function FormInventaris({
       setDasar(form);
       setInfo({ oleh: namaPengisi, waktu: hasil.disimpanPada });
       setFase("tersimpan");
+      // Muat ulang data server: indikator di halaman ini dan layar lain (Kesiapan, Prioritas) ikut angka baru.
+      router.refresh();
     } catch (err) {
       setPesanGalat(err instanceof ApiError ? err.message : "Penyimpanan gagal. Isian masih ada di layar. Coba lagi.");
       setFase("galat");

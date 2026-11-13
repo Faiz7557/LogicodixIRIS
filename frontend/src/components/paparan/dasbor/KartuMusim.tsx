@@ -3,19 +3,33 @@
 import { useState } from "react";
 import { formatAngka } from "@/lib/format";
 import { NAMA_BULAN, NAMA_BULAN_PENDEK } from "@/lib/satelitBulanan";
-import { KepalaKartu, LencanaDemo, kelasKartu, type TahunDasbor } from "./dasar";
+import { KepalaKartu, kelasKartu, type TahunDasbor } from "./dasar";
 
 const L = 300;
 const T = 120;
 
 /**
- * Musim titik api (pola kartu Retention): jumlah hari deteksi per bulan untuk tahun dalam rentang,
- * sebagai grafik tangga dengan arsiran tipis di bawahnya. Puncak diberi lencana persen.
+ * Musim titik api (pola kartu Retention): jumlah hari deteksi per bulan, sebagai grafik tangga dengan
+ * arsiran tipis di bawahnya. Puncak diberi lencana persen. Bawaannya tahun yang dipilih di grafik riwayat
+ * (klik batang tahun untuk ganti); tombol di kepala kartu menggabungkan semua tahun dalam rentang.
  * Arahkan kursor atau fokus ke bulan untuk melihat angkanya.
  */
-export function KartuMusim({ data, dalam }: { data: TahunDasbor[]; dalam: (t: number) => boolean }) {
+export function KartuMusim({
+  data,
+  dalam,
+  tahun,
+  semua,
+  onSemua,
+}: {
+  data: TahunDasbor[];
+  dalam: (t: number) => boolean;
+  tahun: number;
+  semua: boolean;
+  onSemua: (semua: boolean) => void;
+}) {
   const [sorot, setSorot] = useState<number | null>(null);
-  const perBulan = Array.from({ length: 12 }, (_, i) => data.filter((d) => dalam(d.tahun)).reduce((a, d) => a + d.bulan[i], 0));
+  const sumber = semua ? data.filter((d) => dalam(d.tahun)) : data.filter((d) => d.tahun === tahun);
+  const perBulan = Array.from({ length: 12 }, (_, i) => sumber.reduce((a, d) => a + d.bulan[i], 0));
   const total = perBulan.reduce((a, b) => a + b, 0);
   const maks = Math.max(...perBulan, 1);
   const puncak = perBulan.indexOf(Math.max(...perBulan));
@@ -29,7 +43,23 @@ export function KartuMusim({ data, dalam }: { data: TahunDasbor[]; dalam: (t: nu
 
   return (
     <section aria-labelledby="musim" className={`${kelasKartu} flex flex-col`} style={{ animationDelay: "120ms" }}>
-      <KepalaKartu id="musim" judul="Musim titik api" keterangan="Hari deteksi per bulan, semua tahun dalam rentang." kanan={<LencanaDemo />} />
+      <KepalaKartu
+        id="musim"
+        judul={semua ? "Musim titik api" : `Musim titik api ${tahun}`}
+        keterangan={semua ? "Hari deteksi per bulan, semua tahun dalam rentang." : "Hari deteksi per bulan. Klik batang di grafik riwayat untuk ganti tahun."}
+        kanan={
+          <span className="flex shrink-0 items-center gap-1.5">
+            <button
+              type="button"
+              aria-pressed={semua}
+              onClick={() => onSemua(!semua)}
+              className="min-h-8 rounded-full border border-line px-2.5 text-xs font-semibold transition-colors hover:bg-line/40"
+            >
+              {semua ? `Tahun ${tahun}` : "Semua tahun"}
+            </button>
+          </span>
+        }
+      />
 
       <div className="relative mt-4 flex-1">
         <svg viewBox={`0 0 ${L} ${T}`} preserveAspectRatio="none" aria-hidden="true" className="h-36 w-full overflow-visible">
@@ -79,6 +109,7 @@ export function KartuMusim({ data, dalam }: { data: TahunDasbor[]; dalam: (t: nu
         <span className="text-muted">
           {" "}
           · {formatAngka(perBulan[aktif])} hari{sorot === null && total > 0 ? ", bulan paling rawan" : ""}
+          {total === 0 ? (semua ? " · tidak ada deteksi dalam rentang ini" : ` · tidak ada deteksi pada ${tahun}`) : ""}
         </span>
       </p>
     </section>

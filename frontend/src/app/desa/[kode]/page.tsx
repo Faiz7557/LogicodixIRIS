@@ -10,7 +10,7 @@ import { RingkasanAi } from "@/components/ui/RingkasanAi";
 import { getDesaCard, getGerbang, getSesi } from "@/lib/dataSource";
 import { labelTampakAman } from "@/lib/kalimat";
 
-export const metadata: Metadata = { title: "Bukti satelit" };
+export const metadata: Metadata = { title: "Informasi detail" };
 
 export default function KartuPaparanPage({ params }: PageProps<"/desa/[kode]">) {
   return (
@@ -27,7 +27,7 @@ export default function KartuPaparanPage({ params }: PageProps<"/desa/[kode]">) 
 }
 
 /*
- * Bukti satelit (App Flow v2 §3.2) sebagai dasbor interaktif: riwayat, paparan, musim, matriks hari dan titik,
+ * Informasi detail (App Flow v2 §3.2) sebagai dasbor interaktif: riwayat, paparan, musim, matriks hari dan titik,
  * wawasan, perbandingan kecamatan (lihat DasborSatelit), lalu ajakan memeriksa kesiapan dan batasan data.
  */
 async function Isi({ params }: { params: Promise<{ kode: string }> }) {
@@ -50,7 +50,6 @@ async function Isi({ params }: { params: Promise<{ kode: string }> }) {
         <RingkasanAi halaman="paparan" kode={kode} />
       </div>
       <DasborSatelit
-        kode={kode}
         namaDesa={desa.nama}
         lokasi={`${desa.kecNama}, ${desa.kabNama}, ${desa.provNama}`}
         strip={card.strip}

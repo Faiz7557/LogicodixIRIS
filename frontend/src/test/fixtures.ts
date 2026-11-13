@@ -2,9 +2,9 @@
  * Fixture uji: data contoh sintetis untuk tes fungsi murni. Bukan data satelit dan tidak dipakai runtime.
  *
  * Angka dihitung dengan rumus TRD v2 §6 agar konsisten:
- *   skor = 100 * Σ(bobot * coverage) / Σ(bobot), bobot 15/20/20/20.
- *   dana_operasi 1/1, pompa 1/1, selang 3/10, sumur 2/5  ->  (15+20+6+8)/75 = 65,3  ->  sebagian.
- *   pagu Rp15 juta: 2 selang x Rp6.669.000 = Rp13.338.000; selang 5/10 -> (15+20+10+8)/75 = 70,7.
+ *   skor = 100 * Σ(bobot * coverage) / Σ(bobot), bobot 20/20/20.
+ *   pompa 1/1, selang 3/10, sumur 2/5  ->  (20+6+8)/60 = 56,7  ->  sebagian.
+ *   pagu Rp15 juta: 2 selang x Rp6.669.000 = Rp13.338.000; selang 5/10 -> (20+10+8)/60 = 63,3.
  */
 import type {
   Akun,
@@ -26,7 +26,6 @@ export const mockAkun: Record<"mpa" | "desa", Akun> = {
 
 // ---------- Katalog (Schema §6: katalog_item.csv) ----------
 export const mockCatalog: CatalogItem[] = [
-  { kode: "dana_operasi", nama: "Biaya operasi pemadaman", satuan: "minggu", bobot: 15, kritis: true, bisaDibeli: true, punyaRusak: false, hanyaGambut: false },
   { kode: "pompa_jinjing", nama: "Pompa jinjing", satuan: "unit", bobot: 20, kritis: true, bisaDibeli: true, punyaRusak: true, hanyaGambut: false },
   { kode: "selang_keluar", nama: "Selang keluar", satuan: "buah", bobot: 20, kritis: true, bisaDibeli: true, punyaRusak: true, hanyaGambut: false },
   { kode: "sumur_bor", nama: "Sumur bor", satuan: "titik", bobot: 20, kritis: true, bisaDibeli: true, punyaRusak: true, hanyaGambut: true },
@@ -34,7 +33,6 @@ export const mockCatalog: CatalogItem[] = [
 
 // ---------- Paket minimum (PRD §7) ----------
 export const mockPaket: PaketRow[] = [
-  { itemKode: "dana_operasi", target: 1, sumber: "Asumsi tim", label: "asumsi_tim" },
   { itemKode: "pompa_jinjing", target: 1, sumber: "Asumsi tim", label: "asumsi_tim" },
   { itemKode: "selang_keluar", target: 10, sumber: "Asumsi tim", label: "asumsi_tim" },
   { itemKode: "sumur_bor", target: 5, sumber: "Asumsi tim", label: "asumsi_tim" },
@@ -45,7 +43,6 @@ export const mockHarga: HargaRow[] = [
   { itemKode: "pompa_jinjing", aksi: "beli", hargaRp: 28_028_610, sumber: "Perbup Sanggau 32/2025 hlm. 175", tanggal: "2026-11-09" },
   { itemKode: "pompa_jinjing", aksi: "perbaiki", hargaRp: 510_000, sumber: "Perwal Kediri 3/2025 hlm. 269, item 4594", tanggal: "2026-11-09" },
   { itemKode: "selang_keluar", aksi: "beli", hargaRp: 6_669_000, sumber: "Perbup Sanggau 32/2025 hlm. 174", tanggal: "2026-11-09" },
-  { itemKode: "dana_operasi", aksi: "beli", hargaRp: 5_000_000, sumber: "Nurhidayah dkk. 2023 hlm. 9", tanggal: "2026-11-09" },
 ];
 
 /** Hanya tampil untuk desa Kalteng (prov_kode 62). Kalbar: tampilkan kalimat ketiadaan angka. */
@@ -59,6 +56,9 @@ export const mockPergubKalteng: ReferensiPergub[] = [
 const tahun = Array.from({ length: 15 }, (_, i) => 2012 + i);
 const terpapar = new Set([2015, 2019, 2026]);
 
+/** Sebaran uji: semua hari deteksi di September. */
+const bulanUji = (hari: number) => Array.from({ length: 12 }, (_, i) => (i === 8 ? hari : 0));
+
 /** Strip 2012-2026 dengan tahun terpapar yang ditentukan. */
 export const stripDari = (terpaparSet: number[]) =>
   tahun.map((t) => ({
@@ -66,6 +66,7 @@ export const stripDari = (terpaparSet: number[]) =>
     nDet: terpaparSet.includes(t) ? 6 : 0,
     detDays: terpaparSet.includes(t) ? 3 : 0,
     terpapar: terpaparSet.includes(t),
+    bulan: bulanUji(terpaparSet.includes(t) ? 3 : 0),
   }));
 
 export const mockDesaCard: DesaCard = {
@@ -92,6 +93,7 @@ export const mockDesaCard: DesaCard = {
     nDet: terpapar.has(t) ? 6 : 0,
     detDays: terpapar.has(t) ? 3 : 0,
     terpapar: terpapar.has(t),
+    bulan: bulanUji(terpapar.has(t) ? 3 : 0),
   })),
   paparan: {
     mode: "live",
@@ -110,12 +112,11 @@ export const mockDesaCard: DesaCard = {
 
 // ---------- Kesiapan ----------
 export const mockReadiness: ReadinessResult = {
-  skor: 65.3,
+  skor: 56.7,
   status: "sebagian",
   rantaiTerlemah: "selang_keluar",
   lengkap: true,
   items: [
-    { itemKode: "dana_operasi", target: 1, berfungsi: 1, rusak: 0, coverage: 1, kritis: true, belumDiisi: false },
     { itemKode: "pompa_jinjing", target: 1, berfungsi: 1, rusak: 1, coverage: 1, kritis: true, belumDiisi: false },
     { itemKode: "selang_keluar", target: 10, berfungsi: 3, rusak: 0, coverage: 0.3, kritis: true, belumDiisi: false },
     { itemKode: "sumur_bor", target: 5, berfungsi: 2, rusak: 1, coverage: 0.4, kritis: true, belumDiisi: false },
@@ -126,7 +127,7 @@ export const mockReadiness: ReadinessResult = {
 export const mockPrioritas: PrioritasPayload = {
   paguRp: 15_000_000,
   terpakaiRp: 13_338_000,
-  skorSesudah: 70.7,
+  skorSesudah: 63.3,
   terpilih: [
     {
       itemKode: "selang_keluar",

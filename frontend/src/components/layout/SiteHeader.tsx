@@ -10,7 +10,7 @@ const links = [
 ];
 
 // Halaman berakun: /desa/[kode]/kesiapan, inventaris, prioritas, usulan (dan turunannya).
-const AKUN = /^\/desa\/[^/]+\/(kesiapan|inventaris|prioritas|usulan)(\/|$)/;
+const AKUN = /^\/desa\/[^/]+\/(kesiapan|inventaris|prioritas|usulan|akun)(\/|$)/;
 // Kartu Paparan /desa/[kode]: berakun bila sudah masuk dan itu desa akun sendiri.
 const PAPARAN = /^\/desa\/([^/]+)\/?$/;
 
@@ -32,8 +32,9 @@ export function SiteHeader({ sesi = null }: { sesi?: SesiHeader }) {
     AKUN.test(path) || (!!sesi && (path === "/time-machine" || path === "/data" || sesi.desaKode === paparan));
 
   return (
-    <header className="no-print border-b border-line bg-surface">
-      <div className={`flex items-center justify-between gap-2 ${akun ? "px-4 md:px-6" : "mx-auto max-w-[1040px] px-4"}`}>
+    // Berakun di laptop: header menempel (tinggi tetap 45 px) supaya sidebar di bawahnya muat satu layar.
+    <header className={`no-print border-b border-line bg-surface ${akun ? "md:sticky md:top-0 md:z-30" : ""}`}>
+      <div className={`flex items-center justify-between gap-2 ${akun ? "px-4 md:h-11 md:px-6" : "mx-auto max-w-[1040px] px-4"}`}>
         <Logo />
         <nav aria-label="Navigasi utama" className={akun ? "md:hidden" : undefined}>
           <ul className="flex items-center">
@@ -48,7 +49,18 @@ export function SiteHeader({ sesi = null }: { sesi?: SesiHeader }) {
               </li>
             ))}
             <li>
-              {akun ? (
+              {akun && sesi ? (
+                <div className="flex items-center">
+                  {/* Di HP sidebar tidak tampil: halaman akun dan ganti password dibuka dari sini. */}
+                  <Link
+                    href={`/desa/${sesi.desaKode}/akun`}
+                    className="flex min-h-11 items-center whitespace-nowrap px-1 text-sm text-muted hover:text-ink sm:px-3"
+                  >
+                    Akun
+                  </Link>
+                  <TombolKeluar className="ml-0.5 flex min-h-11 items-center whitespace-nowrap rounded-card border border-line-2 bg-surface px-2.5 text-sm font-semibold text-ink hover:border-ink hover:bg-surface-2 disabled:opacity-60 sm:ml-1 sm:px-3" />
+                </div>
+              ) : akun ? (
                 <TombolKeluar className="ml-0.5 flex min-h-11 items-center whitespace-nowrap rounded-card border border-line-2 bg-surface px-2.5 text-sm font-semibold text-ink hover:border-ink hover:bg-surface-2 disabled:opacity-60 sm:ml-1 sm:px-3" />
               ) : sesi ? (
                 <Link

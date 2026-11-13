@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { formatAngka } from "@/lib/format";
-import { NAMA_BULAN, NAMA_BULAN_PENDEK, sebarBulanan } from "@/lib/satelitBulanan";
+import { NAMA_BULAN, NAMA_BULAN_PENDEK } from "@/lib/satelitBulanan";
 import type { DesaPaparan, DesaTahun } from "@/lib/types";
 import { PilihTampilanSatelit } from "./PilihTampilanSatelit";
 import { TINGKAT, tingkat, type TahunSatelit } from "./skalaSatelit";
@@ -10,7 +10,7 @@ import { TINGKAT, tingkat, type TahunSatelit } from "./skalaSatelit";
  * Baris = bulan, kolom = tahun, sehingga musim kebakaran terlihat sebagai pita mendatar.
  * Tahun kering ekstrem diberi latar kolom dan label tebal, jadi arti tidak hanya lewat warna.
  *
- * DEMO: angka per bulan diperkirakan dari total hari per tahun (lib/satelitBulanan) sampai backend punya `desa_bulan`.
+ * Angka per bulan dari `desa_bulan`: hari berbeda dengan deteksi FIRMS VIIRS S-NPP per bulan.
  */
 
 export function KalenderSatelit({
@@ -30,7 +30,7 @@ export function KalenderSatelit({
 
   const data: TahunSatelit[] = strip.map((s) => {
     const ekstrem = tahunEkstrem.includes(s.tahun);
-    return { tahun: s.tahun, hari: s.detDays, ekstrem, bulan: sebarBulanan(kode, s.tahun, s.detDays, ekstrem) };
+    return { tahun: s.tahun, hari: s.detDays, ekstrem, bulan: s.bulan };
   });
 
   const terdeteksi = strip.filter((s) => s.terpapar);
@@ -133,8 +133,7 @@ export function KalenderSatelit({
               Kapan titik api muncul di desa ini?
             </h2>
             <p className="text-sm text-muted">
-              Hari ada titik api per bulan, {awal} sampai {akhir}.{" "}
-              <span className="rounded bg-warn-soft px-1.5 py-0.5 text-xs font-semibold text-warn">Demo</span>
+              Hari ada titik api per bulan, {awal} sampai {akhir}. Sumber: NASA FIRMS VIIRS S-NPP.
             </p>
           </div>
         }
@@ -143,7 +142,7 @@ export function KalenderSatelit({
             href={`/desa/${kode}`}
             className="group inline-flex min-h-11 items-center gap-1.5 rounded-full border border-line bg-paper px-4 text-sm font-semibold hover:bg-line/40"
           >
-            Bukti satelit lengkap
+            Informasi detail lengkap
             <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-hover:translate-x-0.5">
               <path d="M5 12h14M13 6l6 6-6 6" />
             </svg>
@@ -172,9 +171,8 @@ export function KalenderSatelit({
 
       <div className="mt-5 flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-t border-line pt-4">
         <p className="max-w-[72ch] text-sm text-muted">
-          Setiap kotak satu bulan. Makin gelap, makin banyak hari ada titik api di desa. Kolom berlatar pasir = tahun kering ekstrem.{" "}
-          <span className="font-semibold text-ink">Demo:</span> angka per bulan diperkirakan dari total hari per tahun dengan pola musim kemarau
-          Kalimantan, sampai data satelit per bulan tersedia.
+          Setiap kotak satu bulan. Makin gelap, makin banyak hari ada titik api di desa. Kolom berlatar pasir = tahun kering ekstrem.
+          Angka dihitung dari tanggal setiap titik api satelit dalam radius 2 km dari batas desa.
         </p>
         <ul aria-label="Keterangan warna" className="flex items-center gap-1.5 text-sm text-muted">
           <li>Sedikit</li>

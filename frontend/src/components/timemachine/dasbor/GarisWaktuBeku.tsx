@@ -59,9 +59,11 @@ export function GarisWaktuBeku({ tahunUji, pilihan, onPilih }: { tahunUji: numbe
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 id="garis-beku" className="font-semibold">
-            Garis waktu beku
+            Pilih tahun yang diuji
           </h2>
-          <p className="mt-0.5 text-sm text-muted">Seret garis beku atau pilih tahun uji. Data sesudah garis disembunyikan saat peringkat disusun.</p>
+          <p className="mt-0.5 text-sm text-muted">
+            Seret garis &ldquo;Beku&rdquo; atau klik tahunnya. Data sebelum garis dipakai untuk menebak, kotak oranye adalah tahun yang dicocokkan, sisanya disembunyikan.
+          </p>
         </div>
         <div role="group" aria-label="Tahun uji" className="flex flex-wrap gap-1.5">
           {pilihan.map((t) => (

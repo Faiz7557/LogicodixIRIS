@@ -61,32 +61,13 @@ function PompaJinjing() {
   );
 }
 
-function DanaOperasi() {
-  return (
-    <>
-      {/* dompet */}
-      <path d="M8 22h40a6 6 0 0 1 6 6v22a6 6 0 0 1-6 6H14a6 6 0 0 1-6-6z" {...garis} fill="var(--paper)" />
-      <path d="M8 22l30-10 4 10" {...garis} />
-      <rect x="40" y="33" width="16" height="10" rx="3" {...garis} fill="var(--surface)" />
-      <circle cx="46" cy="38" r="1.800" fill="var(--ink)" stroke="none" />
-      {/* tumpukan koin */}
-      <ellipse cx="22" cy="46" rx="8" ry="3" {...garis} fill="var(--ember)" />
-      <path d="M14 46v-5M30 46v-5" {...garis} />
-      <ellipse cx="22" cy="41" rx="8" ry="3" {...garis} fill="var(--ember)" />
-      <path d="M14 41v-5M30 41v-5" {...garis} />
-      <ellipse cx="22" cy="36" rx="8" ry="3" {...garis} fill="var(--ember)" />
-    </>
-  );
-}
-
 const GAMBAR: Record<string, () => React.ReactNode> = {
   selang_keluar: SelangKeluar,
   sumur_bor: SumurBor,
   pompa_jinjing: PompaJinjing,
-  dana_operasi: DanaOperasi,
 };
 
-/** Kotak gambar item. Item tanpa gambar (kode di luar empat item inti) tidak menampilkan apa-apa. */
+/** Kotak gambar item. Item tanpa gambar (kode di luar tiga item inti) tidak menampilkan apa-apa. */
 export function GambarItem({ kode, className = "" }: { kode: string; className?: string }) {
   const Gambar = GAMBAR[kode];
   if (!Gambar) return null;
