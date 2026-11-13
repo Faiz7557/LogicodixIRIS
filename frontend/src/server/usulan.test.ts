@@ -1,10 +1,14 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useTestDb } from "@/test/testDb";
 import { getUsulan, listUsulanPage, terbitkanPermohonanAnggaran, terbitkanUsulan } from "./usulan";
 import { setPagu, setKeputusan, getPrioritas } from "./prioritas";
 
 describe("usulan", () => {
   useTestDb();
+
+  // Surat usulan memakai generateNarrative. Tanpa ini, kunci API di shell developer membuat tes memanggil jaringan nyata.
+  beforeEach(() => vi.stubEnv("OPENAI_API_KEY", ""));
+  afterEach(() => vi.unstubAllEnvs());
 
   it("menolak tanpa baris setuju", async () => {
     await expect(terbitkanUsulan("KOSONG", 1, "csr")).rejects.toThrow("Belum ada baris yang disetujui");
