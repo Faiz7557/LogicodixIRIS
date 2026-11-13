@@ -13,6 +13,10 @@
 # basis data lokal (data uji dan keluaran pipeline). Dibagikan lewat make bundle, bukan git.
 /data/dev.db*
 /data/siapkemarau.db*
+# jaring aman: zip kiriman anggota tim isinya datar, jadi ekstrak yang salah tempat
+# meninggalkan DB/folder di akar repo. Lokasi standarnya tetap data/siapkemarau.db.
+/siapkemarau.db*
+/siapkemarau.db-nyata-*/
 
 # python pipeline
 __pycache__/
