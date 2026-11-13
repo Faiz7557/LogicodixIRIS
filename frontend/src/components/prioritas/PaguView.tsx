@@ -26,6 +26,8 @@ export function PaguView(data: DataPrioritas) {
   const { kode, namaDesa, catalog } = data;
   const p = usePrioritas(data);
   const { hasil, readiness, paket, harga, pagu } = p;
+  // Saran dan grafik memakai anggaran yang belum terpakai surat usulan sebelumnya.
+  const paguHitung = p.paguBebas;
   const [tambahan, setTambahan] = useState(0);
 
   // Mesin urutan yang sama (fungsi murni), katalog dibatasi ke item paket seperti di server.
@@ -42,22 +44,22 @@ export function PaguView(data: DataPrioritas) {
   // Kurva skor untuk tiap besar dana; titik pagu dan kebutuhan penuh dihitung persis supaya label = angka kartu.
   const { titikKurva, kebutuhan, skorPenuh } = useMemo(() => {
     const penuh = urutkan(1e13);
-    const atas = Math.max(penuh.terpakaiRp * 1.1, pagu * 1.15, 10_000_000);
+    const atas = Math.max(penuh.terpakaiRp * 1.1, paguHitung * 1.15, 10_000_000);
     const langkah = Math.max(LANGKAH_TAMBAHAN, bulatAtas(atas / 60));
     const n = Math.ceil(atas / langkah);
-    const besar = new Set([...Array.from({ length: n + 1 }, (_, i) => i * langkah), pagu, penuh.terpakaiRp]);
+    const besar = new Set([...Array.from({ length: n + 1 }, (_, i) => i * langkah), paguHitung, penuh.terpakaiRp]);
     return {
       titikKurva: [...besar].sort((a, b) => a - b).map((b) => ({ pagu: b, skor: urutkan(b).skorSesudah })),
       kebutuhan: penuh.terpakaiRp,
       skorPenuh: penuh.skorSesudah,
     };
-  }, [urutkan, pagu]);
+  }, [urutkan, paguHitung]);
 
   // Kekurangan = biaya belanja yang tidak muat di pagu (sama dengan total daftar dan bahan usulan).
   const kekurangan = hasil.tidakTerdanai.reduce((s, r) => s + r.biayaRp, 0);
-  const maksTambahan = bulatAtas(Math.max(kekurangan, kebutuhan - pagu, 0));
+  const maksTambahan = bulatAtas(Math.max(kekurangan, kebutuhan - paguHitung, 0));
   const tambahanAktif = Math.min(tambahan, maksTambahan);
-  const coba: PriorityResult = useMemo(() => (tambahanAktif > 0 ? urutkan(pagu + tambahanAktif) : hasil), [tambahanAktif, urutkan, pagu, hasil]);
+  const coba: PriorityResult = useMemo(() => (tambahanAktif > 0 ? urutkan(paguHitung + tambahanAktif) : hasil), [tambahanAktif, urutkan, paguHitung, hasil]);
   const sisaKurang = coba.tidakTerdanai.reduce((s, r) => s + r.biayaRp, 0);
   const tertutup = Math.max(0, kekurangan - sisaKurang);
 
@@ -119,21 +121,21 @@ export function PaguView(data: DataPrioritas) {
             />
             <KartuKpi
               urut={1}
-              label="Sudah disetujui"
-              nilai={p.disetujuiRp}
+              label="Sudah dibuat surat usulan"
+              nilai={p.terkunciRp}
               format={formatRupiah}
               tambahan={
-                p.disetujui.length > 0
-                  ? `${formatAngka(p.disetujui.length)} belanja, ${pagu > 0 ? Math.round((p.disetujuiRp / pagu) * 100) : 0}% dari anggaran`
-                  : "belum ada yang disetujui di langkah 2"
+                p.terkunci.length > 0
+                  ? `${formatAngka(p.terkunci.length)} belanja terkunci, ${pagu > 0 ? Math.round((p.terkunciRp / pagu) * 100) : 0}% dari anggaran`
+                  : "belum ada surat usulan"
               }
             />
             <KartuKpi
               urut={2}
-              label="Sisa anggaran sementara"
-              nilai={p.sisaSementara}
+              label="Sisa anggaran"
+              nilai={paguHitung}
               format={formatRupiah}
-              tambahan={p.disetujuiRp > 0 ? `anggaran ${formatRupiah(pagu)} dikurangi yang disetujui` : "berkurang setiap belanja disetujui"}
+              tambahan={p.terkunciRp > 0 ? `anggaran ${formatRupiah(pagu)} dikurangi surat usulan` : "berkurang setelah surat usulan dibuat"}
             />
             <KartuKpi
               urut={3}
@@ -166,10 +168,14 @@ export function PaguView(data: DataPrioritas) {
         </p>
         {hasil.terpilih.length > 0 ? (
           <div className="mt-3">
-            <BatangPagu pagu={pagu} terpilih={hasil.terpilih} nama={p.nama} satuan={p.satuan} keputusan={p.keputusan} />
+            <BatangPagu pagu={paguHitung} terpilih={hasil.terpilih} nama={p.nama} satuan={p.satuan} keputusan={p.keputusan} />
           </div>
         ) : (
-          <div className="mt-3 flex items-center gap-3 rounded-card border border-dashed border-line-2 bg-paper px-4 py-4 text-sm">
+          <div
+            className={`mt-3 flex items-center gap-3 rounded-card border px-4 py-4 text-sm ${
+              p.keadaan === "terpenuhi" ? "border-ok/40 bg-ok-soft" : "border-dashed border-line-2 bg-paper"
+            }`}
+          >
             <svg
               aria-hidden="true"
               width="22"
@@ -180,9 +186,9 @@ export function PaguView(data: DataPrioritas) {
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className="shrink-0 text-muted"
+              className={`shrink-0 ${p.keadaan === "terpenuhi" ? "text-ok" : "text-muted"}`}
             >
-              <path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
+              {p.keadaan === "terpenuhi" ? <path d="M5 12l5 5 9-10" /> : <path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />}
             </svg>
             <p>
               {pagu === 0 ? (
@@ -294,11 +300,11 @@ export function PaguView(data: DataPrioritas) {
           <div className="mt-3">
             <KurvaSkorPagu
               titik={titikKurva}
-              pagu={pagu}
+              pagu={paguHitung}
               skorSekarang={p.skorSekarang}
               kebutuhan={kebutuhan}
-              coba={pagu + tambahanAktif}
-              onPilih={maksTambahan > 0 ? (b) => setTambahan(Math.min(Math.max(0, b - pagu), maksTambahan)) : undefined}
+              coba={paguHitung + tambahanAktif}
+              onPilih={maksTambahan > 0 ? (b) => setTambahan(Math.min(Math.max(0, b - paguHitung), maksTambahan)) : undefined}
             />
           </div>
         </section>

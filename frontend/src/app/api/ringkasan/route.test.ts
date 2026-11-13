@@ -32,8 +32,8 @@ describe("POST /api/ringkasan", () => {
     expect(res.status).toBe(200);
     expect(await res.json()).toMatchObject({ sumber: "template", model: null, butir: expect.any(Array) });
   });
-  it("timemachine publik tanpa kode 200", async () => {
-    expect((await kirim({ halaman: "timemachine" })).status).toBe(200);
+  it("paparan tanpa kode 400", async () => {
+    expect((await kirim({ halaman: "paparan" })).status).toBe(400);
   });
   it("halaman tak dikenal 400", async () => {
     expect((await kirim({ halaman: "rahasia" })).status).toBe(400);
@@ -66,12 +66,12 @@ describe("POST /api/ringkasan", () => {
     expect((await kirim({ halaman: "paparan", kode: "TIDAK_ADA" })).status).toBe(404);
   });
   it("permintaan ke-21 dari IP yang sama 429 dengan Retry-After", async () => {
-    for (let i = 0; i < 20; i++) expect((await kirim({ halaman: "timemachine" })).status).toBe(200);
-    const res = await kirim({ halaman: "timemachine" });
+    for (let i = 0; i < 20; i++) expect((await kirim({ halaman: "paparan", kode: KODE_UJI })).status).toBe(200);
+    const res = await kirim({ halaman: "paparan", kode: KODE_UJI });
     expect(res.status).toBe(429);
     expect(res.headers.get("Retry-After")).toBe("3600");
   });
   it("Origin asing ditolak", async () => {
-    expect((await kirim({ halaman: "timemachine" }, undefined, "https://jahat.example")).status).toBe(403);
+    expect((await kirim({ halaman: "paparan", kode: KODE_UJI }, undefined, "https://jahat.example")).status).toBe(403);
   });
 });

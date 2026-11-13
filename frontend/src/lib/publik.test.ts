@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { bentukDesa } from "./bentukDesa";
-import { kesimpulanBacktest, pemenang, type MetricRow, type Strategi } from "./backtest";
 import { bolehTagline, headlinePaparan, kalimatKecamatan, kisahJangkar, labelTampakAman } from "./kalimat";
 
 describe("headlinePaparan (rencana v2 Task 17)", () => {
@@ -40,27 +39,6 @@ describe("kalimatKecamatan", () => {
     expect(kalimatKecamatan({ pMean: 0.42, rateMin: 0.25, rateMax: 0.61 }, "Contoh")).toBe(
       "Di Kecamatan Contoh, rata-rata 42% desa terdeteksi satelit pada tahun kering ekstrem (terendah 25%, tertinggi 61% antar tahun).",
     );
-  });
-});
-
-const rows = (v: Partial<Record<Strategi, number>>): MetricRow[] =>
-  (Object.entries(v) as [Strategi, number][]).map(([strategi, nilai]) => ({ tahunUji: 2026, unit: "desa", strategi, metrik: "capture_20", nilai }));
-
-describe("kesimpulanBacktest (rencana v2 Task 18)", () => {
-  it("mengakui saat kalah dari baseline terbaik", () => {
-    expect(kesimpulanBacktest(rows({ paparan: 0.4, persistensi: 0.5, total_riwayat: 0.45 }), 2026)).toContain("kalah dari persistensi");
-  });
-  it("menyatakan selisih saat menang", () => {
-    expect(kesimpulanBacktest(rows({ paparan: 0.6, persistensi: 0.5, total_riwayat: 0.45 }), 2026)).toContain("10 poin");
-  });
-  it("tidak mengklaim hektare", () => {
-    expect(kesimpulanBacktest(rows({ paparan: 0.6, persistensi: 0.5 }), 2026).toLowerCase()).not.toContain("hektare");
-  });
-  it("tahun tanpa hasil", () => {
-    expect(kesimpulanBacktest([], 2023)).toContain("belum tersedia");
-  });
-  it("pemenang per metrik", () => {
-    expect(pemenang(rows({ paparan: 0.4, persistensi: 0.5 }), 2026, "capture_20")).toBe("persistensi");
   });
 });
 

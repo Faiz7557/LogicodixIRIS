@@ -96,7 +96,7 @@ export default async function BerandaPage() {
               bukan gambaran semua desa.
             </p>
             <p data-muncul style={{ ["--tunda" as string]: "260ms" }} className="mt-3 text-muted">
-              SiapKemarau tidak memadamkan api. Alat ini membantu desa menyusun prioritas belanja dari data publik, dengan asumsi yang ditulis terbuka.
+              SiapKemarau tidak memadamkan api. Alat ini membantu desa menyusun prioritas belanja dari data publik, dengan sumber yang ditulis terbuka.
             </p>
             <a
               data-muncul
@@ -154,7 +154,7 @@ export default async function BerandaPage() {
             Mulai dari desa Anda.
           </h2>
           <p data-muncul style={{ ["--tunda" as string]: "100ms" }} className="mx-auto mt-3 max-w-[52ch] text-white/80">
-            Paparan, Time Machine, serta sumber dan batasan data bisa dilihat tanpa akun. Akun dipakai untuk mencatat alat dan menyusun usulan.
+            Paparan desa serta sumber dan batasan data bisa dilihat tanpa akun. Akun dipakai untuk mencatat alat dan menyusun usulan.
           </p>
           <div data-muncul style={{ ["--tunda" as string]: "200ms" }} className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <a data-magnet href="#cari" className="inline-flex min-h-12 transition-transform duration-300 [transition-timing-function:var(--pegas)] items-center rounded-full bg-white px-6 font-semibold text-ink">
@@ -162,9 +162,6 @@ export default async function BerandaPage() {
             </a>
             <Link data-magnet href="/masuk" className="inline-flex min-h-12 transition-transform duration-300 [transition-timing-function:var(--pegas)] items-center rounded-full border border-white/60 px-6 font-semibold">
               Masuk
-            </Link>
-            <Link href="/time-machine" className="inline-flex min-h-12 items-center px-3 font-semibold underline underline-offset-4">
-              Lihat Time Machine
             </Link>
           </div>
           {gerbang !== "buang" ? (

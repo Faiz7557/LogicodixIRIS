@@ -1,7 +1,7 @@
 import type { SumberTeks } from "@/lib/types";
 
 // Teks badge persis dari App Flow v2 §3.10.
-// Pernyataan "wajib ditinjau manusia" kini ada di pernyataan asumsi dokumen (PernyataanAsumsi).
+// Surat usulan tetap wajib ditinjau manusia sebelum dikirim.
 export function AiBadge({ sumber, model }: { sumber: SumberTeks; model?: string | null }) {
   const ai = sumber === "ai";
   return (

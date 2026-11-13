@@ -1,4 +1,3 @@
-import { kesimpulanBacktest } from "@/lib/backtest";
 import { formatAngka, formatPersen, formatRupiah, formatSkor } from "@/lib/format";
 import { LABEL_TIER, headlinePaparan, labelTampakAman } from "@/lib/kalimat";
 import type { CatalogItem, HalamanRingkasan, Ringkasan, Status } from "@/lib/types";
@@ -6,7 +5,7 @@ import { HttpError } from "./http";
 import { getKesiapan } from "./kesiapan";
 import { modelPenulis, tulisJson } from "./llm";
 import { getPrioritas } from "./prioritas";
-import { getBacktest, getCatalog, getDesaCard } from "./queries";
+import { getCatalog, getDesaCard } from "./queries";
 
 /*
  * Ringkasan satu halaman (plan 09 Bagian C). Server menyusun fakta yang sudah diformat persis seperti di layar,
@@ -19,7 +18,6 @@ export type Fakta = Record<string, string | string[]>;
 const ANGKA = /\d+(?:[.,]\d+)*/g;
 const MAKS_JUDUL = 160;
 const MAKS_BUTIR = 240;
-const TAHUN_UJI = 2026;
 
 export const KATA_TERLARANG = [
   "penyebab",
@@ -39,9 +37,8 @@ const AKSI_TEKS = { beli: "Beli", perbaiki: "Perbaiki" } as const;
 
 const CATATAN_WAJIB: Record<HalamanRingkasan, string> = {
   paparan: "Tanpa deteksi satelit bukan berarti aman. Ini deteksi satelit, bukan luas terbakar.",
-  kesiapan: "Skor mengukur kelengkapan paket minimum asumsi tim, bukan jaminan api bisa dipadamkan.",
-  prioritas: "Urutan ini hasil hitungan dengan sebagian harga asumsi tim; keputusan tetap di musyawarah desa.",
-  timemachine: "Ini uji mundur pada deteksi satelit, bukan ramalan kebakaran di desa tertentu.",
+  kesiapan: "Skor mengukur kelengkapan paket minimum, bukan jaminan api bisa dipadamkan.",
+  prioritas: "Urutan ini hasil hitungan dari harga acuan; keputusan tetap di musyawarah desa.",
 };
 
 const SKEMA = {
@@ -71,23 +68,6 @@ function wajibKode(kode: string | undefined): string {
 
 export async function faktaRingkasan(halaman: HalamanRingkasan, kode?: string): Promise<Fakta> {
   const catatan_wajib = CATATAN_WAJIB[halaman];
-
-  if (halaman === "timemachine") {
-    const bt = await getBacktest();
-    const cap = (s: string) =>
-      bt.metrik.find((m) => m.tahunUji === TAHUN_UJI && m.unit === "desa" && m.metrik === "capture_20" && m.strategi === s)?.nilai;
-    const paparan = cap("paparan");
-    const acak = cap("acak");
-    return {
-      tahun_uji: String(TAHUN_UJI),
-      keputusan_gerbang: bt.gerbang.keputusan,
-      kesimpulan_2026: kesimpulanBacktest(bt.metrik, TAHUN_UJI),
-      data_akhir_2026: bt.dataAkhir2026 ?? "belum ada",
-      capture_20_paparan: paparan === undefined ? "belum ada" : formatPersen(paparan),
-      capture_20_acak: acak === undefined ? "belum ada" : formatPersen(acak),
-      catatan_wajib,
-    };
-  }
 
   const k = wajibKode(kode);
   const card = await getDesaCard(k);
@@ -219,21 +199,6 @@ export function templateRingkasan(halaman: HalamanRingkasan, f: Fakta): { judul:
         judul: `Belanja terpilih ${teks(f, "total_terpilih")} dari pagu ${teks(f, "pagu")} menaikkan skor dari ${teks(f, "skor")} menjadi ${teks(f, "skor_sesudah")}.`,
         butir: [satu, dua, catatan],
       };
-    }
-    case "timemachine": {
-      const kes = teks(f, "kesimpulan_2026", "Hasil uji belum tersedia.");
-      // Kalimat pertama kesimpulan menjadi judul; sisanya (bila ada) menjadi butir pertama.
-      const titik = kes.indexOf(". ");
-      const judul = titik > 0 ? kes.slice(0, titik + 1) : kes;
-      const sisa = titik > 0 ? kes.slice(titik + 2) : "";
-      const pap = teks(f, "capture_20_paparan", "belum ada");
-      const satu =
-        sisa ||
-        (pap === "belum ada"
-          ? `Angka uji ${teks(f, "tahun_uji")} belum tersedia.`
-          : `Pada uji ${teks(f, "tahun_uji")}, peringkat riwayat menangkap ${pap} dan urutan acak ${teks(f, "capture_20_acak", "belum ada")}.`);
-      const dua = `Keputusan gerbang data: ${teks(f, "keputusan_gerbang")}. Data ${teks(f, "tahun_uji")} sampai: ${teks(f, "data_akhir_2026", "belum ada")}.`;
-      return { judul, butir: [satu, dua, catatan] };
     }
   }
 }

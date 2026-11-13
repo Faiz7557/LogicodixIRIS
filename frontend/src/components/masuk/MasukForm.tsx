@@ -47,7 +47,7 @@ export function MasukForm() {
     <div className="mx-auto max-w-[420px] px-4 py-8">
       <h1 className="text-2xl font-bold">Masuk</h1>
       <p className="mt-2 text-xl font-semibold leading-snug">Masuk untuk mencatat alat dan menyusun prioritas desa.</p>
-      <p className="mt-1 text-sm text-muted">Paparan, Time Machine, dan Data bisa dilihat tanpa akun.</p>
+      <p className="mt-1 text-sm text-muted">Paparan desa dan Data bisa dilihat tanpa akun.</p>
 
       <form onSubmit={kirim} noValidate className="mt-6 space-y-4">
         <div>

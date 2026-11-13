@@ -29,6 +29,18 @@ export function PenggerakGulir() {
       { rootMargin: "0px 0px -12% 0px", threshold: 0.12 },
     );
     document.querySelectorAll("[data-muncul]").forEach((el) => io.observe(el));
+    // Isi yang baru dirender belakangan (layar interaktif, mis. papan Keputusan) ikut diamati,
+    // supaya tidak tertahan tak terlihat.
+    const mo = new MutationObserver((ubah) => {
+      for (const u of ubah) {
+        u.addedNodes.forEach((n) => {
+          if (!(n instanceof Element)) return;
+          if (n.matches("[data-muncul]:not([data-terlihat])")) io.observe(n);
+          n.querySelectorAll("[data-muncul]:not([data-terlihat])").forEach((el) => io.observe(el));
+        });
+      }
+    });
+    mo.observe(document.body, { childList: true, subtree: true });
 
     const elemen = Array.from(document.querySelectorAll<HTMLElement>("[data-gulir]"));
     let id = 0;
@@ -54,6 +66,7 @@ export function PenggerakGulir() {
     window.addEventListener("resize", minta);
     return () => {
       io.disconnect();
+      mo.disconnect();
       cancelAnimationFrame(id);
       window.removeEventListener("scroll", minta);
       window.removeEventListener("resize", minta);

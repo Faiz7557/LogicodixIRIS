@@ -358,7 +358,6 @@ ORDER BY k.urutan;
 | `kelurahan_tercampur` | Data batas memuat kelurahan yang tidak menerima Dana Desa | peringatan |
 | `luas_desa_bias` | Desa luas lebih mudah terdeteksi | peringatan |
 | `konsesi` | Api di konsesi tidak bisa diselesaikan oleh anggaran desa | batasan |
-| `paket_asumsi` | Paket minimum dan bobot adalah asumsi tim | batasan |
 | `harga_ssh_tertinggi` | SSH adalah harga satuan tertinggi | info |
 | `servis_pendekatan` | Harga servis berasal dari servis pompa air umum di Kediri | peringatan |
 | `dana_desa_2027` | Belum ada Permendesa fokus Dana Desa 2027 | peringatan |
