@@ -245,7 +245,7 @@ export function KartuSkor({
           { label: "perlu biaya", nilai: rupiahRingkas(totalBiaya) },
         ]}
       />
-      {bisaPrioritas ? <TautanBawah href={`/desa/${kode}/prioritas/pagu`}>Isi pagu</TautanBawah> : <TautanBawah href={`/desa/${kode}`}>Lihat bukti paparan</TautanBawah>}
+      {bisaPrioritas ? <TautanBawah href={`/desa/${kode}/prioritas/pagu`}>Isi anggaran</TautanBawah> : <TautanBawah href={`/desa/${kode}`}>Lihat bukti paparan</TautanBawah>}
     </section>
   );
 }

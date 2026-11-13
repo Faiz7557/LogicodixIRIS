@@ -226,8 +226,8 @@ export function usePrioritas({ kode, catalog, awal, kesiapan, paket: paketAwal, 
   const disetujui = barisDisetujui(hasil.terpilih, keputusan);
   // Satu kalimat keadaan untuk penunjuk tiga langkah.
   const ringkasLangkah: [string, string, string] = [
-    `Pagu ${formatRupiah(pagu)}, skor ${formatSkor(skorSekarang)} → ${formatSkor(hasil.skorSesudah)}`,
-    hasil.terpilih.length > 0 ? `${hasil.terpilih.length} saran, ${ringkas.belum} belum diputuskan` : "Belum ada saran untuk pagu ini",
+    `Anggaran ${formatRupiah(pagu)}, skor ${formatSkor(skorSekarang)} → ${formatSkor(hasil.skorSesudah)}`,
+    hasil.terpilih.length > 0 ? `${hasil.terpilih.length} saran, ${ringkas.belum} belum diputuskan` : "Belum ada saran untuk anggaran ini",
     disetujui.length > 0 ? `${disetujui.length} disetujui, ${formatRupiah(totalBiaya(disetujui))}` : "Setujui minimal satu saran",
   ];
 

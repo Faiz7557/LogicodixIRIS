@@ -45,15 +45,15 @@ export function kalimatPrioritas(paguRp: number, skorSekarang: number, hasil: Pr
     case "tanpaHarga":
       return "Belum ada harga. Isi harga dari penawaran setempat.";
     case "nol":
-      return "Isi pagu untuk melihat urutan.";
+      return "Isi anggaran untuk melihat urutan belanja.";
     case "kurang": {
       const t = itemTermurah(harga, catalog);
       return t
-        ? `Pagu belum cukup untuk satu item. Item termurah: ${t.nama}, ${formatRupiah(t.hargaRp)}.`
-        : "Pagu belum cukup untuk satu item.";
+        ? `Anggaran belum cukup untuk satu alat pun. Yang termurah: ${t.nama}, ${formatRupiah(t.hargaRp)}.`
+        : "Anggaran belum cukup untuk satu alat pun.";
     }
     default:
-      return `Dengan pagu ${formatRupiah(paguRp)}, skor kesiapan naik dari ${formatSkor(skorSekarang)} menjadi ${formatSkor(hasil.skorSesudah)}.`;
+      return `Dengan anggaran ${formatRupiah(paguRp)}, skor kesiapan naik dari ${formatSkor(skorSekarang)} menjadi ${formatSkor(hasil.skorSesudah)}.`;
   }
 }
 

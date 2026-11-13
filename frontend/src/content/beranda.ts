@@ -13,7 +13,7 @@ export const LANGKAH = [
   { judul: "Lihat paparan", isi: "Berapa tahun kering ekstrem desa terdeteksi satelit sejak 2012." },
   { judul: "Catat alat", isi: "Ketua MPA mengisi jumlah alat yang ada dan yang masih berfungsi, lewat HP." },
   { judul: "Lihat kesiapan", isi: "Skor terhadap paket minimum satu musim, dan mata rantai yang paling lemah." },
-  { judul: "Susun prioritas", isi: "Isi pagu. Urutan belanja muncul dengan alasan tiap baris. Desa yang memutuskan." },
+  { judul: "Susun prioritas", isi: "Isi anggaran desa. Urutan belanja muncul dengan alasan tiap baris. Desa yang memutuskan." },
   { judul: "Terbitkan usulan", isi: "Satu dokumen siap cetak untuk APBDes, BPBD, Daops, atau CSR." },
 ] as const;
 

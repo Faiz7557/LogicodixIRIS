@@ -29,7 +29,7 @@ const kelompok: Kelompok[] = [
     tanya: "Apa yang perlu dibeli?",
     items: [
       // Tiga langkah berurutan: cek pagu, putuskan saran, terbitkan usulan.
-      { href: (k) => `/desa/${k}/prioritas/pagu`, label: "1. Pagu", peran: ["desa"], icon: <IconSlider /> },
+      { href: (k) => `/desa/${k}/prioritas/pagu`, label: "1. Anggaran", peran: ["desa"], icon: <IconSlider /> },
       { href: (k) => `/desa/${k}/prioritas`, label: "2. Keputusan", peran: ["desa"], icon: <IconSort />, aktifSampai: "persis" },
       { href: (k) => `/desa/${k}/usulan`, label: "3. Usulan", peran: ["desa"], icon: <IconDoc /> },
     ],

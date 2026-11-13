@@ -32,12 +32,12 @@ describe("parsePagu", () => {
 
 describe("keadaan dan kalimat", () => {
   it("pagu nol: teks persis App Flow", () => {
-    expect(kalimatPrioritas(0, 56.7, hitung(0), mockHarga, mockCatalog)).toBe("Isi pagu untuk melihat urutan.");
+    expect(kalimatPrioritas(0, 56.7, hitung(0), mockHarga, mockCatalog)).toBe("Isi anggaran untuk melihat urutan belanja.");
   });
   it("pagu di bawah harga termurah menyebut item dan harganya", () => {
     expect(keadaanPagu(1000, hitung(1000), mockHarga)).toBe("kurang");
     expect(kalimatPrioritas(1000, 56.7, hitung(1000), mockHarga, mockCatalog)).toBe(
-      "Pagu belum cukup untuk satu item. Item termurah: Pompa jinjing, Rp510.000.",
+      "Anggaran belum cukup untuk satu alat pun. Yang termurah: Pompa jinjing, Rp510.000.",
     );
   });
   it("semua harga kosong: teks persis App Flow", () => {
@@ -47,7 +47,7 @@ describe("keadaan dan kalimat", () => {
   });
   it("normal: skor sekarang menuju skor sesudah", () => {
     expect(kalimatPrioritas(15_000_000, 56.7, hitung(15_000_000), mockHarga, mockCatalog)).toBe(
-      "Dengan pagu Rp15.000.000, skor kesiapan naik dari 56,7 menjadi 63,3.",
+      "Dengan anggaran Rp15.000.000, skor kesiapan naik dari 56,7 menjadi 63,3.",
     );
   });
   it("item termurah", () => {

@@ -69,7 +69,7 @@ export function PrioritasView(data: DataPrioritas) {
           <div className="mt-3">
             <EmptyState
               title={p.keadaan === "kurang" ? "Belum ada belanja yang muat." : p.keadaan === "tanpaHarga" ? "Belum ada harga." : "Belum ada urutan."}
-              action={{ href: `/desa/${kode}/prioritas/pagu`, label: "Isi pagu" }}
+              action={{ href: `/desa/${kode}/prioritas/pagu`, label: "Isi anggaran" }}
             >
               {p.kalimat}
             </EmptyState>
@@ -101,15 +101,15 @@ export function PrioritasView(data: DataPrioritas) {
       <div className="mt-6 grid gap-4 md:grid-cols-2">
         <section aria-labelledby="ringkas-pagu" className="flex flex-col rounded-panel border border-line bg-surface p-5 shadow-card">
           <h2 id="ringkas-pagu" className="font-bold">
-            Pagu belanja
+            Anggaran belanja
           </h2>
           <dl className="mt-3 grid grid-cols-[repeat(auto-fit,minmax(9.5rem,1fr))] gap-3">
             <div>
-              <dt className="text-sm text-muted">Pagu</dt>
+              <dt className="text-sm text-muted">Anggaran</dt>
               <dd className="tabular text-lg font-semibold leading-tight">{formatRupiah(pagu)}</dd>
             </div>
             <div>
-              <dt className="text-sm text-muted">Terpakai</dt>
+              <dt className="text-sm text-muted">Dipakai</dt>
               <dd className="tabular text-lg font-semibold leading-tight">{formatRupiah(hasil.terpakaiRp)}</dd>
             </div>
             <div>
@@ -124,7 +124,7 @@ export function PrioritasView(data: DataPrioritas) {
             href={`/desa/${kode}/prioritas/pagu`}
             className="group mt-auto inline-flex min-h-11 items-center gap-1.5 self-start pt-3 text-sm font-semibold text-ember"
           >
-            Ubah pagu di langkah 1
+            Ubah anggaran di langkah 1
             <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-hover:translate-x-0.5">
               <path d="M5 12h14M13 6l6 6-6 6" />
             </svg>

@@ -105,8 +105,8 @@ export function KurvaSkorPagu({
         viewBox={`0 0 ${W} ${H}`}
         className={`block h-auto w-full touch-none select-none ${onPilih ? "cursor-crosshair" : "cursor-default"}`}
         role="img"
-        aria-label={`Kurva skor kesiapan terhadap besar dana. Pada pagu ${formatRupiah(pagu)} skor menjadi ${formatSkor(skorPagu)}${
-          adaKurang ? `; bila seluruh kebutuhan ${formatRupiah(kebutuhan!)} terdanai, skor menjadi ${formatSkor(skorPada(ujungKurang))}` : ""
+        aria-label={`Grafik skor kesiapan menurut besar dana. Dengan anggaran ${formatRupiah(pagu)} skor menjadi ${formatSkor(skorPagu)}${
+          adaKurang ? `; bila semua kebutuhan ${formatRupiah(kebutuhan!)} terbeli, skor menjadi ${formatSkor(skorPada(ujungKurang))}` : ""
         }. Tabel tersedia di bawah grafik.`}
         onPointerMove={(e) => setArah(dariPointer(e))}
         onPointerLeave={() => setArah(null)}
@@ -158,7 +158,7 @@ export function KurvaSkorPagu({
               strokeWidth="3"
               paintOrder="stroke"
             >
-              Kebutuhan penuh: {formatSkor(skorPada(ujungKurang))}
+              Semua terbeli: {formatSkor(skorPada(ujungKurang))}
             </text>
           </g>
         ) : null}
@@ -184,7 +184,7 @@ export function KurvaSkorPagu({
               fontWeight="600"
               fill="var(--ink)"
             >
-              Pagu: {formatSkor(skorPagu)}
+              Anggaran: {formatSkor(skorPagu)}
             </text>
           </g>
         ) : null}
@@ -236,7 +236,7 @@ export function KurvaSkorPagu({
           </span>
           {aktif.pagu > pagu ? (
             <span className="tabular block text-xs text-faint">
-              Perlu {formatRupiah(aktif.pagu - pagu)} di luar pagu{onPilih ? ". Klik untuk mencoba." : ""}
+              Perlu tambahan {formatRupiah(aktif.pagu - pagu)}{onPilih ? ". Klik untuk mencoba." : ""}
             </span>
           ) : null}
         </div>
@@ -249,10 +249,10 @@ export function KurvaSkorPagu({
             <thead className="sticky top-0 bg-paper">
               <tr>
                 <th scope="col" className="px-3 py-2 text-left font-semibold">
-                  Pagu
+                  Besar dana
                 </th>
                 <th scope="col" className="px-3 py-2 text-right font-semibold">
-                  Skor sesudah
+                  Skor setelah belanja
                 </th>
               </tr>
             </thead>
@@ -302,7 +302,7 @@ export function BatangPagu({
       </p>
       <div
         role="img"
-        aria-label={`Pemakaian pagu: ${terpilih.map((b) => `${namaAksi(b.aksi)} ${nama(b.itemKode)} ${formatRupiah(b.biayaRp)}`).join(", ") || "belum ada belanja"}; sisa ${formatRupiah(sisa)}.`}
+        aria-label={`Pemakaian anggaran: ${terpilih.map((b) => `${namaAksi(b.aksi)} ${nama(b.itemKode)} ${formatRupiah(b.biayaRp)}`).join(", ") || "belum ada belanja"}; sisa ${formatRupiah(sisa)}.`}
         className="mt-2 flex h-6 w-full gap-[2px] overflow-hidden rounded-[6px]"
         onPointerLeave={() => setArah(null)}
       >
@@ -331,9 +331,9 @@ export function BatangPagu({
             {formatAngka(aktif.qty)} × · <span className="tabular">{formatRupiah(aktif.biayaRp)}</span>
           </>
         ) : terpilih.length > 0 ? (
-          "Arahkan ke batang untuk melihat rinciannya."
+          "Sentuh atau arahkan ke batang untuk melihat rinciannya."
         ) : (
-          "Belum ada belanja yang muat di pagu ini."
+          "Anggaran ini belum cukup untuk membeli apa pun."
         )}
       </p>
       <ul className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted">
@@ -367,7 +367,7 @@ export interface BarisCakupan {
 
 const GERAK = "left 500ms var(--pegas), width 500ms var(--pegas), opacity 300ms ease-out";
 
-export function CakupanSesudah({ baris, labelSesudah = "Sesudah belanja" }: { baris: BarisCakupan[]; labelSesudah?: string }) {
+export function CakupanSesudah({ baris, labelSesudah = "Setelah belanja" }: { baris: BarisCakupan[]; labelSesudah?: string }) {
   const [arah, setArah] = useState<string | null>(null);
   const pct = (n: number, t: number) => (t > 0 ? Math.min(n / t, 1) * 100 : 0);
   const adaTambahan = baris.some((b) => b.denganTambahan !== undefined && b.denganTambahan > b.sesudah);
@@ -452,7 +452,7 @@ export function CakupanSesudah({ baris, labelSesudah = "Sesudah belanja" }: { ba
               {arah === b.kode ? (
                 <p className="tabular mt-1 text-xs text-muted">
                   {formatAngka(b.sebelum)} → {formatAngka(b.sesudah)}
-                  {naikLagi ? ` → ${formatAngka(b.denganTambahan!)}` : ""} dari paket minimum {formatAngka(b.target)} {b.satuan}
+                  {naikLagi ? ` → ${formatAngka(b.denganTambahan!)}` : ""} dari jumlah minimum {formatAngka(b.target)} {b.satuan}
                 </p>
               ) : null}
             </li>
