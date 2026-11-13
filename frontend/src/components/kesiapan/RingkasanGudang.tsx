@@ -22,7 +22,12 @@ type Baris = {
 
 const harga = (rows: HargaRow[], kode: string, aksi: "beli" | "perbaiki") => rows.find((h) => h.itemKode === kode && h.aksi === aksi)?.hargaRp ?? null;
 
-/** Baris tindakan terurut dari item paling genting (urutan `items` sudah dari kesenjangan terbesar). */
+/**
+ * Baris tindakan terurut dari item paling genting (urutan `items` sudah dari kesenjangan terbesar).
+ * Ukurannya sama dengan mesin prioritas (engine/priority.ts): kekurangan = target dikurangi yang berfungsi;
+ * unit rusak diperbaiki dulu sampai menutup kekurangan, sisanya baru dibeli. Unit rusak tanpa harga perbaikan
+ * ikut dibeli. Unit rusak di luar kekurangan tidak dimasukkan karena paket minimum sudah terpenuhi tanpanya.
+ */
 export function barisTindakan(items: ItemView[], catalog: CatalogItem[], hargaRows: HargaRow[]): Baris[] {
   const out: Baris[] = [];
   for (const it of items) {
@@ -34,28 +39,32 @@ export function barisTindakan(items: ItemView[], catalog: CatalogItem[], hargaRo
       continue;
     }
     const kurang = Math.max(it.target - it.berfungsi, 0);
-    if (kurang > 0) {
+    if (kurang === 0) continue;
+    const hPerbaiki = harga(hargaRows, it.itemKode, "perbaiki");
+    const perbaiki = alat && hPerbaiki !== null ? Math.min(it.rusak, kurang) : 0;
+    const beli = kurang - perbaiki;
+    const keadaan = alat ? `Ada ${formatAngka(it.berfungsi)}, butuh ${n(it.target)}` : `Tersedia ${formatAngka(it.berfungsi)}, butuh ${n(it.target)}`;
+    if (perbaiki > 0) {
+      out.push({
+        kunci: `${it.itemKode}:perbaiki`,
+        kode: it.itemKode,
+        nama: it.nama,
+        keadaan: `${keadaan}, ${n(it.rusak)} rusak`,
+        aksi: `Perbaiki ${n(perbaiki)}`,
+        biaya: perbaiki * (hPerbaiki ?? 0),
+        ragam: "rusak",
+      });
+    }
+    if (beli > 0) {
       const h = harga(hargaRows, it.itemKode, "beli");
       out.push({
         kunci: `${it.itemKode}:beli`,
         kode: it.itemKode,
         nama: it.nama,
-        keadaan: alat ? `Ada ${formatAngka(it.berfungsi)}, butuh ${n(it.target)}` : `Tersedia ${formatAngka(it.berfungsi)}, butuh ${n(it.target)}`,
-        aksi: alat ? `Beli ${n(kurang)}` : `Tambah dana ${n(kurang)}`,
-        biaya: h === null ? null : kurang * h,
+        keadaan: perbaiki > 0 ? `Masih kurang ${n(beli)} setelah diperbaiki` : keadaan,
+        aksi: alat ? `Beli ${n(beli)}` : `Tambah dana ${n(beli)}`,
+        biaya: h === null ? null : beli * h,
         ragam: "kurang",
-      });
-    }
-    if (alat && it.rusak > 0) {
-      const h = harga(hargaRows, it.itemKode, "perbaiki");
-      out.push({
-        kunci: `${it.itemKode}:perbaiki`,
-        kode: it.itemKode,
-        nama: it.nama,
-        keadaan: `${n(it.rusak)} rusak`,
-        aksi: `Perbaiki ${n(it.rusak)}`,
-        biaya: h === null ? null : it.rusak * h,
-        ragam: "rusak",
       });
     }
   }
@@ -72,7 +81,7 @@ export function TanganiDulu({ kode, baris }: { kode: string; baris: Baris[] }) {
         <p className="text-sm text-muted">Urut dari item paling genting</p>
       </div>
       {baris.length === 0 ? (
-        <p className="border-t border-line px-5 py-4 text-muted md:px-6">Tidak ada yang mendesak. Semua item paket minimum terpenuhi dan tidak ada yang rusak.</p>
+        <p className="border-t border-line px-5 py-4 text-muted md:px-6">Tidak ada yang mendesak. Semua item paket minimum sudah terpenuhi.</p>
       ) : (
         <ul className="divide-y divide-surface border-t border-line">
           {baris.map((b) => (
@@ -240,8 +249,8 @@ export function KartuSkor({
       <div className="min-h-5 flex-1" />
       <BarisAngka
         isi={[
-          { label: "item kurang", nilai: formatAngka(itemKurang) },
-          { label: "item rusak", nilai: formatAngka(rusak) },
+          { label: "perlu dibeli", nilai: formatAngka(itemKurang) },
+          { label: "perlu diperbaiki", nilai: formatAngka(rusak) },
           { label: "perlu biaya", nilai: rupiahRingkas(totalBiaya) },
         ]}
       />

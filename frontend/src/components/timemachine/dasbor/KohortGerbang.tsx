@@ -17,20 +17,23 @@ const KOHORT: { kunci: Kunci; label: string; ket: string }[] = [
 const KEPUTUSAN: Record<KeputusanGerbang, { label: string; kelas: string; isi: string }> = {
   pertahankan: { label: "Pertahankan klaim", kelas: "bg-ok-soft text-ok", isi: "Label Tampak aman tetap ditampilkan apa adanya." },
   lunakkan: { label: "Lunakkan klaim", kelas: "bg-warn-soft text-warn", isi: "Label Tampak aman tetap tampil, dengan kalimat yang lebih hati-hati." },
-  buang: { label: "Buang klaim", kelas: "bg-danger-soft text-danger", isi: "Label Tampak aman disembunyikan dari Bukti satelit." },
+  buang: { label: "Buang klaim", kelas: "bg-danger-soft text-danger", isi: "Label Tampak aman disembunyikan dari Informasi detail." },
 };
 
 /**
  * Tiga kelompok desa per 31 Desember 2025 sebagai grafik wafel: satu titik = satu desa,
- * titik penuh = terdeteksi 2026. Menyorot satu kelompok meredupkan yang lain.
+ * titik penuh = terdeteksi 2026. Kelompok besar dibatasi MAKS_TITIK titik (tiap titik mewakili beberapa
+ * desa, jumlah titik penuh mengikuti persentase), supaya kartu tidak memanjang ribuan titik.
+ * Menyorot satu kelompok meredupkan yang lain.
  */
+const MAKS_TITIK = 100;
 export function KartuKohort({ grup }: { grup: Backtest["grup"] }) {
   const [sorot, setSorot] = useState<Kunci | null>(null);
   const ambil = (k: Kunci) => grup.find((g) => g.strata === "semua" && g.grup === k);
 
   return (
     <section aria-labelledby="kohort" className={kelasKartu} style={{ animationDelay: "220ms" }}>
-      <KepalaKartu id="kohort" judul="Apakah desa yang tampak aman benar-benar aman?" keterangan="Laju terdeteksi 2026 menurut keadaan desa per 31 Desember 2025. Satu titik = satu desa." />
+      <KepalaKartu id="kohort" judul="Apakah desa yang tampak aman benar-benar aman?" keterangan={`Laju terdeteksi 2026 menurut keadaan desa per 31 Desember 2025. Satu titik = satu desa, paling banyak ${MAKS_TITIK} titik per kelompok.`} />
       <ul className="mt-4 grid gap-3 sm:grid-cols-3">
         {KOHORT.map((k, ki) => {
           const g = ambil(k.kunci);
@@ -49,17 +52,10 @@ export function KartuKohort({ grup }: { grup: Backtest["grup"] }) {
               <p className="tabular mt-2 text-3xl font-semibold tracking-[-0.03em]">{g ? `${Math.round(g.rate * 100)}%` : "–"}</p>
               {g ? (
                 <>
-                  <div aria-hidden="true" className="mt-2 flex flex-wrap gap-1">
-                    {Array.from({ length: g.nDesa }, (_, i) => (
-                      <span
-                        key={i}
-                        className={`masuk size-3 rounded-full ${i < g.nTerpapar2026 ? "bg-ember" : "bg-surface ring-1 ring-inset ring-line-2"}`}
-                        style={{ animationDelay: `${300 + ki * 120 + i * 18}ms` }}
-                      />
-                    ))}
-                  </div>
+                  <Wafel nDesa={g.nDesa} nKena={g.nTerpapar2026} jeda={300 + ki * 120} />
                   <p className="mt-2 text-xs text-muted">
                     {formatAngka(g.nTerpapar2026)} dari {formatAngka(g.nDesa)} desa terdeteksi
+                    {g.nDesa > MAKS_TITIK ? ` · 1 titik ≈ ${formatAngka(Math.round(g.nDesa / MAKS_TITIK))} desa` : ""}
                   </p>
                 </>
               ) : (
@@ -70,6 +66,23 @@ export function KartuKohort({ grup }: { grup: Backtest["grup"] }) {
         })}
       </ul>
     </section>
+  );
+}
+
+/** Grafik wafel 10 kolom, paling banyak MAKS_TITIK titik; titik penuh dibulatkan dari persentase. */
+function Wafel({ nDesa, nKena, jeda }: { nDesa: number; nKena: number; jeda: number }) {
+  const titik = Math.min(nDesa, MAKS_TITIK);
+  const penuh = nDesa > MAKS_TITIK ? Math.round((nKena / nDesa) * titik) : nKena;
+  return (
+    <div aria-hidden="true" className="mt-2 grid w-full max-w-[9.75rem] grid-cols-10 gap-1">
+      {Array.from({ length: titik }, (_, i) => (
+        <span
+          key={i}
+          className={`masuk aspect-square w-full rounded-full ${i < penuh ? "bg-ember" : "bg-surface ring-1 ring-inset ring-line-2"}`}
+          style={{ animationDelay: `${jeda + i * 12}ms` }}
+        />
+      ))}
+    </div>
   );
 }
 

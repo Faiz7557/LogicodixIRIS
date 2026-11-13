@@ -66,6 +66,23 @@ export function usePrioritas({ kode, catalog, awal, kesiapan, paket: paketAwal, 
   const nomorPagu = useRef(0);
   const penundaCatatan = useRef(new Map<string, CatatanTertunda>());
 
+  // Data server bisa berganti tanpa hook ini dibuat ulang: setelah router.refresh, atau saat kembali ke halaman
+  // yang disimpan Next. Ikuti data terbaru (mis. inventaris baru dicatat) daripada angka saat pertama dibuka.
+  const [dariServer, setDariServer] = useState({ awal, kesiapan, paketAwal, hargaAwal });
+  if (dariServer.awal !== awal || dariServer.kesiapan !== kesiapan || dariServer.paketAwal !== paketAwal || dariServer.hargaAwal !== hargaAwal) {
+    setDariServer({ awal, kesiapan, paketAwal, hargaAwal });
+    setHasil(awal);
+    setReadiness(kesiapan);
+    setPaket(paketAwal);
+    setHarga(hargaAwal);
+    setPagu(awal.paguRp);
+  }
+  // Dasar pembalikan ikut data server terbaru; dijalankan sebelum efek tulis pagu di bawah.
+  useEffect(() => {
+    paguServer.current = awal.paguRp;
+    terkonfirmasi.current = petaKeputusan(awal.keputusan);
+  }, [awal]);
+
   const terapkan = useCallback((p: PrioritasPayload) => {
     setHasil(p);
     paguServer.current = p.paguRp;

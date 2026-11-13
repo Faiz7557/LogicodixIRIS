@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { formatAngka, formatRupiah, formatSkor } from "@/lib/format";
-import { namaAksi } from "@/lib/prioritas";
+import { keyBaris, namaAksi, type KeputusanMap } from "@/lib/prioritas";
 import type { Aksi, Keputusan, PriorityRow } from "@/lib/types";
 
 /*
@@ -277,14 +277,22 @@ export function KurvaSkorPagu({
 /* Batang pemakaian pagu                                                                            */
 /* ---------------------------------------------------------------------------------------------- */
 
+/** Lebar minimum satu ruas batang: belanja kecil (mis. Rp120.000 dari Rp300 juta) tetap terlihat. */
+const RUAS_MIN_PX = 10;
+
 export function BatangPagu({
   pagu,
   terpilih,
   nama,
+  satuan = () => "",
+  keputusan,
 }: {
   pagu: number;
   terpilih: PriorityRow[];
   nama: (kode: string) => string;
+  satuan?: (kode: string) => string;
+  /** Keputusan desa per baris (langkah 2). Bila ada, daftar di bawah batang menampilkan statusnya. */
+  keputusan?: KeputusanMap;
 }) {
   const [arah, setArah] = useState<number | null>(null);
   const total = terpilih.reduce((a, b) => a + b.biayaRp, 0);
@@ -314,6 +322,8 @@ export function BatangPagu({
               animationDuration: "700ms",
               animationDelay: `${i * 60}ms`,
               width: `${(b.biayaRp / Math.max(pagu, total)) * 100}%`,
+              minWidth: RUAS_MIN_PX,
+              flexShrink: 0,
               background: WARNA_AKSI[b.aksi],
               opacity: arah === null || arah === i ? 1 : 0.45,
             }}
@@ -330,13 +340,48 @@ export function BatangPagu({
             </span>{" "}
             {formatAngka(aktif.qty)} × · <span className="tabular">{formatRupiah(aktif.biayaRp)}</span>
           </>
-        ) : terpilih.length > 0 ? (
-          "Sentuh atau arahkan ke batang untuk melihat rinciannya."
-        ) : (
+        ) : terpilih.length > 0 ? null : (
           "Anggaran ini belum cukup untuk membeli apa pun."
         )}
       </p>
-      <ul className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted">
+      {terpilih.length > 0 ? (
+        <ol className="mt-3 divide-y divide-line overflow-hidden rounded-card border border-line">
+          {terpilih.map((b, i) => {
+            const k = keputusan?.[keyBaris(b)]?.keputusan ?? "belum";
+            const st = STATUS.find((x) => x.kunci === k)!;
+            return (
+              <li
+                key={keyBaris(b)}
+                className={`flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-3 py-2 text-sm transition-colors ${arah === i ? "bg-paper" : ""}`}
+                onPointerEnter={() => setArah(i)}
+                onPointerLeave={() => setArah(null)}
+              >
+                <span className="flex min-w-0 items-center gap-2">
+                  <Swatch warna={WARNA_AKSI[b.aksi]} />
+                  <span className="font-semibold">
+                    {namaAksi(b.aksi)} {nama(b.itemKode).toLowerCase()}
+                  </span>
+                  <span className="text-muted">
+                    · {formatAngka(b.qty)} {satuan(b.itemKode)}
+                  </span>
+                </span>
+                <span className="flex items-center gap-3">
+                  {keputusan ? (
+                    <span className="inline-flex items-center gap-1 text-xs font-semibold" style={{ color: k === "belum" ? "var(--muted)" : st.warna }}>
+                      <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+                        {st.ikon}
+                      </svg>
+                      {st.label}
+                    </span>
+                  ) : null}
+                  <span className="tabular font-semibold">{formatRupiah(b.biayaRp)}</span>
+                </span>
+              </li>
+            );
+          })}
+        </ol>
+      ) : null}
+      <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted">
         {aksiAda.map((a) => (
           <li key={a} className="flex items-center gap-1.5">
             <Swatch warna={WARNA_AKSI[a]} /> {labelLegenda(a)}

@@ -166,7 +166,7 @@ export function PaguView(data: DataPrioritas) {
         </p>
         {hasil.terpilih.length > 0 ? (
           <div className="mt-3">
-            <BatangPagu pagu={pagu} terpilih={hasil.terpilih} nama={p.nama} />
+            <BatangPagu pagu={pagu} terpilih={hasil.terpilih} nama={p.nama} satuan={p.satuan} keputusan={p.keputusan} />
           </div>
         ) : (
           <div className="mt-3 flex items-center gap-3 rounded-card border border-dashed border-line-2 bg-paper px-4 py-4 text-sm">
@@ -394,7 +394,7 @@ function CobaTambahan({ nilai, maks, kekurangan, onUbah }: { nilai: number; maks
 }
 
 /** Kotak angka dasbor; angka berhitung dari nilai lama ke nilai baru. `gelap` untuk angka utama. */
-function KartuKpi({
+export function KartuKpi({
   label,
   nilai,
   format,
