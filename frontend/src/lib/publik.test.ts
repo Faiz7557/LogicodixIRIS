@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { bentukDesa } from "./bentukDesa";
 import { kesimpulanBacktest, pemenang, type MetricRow, type Strategi } from "./backtest";
-import { bolehTagline, headlinePaparan, kalimatKecamatan, labelTampakAman } from "./kalimat";
+import { bolehTagline, headlinePaparan, kalimatKecamatan, kisahJangkar, labelTampakAman } from "./kalimat";
 
 describe("headlinePaparan (rencana v2 Task 17)", () => {
   it("desa tenang dengan riwayat", () => {
@@ -80,5 +80,17 @@ describe("bentukDesa", () => {
   it("mendukung MultiPolygon", () => {
     const mp = JSON.stringify({ type: "MultiPolygon", coordinates: [JSON.parse(persegi).coordinates, JSON.parse(persegi).coordinates] });
     expect(bentukDesa(mp)!.path.split("M").length - 1).toBe(2);
+  });
+});
+
+
+describe("kisahJangkar (plan 11 Task 5)", () => {
+  it("kisah jangkar dari angka nyata Kali Bandung", () => {
+    const r = ([[2020, 2, true], [2021, 15, true], [2022, 0, false], [2023, 0, false], [2024, 7, true], [2025, 7, true], [2026, 365, true]] as const)
+      .map(([tahun, nDet, terpapar]) => ({ tahun, nDet, terpapar }));
+    expect(kisahJangkar(r)).toEqual({ tenang: 2, maksSebelum: 15, nDet2026: 365 });
+  });
+  it("tahun yang hilang dihitung nol, bukan galat", () => {
+    expect(kisahJangkar([])).toEqual({ tenang: 0, maksSebelum: 0, nDet2026: 0 });
   });
 });

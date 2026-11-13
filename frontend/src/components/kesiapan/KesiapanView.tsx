@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { AssumptionNote } from "@/components/ui/AssumptionNote";
-import { EmptyState } from "@/components/ui/PageState";
+import { RingkasanAi } from "@/components/ui/RingkasanAi";
 import {
   bisaSusunPrioritas,
+  itemTerkunci,
   kalimatRantaiTerlemah,
   keadaanKesiapan,
   keteranganProvinsi,
@@ -53,18 +54,30 @@ export function KesiapanView({
           Seberapa siap {desa.nama} menghadapi kemarau?
         </h1>
         <p className="mt-1 text-sm text-muted">{wilayah}</p>
+        <RingkasanAi halaman="kesiapan" kode={kode} className="mt-3" />
       </header>
 
-      {keadaan === "kosong" ? (
-        <div className="mt-6">
-          <EmptyState title="Catat alat dulu." action={{ href: `/desa/${kode}/inventaris`, label: "Catat alat" }}>
-            Skor kesiapan muncul setelah jumlah alat yang berfungsi dicatat. Ketua MPA atau sekdes bisa mengisinya
-            lewat HP.
-          </EmptyState>
-        </div>
-      ) : (
-        <>
-          <p className="mt-4 max-w-[60ch] text-xl font-semibold leading-snug">{kalimatRantaiTerlemah(hasil, items)}</p>
+      {/* Dasbor selalu tampil, juga sebelum ada alat yang dicatat: peta 3D, kartu, dan riwayat satelit
+          sudah bermakna dari data publik. Saat kosong, ajakan mencatat alat ada di paling atas. */}
+      <>
+          {keadaan === "kosong" ? (
+            <div className="mt-4 flex flex-col gap-3 rounded-panel border border-dashed border-line-2 bg-surface p-5 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-xl font-semibold leading-snug">Belum ada alat yang dicatat.</p>
+                <p className="mt-1 max-w-[60ch] text-sm text-muted">
+                  Skor kesiapan masih 0 sampai jumlah alat yang berfungsi dicatat. Ketua MPA atau sekdes bisa mengisinya lewat HP.
+                </p>
+              </div>
+              <Link
+                href={`/desa/${kode}/inventaris`}
+                className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-full bg-ink px-5 font-semibold text-white"
+              >
+                Catat alat
+              </Link>
+            </div>
+          ) : (
+            <p className="mt-4 max-w-[60ch] text-xl font-semibold leading-snug">{kalimatRantaiTerlemah(hasil, items)}</p>
+          )}
           <p className="mt-2 max-w-[60ch] text-muted">
             {ringkasanPaparan(paparan)}{" "}
             <Link href={`/desa/${kode}`} className="inline-flex min-h-11 items-center text-water underline underline-offset-2">
@@ -97,7 +110,20 @@ export function KesiapanView({
                   berfungsi: it.berfungsi,
                   rusak: it.rusak,
                   belumDiisi: it.belumDiisi,
-                }))}
+                }))
+                // Item terkunci (sumur bor di desa tanpa gambut) tetap ada di peta, digembok.
+                .concat(
+                  itemTerkunci(catalog, desa.peatFrac).map((c) => ({
+                    kode: c.kode,
+                    nama: c.nama,
+                    satuan: c.satuan,
+                    target: 0,
+                    berfungsi: 0,
+                    rusak: 0,
+                    belumDiisi: false,
+                    terkunci: true,
+                  })),
+                )}
             />
           </section>
 
@@ -123,9 +149,7 @@ export function KesiapanView({
           <div className="mt-4">
             <KalenderSatelit kode={kode} strip={card.strip} tahunEkstrem={card.tahunEkstrem} paparan={paparan} />
           </div>
-
-        </>
-      )}
+      </>
 
       <div className="mt-6 space-y-2">
         <AssumptionNote>Paket minimum satu musim adalah asumsi tim dan bisa diubah desa.</AssumptionNote>

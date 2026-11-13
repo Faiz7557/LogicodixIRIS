@@ -14,6 +14,8 @@ export interface DataZona {
   target: number;
   berfungsi: number;
   rusak: number;
+  /** Item belum terbuka untuk desa ini (sumur bor di desa tanpa gambut): digambar redup dan digembok. */
+  terkunci?: boolean;
 }
 
 export interface Zona {
@@ -234,16 +236,18 @@ export function bangunGudang(data: DataZona[]): PetaGudang {
     const dz = data.find((x) => x.kode === kode)!;
     const kurang = Math.max(dz.target - dz.berfungsi, 0);
     const rasio = dz.target > 0 ? kurang / dz.target : 0;
-    // Bercak panas di bawah zona, makin merah makin banyak yang kurang.
-    const panas = new THREE.Mesh(
-      geoPanas,
-      m(new THREE.MeshBasicMaterial({ color: warnaPanas(rasio), alphaMap: tekPanas, transparent: true, opacity: 0.75, depthWrite: false })),
-    );
-    panas.rotation.x = -Math.PI / 2;
-    panas.scale.set(w * 1.7, d * 1.7, 1);
-    panas.position.set(cx, 0.015, cz);
-    panas.renderOrder = 1;
-    akar.add(panas);
+    if (!dz.terkunci) {
+      // Bercak panas di bawah zona, makin merah makin banyak yang kurang.
+      const panas = new THREE.Mesh(
+        geoPanas,
+        m(new THREE.MeshBasicMaterial({ color: warnaPanas(rasio), alphaMap: tekPanas, transparent: true, opacity: 0.75, depthWrite: false })),
+      );
+      panas.rotation.x = -Math.PI / 2;
+      panas.scale.set(w * 1.7, d * 1.7, 1);
+      panas.position.set(cx, 0.015, cz);
+      panas.renderOrder = 1;
+      akar.add(panas);
+    }
     // Garis lantai kuning seperti penanda area gudang.
     if (lantaiGarisan) {
       const t = 0.08;
@@ -344,8 +348,42 @@ export function bangunGudang(data: DataZona[]): PetaGudang {
     });
   }
 
+  // Sumur bor terkunci (desa tanpa gambut): halaman berpagar dengan gembok besar, sumur hanya kerangka.
+  const sumurTerkunci = data.find((x) => x.kode === "sumur_bor")?.terkunci;
+  if (sumurTerkunci) {
+    const abu = std(0xb9b6ae, 0.95);
+    akar.add(kotak(7, 0.06, 9, abu, 15.5, -0.17, -1, false, 0));
+    zonaBaru("sumur_bor", 15.5, -1, 6, 8, 3.6, false);
+    // Pagar tiang dan tali di keliling halaman.
+    const [x0, x1, z0, z1] = [12.2, 18.8, -5.2, 3.2];
+    const tiang: [number, number][] = [];
+    for (let x = x0; x <= x1 + 0.01; x += 2.2) tiang.push([x, z0], [x, z1]);
+    for (let z = z0 + 2.1; z < z1 - 0.1; z += 2.1) tiang.push([x0, z], [x1, z]);
+    for (const [x, z] of tiang) akar.add(kotak(0.12, 1.1, 0.12, warna.batang, x, 0.55, z));
+    for (const y of [0.5, 0.95]) {
+      akar.add(kotak(x1 - x0, 0.04, 0.04, warna.kuning, (x0 + x1) / 2, y, z0, false));
+      akar.add(kotak(x1 - x0, 0.04, 0.04, warna.kuning, (x0 + x1) / 2, y, z1, false));
+      akar.add(kotak(0.04, 0.04, z1 - z0, warna.kuning, x0, y, (z0 + z1) / 2, false));
+      akar.add(kotak(0.04, 0.04, z1 - z0, warna.kuning, x1, y, (z0 + z1) / 2, false));
+    }
+    // Dua kerangka sumur: alatnya ada di katalog, tetapi belum terbuka untuk desa ini.
+    akar.add(hantu(1.3, 1.8, 1.3, 14.1, -2.4), hantu(1.3, 1.8, 1.3, 16.9, 0.4));
+    // Gembok besar di tengah halaman.
+    const gembok = new THREE.Group();
+    gembok.add(kotak(1.5, 1.2, 0.5, std(0x3d4652, 0.4, 0.6), 0, 0, 0, true, 0.12));
+    const sengkang = new THREE.Mesh(g(new THREE.TorusGeometry(0.48, 0.11, 12, 28, Math.PI)), warna.baja);
+    sengkang.position.y = 0.6;
+    gembok.add(sengkang);
+    gembok.add(silinder(0.11, 0.11, 0.25, warna.baja, -0.48, 0.6, 0, 12), silinder(0.11, 0.11, 0.25, warna.baja, 0.48, 0.6, 0, 12));
+    const lubang = silinder(0.12, 0.12, 0.06, warna.kuning, 0, 0.05, 0.27, 16);
+    lubang.rotation.x = Math.PI / 2;
+    gembok.add(lubang);
+    gembok.position.set(15.5, 1.7, -1);
+    akar.add(gembok);
+  }
+
   // Sumur bor: di halaman bertanah gambut, di luar gudang.
-  if (data.some((x) => x.kode === "sumur_bor")) {
+  if (data.some((x) => x.kode === "sumur_bor") && !sumurTerkunci) {
     akar.add(kotak(7, 0.06, 9, warna.tanahGambut, 15.5, -0.17, -1, false, 0));
     const slot = zonaBaru("sumur_bor", 15.5, -1, 6, 8, 2.2, false);
     function sumur(x: number, z: number, rusak: boolean): THREE.Group {

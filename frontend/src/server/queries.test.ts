@@ -1,7 +1,7 @@
 import { createClient } from "@libsql/client";
 import { describe, expect, it } from "vitest";
 import { setDb } from "./db";
-import { getDesaCard, getGerbang, searchDesa } from "./queries";
+import { getDesaCard, getGerbang, getRiwayatJangkar, searchDesa } from "./queries";
 import { useTestDb } from "@/test/testDb";
 
 describe("queries", () => {
@@ -18,4 +18,5 @@ describe("queries", () => {
     await expect(searchDesa("ka")).rejects.toMatchObject({ status: 503, kode: "data_belum_ada" });
   });
   it("kartu memuat strip 2012-2026", async () => { expect((await getDesaCard("TINGGI"))!.strip).toHaveLength(15); });
+  it("riwayat jangkar null di DB uji", async () => { expect(await getRiwayatJangkar()).toBeNull(); });
 });

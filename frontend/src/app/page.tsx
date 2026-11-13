@@ -15,7 +15,7 @@ import { SearchBox } from "@/components/paparan/SearchBox";
 import { TEKS_BELUM_DIUJI } from "@/components/ui/PernyataanAsumsi";
 import { LANGKAH, PERAN, STATISTIK } from "@/content/beranda";
 import { getGerbang } from "@/lib/dataSource";
-import { countTampakAman } from "@/server/queries";
+import { countTampakAman, getRiwayatJangkar } from "@/server/queries";
 import { bolehTagline } from "@/lib/kalimat";
 
 /*
@@ -29,6 +29,8 @@ export default async function BerandaPage() {
   await connection();
   const gerbang = await getGerbang().catch(() => "buang" as const);
   const tampakAman = gerbang === "buang" ? null : await countTampakAman().catch(() => null);
+  // Riwayat satelit desa jangkar; DB uji atau DB lama: null, dan bagian kisah tidak dirender.
+  const riwayatJangkar = await getRiwayatJangkar().catch(() => null);
   const kelasJudul = "text-balance text-3xl font-semibold leading-tight tracking-tight sm:text-4xl";
 
   return (
@@ -96,8 +98,9 @@ export default async function BerandaPage() {
               Keputusan yang gagal dibuat saat tidak ada asap.
             </h2>
             <p data-muncul style={{ ["--tunda" as string]: "180ms" }} className="mt-4 text-muted">
-              Di Desa Kalibandung, Kubu Raya, enam tahun tanpa api membuat pos karhutla tidak dianggarkan. Saat api datang pada 2026, selang hanya 100 m
-              dan warga patungan membeli BBM (Mongabay, 31 Agu 2026). Dana desa juga turun karena efisiensi. Ini satu kasus, bukan gambaran semua desa.
+              Di Desa Kalibandung, Kubu Raya, warga menyebut enam tahun tanpa kebakaran, sehingga pos karhutla tidak dianggarkan. Saat api datang pada
+              2026, selang hanya 100 m dan warga patungan membeli BBM (Mongabay, 31 Agu 2026). Dana desa juga turun karena efisiensi. Ini satu kasus,
+              bukan gambaran semua desa.
             </p>
             <p data-muncul style={{ ["--tunda" as string]: "260ms" }} className="mt-3 text-muted">
               SiapKemarau tidak memadamkan api. Alat ini membantu desa menyusun prioritas belanja dari data publik, dengan asumsi yang ditulis terbuka.
@@ -118,8 +121,8 @@ export default async function BerandaPage() {
         </div>
       </section>
 
-      {/* ---------- Puncak: enam tahun tanpa api (disematkan, digulir) ---------- */}
-      <EnamTahun />
+      {/* ---------- Puncak: kisah warga dan deteksi satelit desa jangkar (disematkan, digulir) ---------- */}
+      {riwayatJangkar ? <EnamTahun riwayat={riwayatJangkar} /> : null}
 
       {/* ---------- Cara kerja (panel naik seperti tirai, rel kemajuan mengikuti scroll) ---------- */}
       <div data-gulir="masuk" className="bg-paper">

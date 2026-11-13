@@ -1,20 +1,24 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { formatAngka } from "@/lib/format";
+import { kisahJangkar } from "@/lib/kalimat";
+import type { DesaTahun } from "@/lib/types";
 
 /*
- * Puncak beranda: "Enam tahun tanpa api" (kisah Desa Kalibandung, Kubu Raya; Mongabay 31 Agu 2026,
- * sama dengan teks di bagian Kenapa). Panel disematkan dan scroll menjadi penggulir waktu:
- * 2020 sampai 2025 berlalu tenang, penghitung naik, lalu 2026 menyala, panel menghangat dan bara naik.
+ * Puncak beranda: kisah Desa Kalibandung, Kubu Raya (Mongabay 31 Agu 2026), disandingkan dengan deteksi satelit
+ * desa itu sendiri (plan 11 Task 5). Warga menyebut enam tahun tanpa kebakaran; satelit mencatat deteksi kecil
+ * di sebagian besar tahun itu. Keduanya ditampilkan, tidak disamakan.
+ * Panel disematkan dan scroll menjadi penggulir waktu: tiap tahun 2020-2025 lewat dengan angka deteksinya,
+ * lalu 2026 menyala. Tinggi batang = jumlah deteksi satelit (skala linear, angkanya tertulis).
  * Tanpa JS atau saat gerak dikurangi: tidak disematkan, langsung menampilkan keadaan akhir.
  */
-const TAHUN = [2020, 2021, 2022, 2023, 2024, 2025, 2026];
-
-export function EnamTahun() {
+export function EnamTahun({ riwayat }: { riwayat: DesaTahun[] }) {
+  const tahun = riwayat.map((r) => r.tahun);
   const luar = useRef<HTMLElement>(null);
   const panel = useRef<HTMLDivElement>(null);
   // Bawaan = keadaan akhir (server, tanpa JS, gerak dikurangi)
-  const [indeks, setIndeks] = useState(TAHUN.length);
+  const [indeks, setIndeks] = useState(tahun.length + 1);
   const [gerak, setGerak] = useState(false);
 
   useEffect(() => {
@@ -28,7 +32,7 @@ export function EnamTahun() {
       const jarak = r.height - window.innerHeight;
       const p = Math.min(Math.max(-r.top / Math.max(jarak, 1), 0), 1);
       panel.current?.style.setProperty("--p", p.toFixed(4));
-      // 0..0.08 pembuka, 0.08..0.68 enam tahun tenang, 0.72 api 2026, 0.86 kisah lengkap
+      // 0..0.08 pembuka, 0.08..0.68 enam tahun 2020-2025, 0.72 tahun 2026, 0.86 kisah lengkap
       const i = p < 0.08 ? 0 : p < 0.72 ? 1 + Math.min(Math.floor(((p - 0.08) / 0.6) * 6), 5) : p < 0.86 ? 7 : 8;
       const api = Math.min(Math.max((p - 0.68) / 0.1, 0), 1);
       panel.current?.style.setProperty("--api", api.toFixed(4));
@@ -51,10 +55,16 @@ export function EnamTahun() {
     };
   }, []);
 
-  const tenang = Math.min(Math.max(indeks, 0), 6); // tahun tanpa api yang sudah lewat
-  const menyala = indeks >= 7;
-  const lengkap = indeks >= 8;
-  const tahunTampil = TAHUN[Math.max(Math.min(indeks, 7) - 1, 0)];
+  const { maksSebelum, nDet2026 } = kisahJangkar(riwayat);
+  const maks = Math.max(...riwayat.map((r) => r.nDet), 1);
+  const terakhir = riwayat.length - 1; // indeks 2026
+  const lewatHingga = Math.min(Math.max(indeks, 0), riwayat.length); // jumlah tahun yang sudah tampil
+  const menyala = indeks >= riwayat.length;
+  const lengkap = indeks > riwayat.length;
+  const kini = riwayat[Math.max(Math.min(indeks, riwayat.length) - 1, 0)];
+
+  const kalimatTahun = (r: DesaTahun) =>
+    r.nDet === 0 ? `${r.tahun}: tidak ada deteksi satelit.` : `${r.tahun}: ${formatAngka(r.nDet)} deteksi satelit di sekitar desa.`;
 
   return (
     <section ref={luar} aria-labelledby="enam-tahun" className={`relative ${gerak ? "h-[340vh]" : ""}`}>
@@ -66,7 +76,7 @@ export function EnamTahun() {
           color: gerak ? undefined : "#fff",
         }}
       >
-        {/* Bara naik saat api menyala */}
+        {/* Bara naik saat 2026 menyala */}
         <div aria-hidden="true" className="pointer-events-none absolute inset-0" style={{ opacity: gerak ? "var(--api, 0)" : 1 }}>
           {Array.from({ length: 34 }, (_, i) => (
             <span
@@ -93,24 +103,23 @@ export function EnamTahun() {
             <p className="text-sm font-bold" style={{ color: menyala || !gerak ? "#f39a5c" : "var(--ember)" }}>
               Desa Kalibandung, Kubu Raya
             </p>
-            <h2 id="enam-tahun" className="sr-only">
-              Enam tahun tanpa api, lalu 2026
+            <h2 id="enam-tahun" className="mt-1 text-balance text-xl font-semibold leading-snug">
+              Enam tahun menurut warga, tujuh tahun menurut satelit
             </h2>
             <p aria-hidden="true" className="tabular mt-2 text-[clamp(5rem,16vw,11rem)] font-semibold leading-none tracking-[-0.05em]">
-              <span key={tahunTampil} className="ganti-tahun inline-block">
-                {tahunTampil}
+              <span key={kini.tahun} className="ganti-tahun inline-block">
+                {kini.tahun}
               </span>
             </p>
             <div aria-live="polite" className="mt-4 min-h-[7.5rem] max-w-[34ch] text-xl font-semibold leading-snug">
               {indeks === 0 ? (
-                <p className="ganti-tahun">Musim kering datang dan pergi. Tidak ada api.</p>
+                <p className="ganti-tahun">Menurut warga, musim kering datang dan pergi tanpa kebakaran.</p>
               ) : !menyala ? (
-                <p key={tenang} className="ganti-tahun">
-                  {tenang} tahun tanpa api.{" "}
-                  <span className="opacity-60">{tenang >= 6 ? "Pos karhutla tidak lagi dianggarkan." : "Tidak ada asap, tidak ada rapat."}</span>
+                <p key={kini.tahun} className="ganti-tahun">
+                  {kalimatTahun(kini)} <span className="opacity-60">Menurut warga: tahun tenang.</span>
                 </p>
               ) : !lengkap ? (
-                <p className="ganti-tahun">Lalu 2026 datang. Api kembali.</p>
+                <p className="ganti-tahun">{kalimatTahun(riwayat[terakhir])} Lalu api datang.</p>
               ) : (
                 <div className="ganti-tahun">
                   <p>Selang hanya 100 m. Warga patungan membeli BBM.</p>
@@ -120,33 +129,45 @@ export function EnamTahun() {
             </div>
           </div>
 
-          {/* Garis waktu: enam tahun tenang lalu 2026 */}
+          {/* Batang per tahun: tinggi = jumlah deteksi satelit */}
           <div>
-            <ol aria-label="Garis waktu 2020 sampai 2026" className="grid grid-cols-7 gap-1.5">
-              {TAHUN.map((t, i) => {
-                const lewat = i < tenang || (i === 6 && menyala);
-                const api = i === 6;
+            <ol aria-label="Deteksi satelit per tahun, 2020 sampai 2026" className="grid grid-cols-7 gap-1.5">
+              {riwayat.map((r, i) => {
+                const lewat = i < lewatHingga;
+                const api = i === terakhir;
+                // Linear terhadap tahun terbanyak; deteksi kecil tetap terlihat setipis garis.
+                const tinggi = r.nDet === 0 ? 0 : Math.max((r.nDet / maks) * 100, 3);
                 return (
-                  <li key={t} className="flex flex-col items-center gap-2">
+                  <li key={r.tahun} className="flex flex-col items-center gap-2">
+                    <span className={`tabular text-sm ${lewat ? "opacity-100" : "opacity-0"} ${api ? "font-bold text-[#f39a5c]" : ""} transition-opacity duration-500`}>
+                      {formatAngka(r.nDet)}
+                    </span>
                     <span
-                      className={`relative block h-28 w-full overflow-hidden rounded-xl border transition-[background-color,border-color,transform] duration-500 [transition-timing-function:var(--pegas)] ${
-                        lewat ? (api ? "scale-y-110 border-[#f08a3c] bg-[#b4431a]" : "border-current/20 bg-current/10") : "border-current/15 bg-transparent"
+                      className={`relative block h-28 w-full overflow-hidden rounded-xl border transition-[border-color] duration-500 ${
+                        lewat ? (api ? "border-[#f08a3c]" : "border-current/25") : "border-current/15"
                       }`}
                     >
-                      {api && lewat ? <span className="absolute inset-0 animate-pulse bg-gradient-to-t from-[#ffb070]/70 to-transparent" /> : null}
-                      {!api && lewat ? <span className="absolute inset-x-2 bottom-2 h-1 rounded-full bg-current/30" /> : null}
+                      <span
+                        className={`absolute inset-x-0 bottom-0 block origin-bottom transition-transform duration-700 [transition-timing-function:var(--pegas)] ${
+                          api ? "bg-[#b4431a]" : "bg-current/40"
+                        }`}
+                        style={{ height: `${tinggi}%`, transform: `scaleY(${lewat ? 1 : 0})` }}
+                      />
+                      {api && lewat ? <span className="absolute inset-0 animate-pulse bg-gradient-to-t from-[#ffb070]/60 to-transparent" /> : null}
                     </span>
-                    <span className={`tabular text-xs ${api && lewat ? "font-bold text-[#f39a5c]" : "opacity-70"}`}>
-                      {t}
-                      <span className="sr-only">{api ? ": api datang" : ": tanpa api"}</span>
+                    <span className={`tabular text-sm ${api && lewat ? "font-bold text-[#f39a5c]" : "opacity-70"}`}>
+                      {r.tahun}
+                      <span className="sr-only">: {r.nDet === 0 ? "tidak ada deteksi satelit" : `${formatAngka(r.nDet)} deteksi satelit`}</span>
                     </span>
                   </li>
                 );
               })}
             </ol>
-            <p className="mt-4 text-sm opacity-70">
-              Satu kasus, bukan gambaran semua desa. Sumber: Mongabay, 31 Agu 2026.
+            <p className="mt-4 text-sm opacity-80">
+              Menurut warga, enam tahun tanpa kebakaran (Mongabay, 31 Agu 2026). Satelit mencatat paling banyak {formatAngka(maksSebelum)} deteksi
+              setahun di sekitar desa pada 2020–2025, lalu {formatAngka(nDet2026)} pada 2026. Deteksi satelit bukan luas terbakar.
             </p>
+            <p className="mt-2 text-sm opacity-70">Satu kasus, bukan gambaran semua desa.</p>
             {gerak ? (
               <span aria-hidden="true" className="mt-5 block h-1 overflow-hidden rounded-full bg-current/10">
                 <span className="block h-full origin-left rounded-full bg-current/50" style={{ transform: "scaleX(var(--p, 0))" }} />
