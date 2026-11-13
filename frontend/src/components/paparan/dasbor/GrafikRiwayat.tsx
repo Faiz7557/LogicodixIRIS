@@ -164,7 +164,7 @@ export function GrafikRiwayat({
  * Rincian tahun yang dipilih di grafik riwayat: status, dua angka, dan sebaran per bulan dari data satelit.
  * Tersusun tegak supaya muat di kartu Paparan yang sempit, dan mengisi sisa tinggi kartu.
  */
-export function RincianTahun({ d }: { d: TahunDasbor }) {
+export function RincianTahun({ d, adaBulan = true }: { d: TahunDasbor; adaBulan?: boolean }) {
   const maks = Math.max(...d.bulan, 1);
   const puncak = d.bulan.indexOf(Math.max(...d.bulan));
   return (
@@ -196,30 +196,33 @@ export function RincianTahun({ d }: { d: TahunDasbor }) {
         </dl>
       </div>
 
-      <figure className="flex min-h-0 min-w-0 flex-1 flex-col">
-        <figcaption className="flex items-center justify-between gap-2 text-xs text-muted">
-          <span>{d.hari > 0 ? `Hari deteksi per bulan, puncak ${NAMA_BULAN[puncak]}` : "Tidak ada hari deteksi tahun ini"}</span>
-        </figcaption>
-        <div className="mt-2 flex min-h-16 flex-1 items-end gap-1">
-          {d.bulan.map((b, i) => (
-            <span key={i} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1">
-              <span
-                className={`block w-full rounded-sm transition-[height] duration-500 [transition-timing-function:var(--pegas)] ${b > 0 ? (i === puncak ? "bg-ember" : "bg-ember/45") : "bg-line"}`}
-                style={{ height: b > 0 ? `${(b / maks) * 100}%` : "3px" }}
-                title={`${NAMA_BULAN[i]} ${d.tahun}: ${b} hari`}
-              />
-            </span>
-          ))}
-        </div>
-        <div aria-hidden="true" className="mt-1 flex gap-1 text-center text-[10px] text-faint">
-          {NAMA_BULAN_PENDEK.map((n) => (
-            <span key={n} className="min-w-0 flex-1">
-              {n[0]}
-            </span>
-          ))}
-        </div>
-        <p className="sr-only">{d.bulan.map((b, i) => `${NAMA_BULAN[i]} ${b} hari`).join(", ")}</p>
-      </figure>
+      {/* Tanpa tabel desa_bulan (DB lama) bilah per bulan disembunyikan. */}
+      {adaBulan ? (
+        <figure className="flex min-h-0 min-w-0 flex-1 flex-col">
+          <figcaption className="flex items-center justify-between gap-2 text-xs text-muted">
+            <span>{d.hari > 0 ? `Hari deteksi per bulan, puncak ${NAMA_BULAN[puncak]}` : "Tidak ada hari deteksi tahun ini"}</span>
+          </figcaption>
+          <div className="mt-2 flex min-h-16 flex-1 items-end gap-1">
+            {d.bulan.map((b, i) => (
+              <span key={i} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1">
+                <span
+                  className={`block w-full rounded-sm transition-[height] duration-500 [transition-timing-function:var(--pegas)] ${b > 0 ? (i === puncak ? "bg-ember" : "bg-ember/45") : "bg-line"}`}
+                  style={{ height: b > 0 ? `${(b / maks) * 100}%` : "3px" }}
+                  title={`${NAMA_BULAN[i]} ${d.tahun}: ${b} hari`}
+                />
+              </span>
+            ))}
+          </div>
+          <div aria-hidden="true" className="mt-1 flex gap-1 text-center text-[10px] text-faint">
+            {NAMA_BULAN_PENDEK.map((n) => (
+              <span key={n} className="min-w-0 flex-1">
+                {n[0]}
+              </span>
+            ))}
+          </div>
+          <p className="sr-only">{d.bulan.map((b, i) => `${NAMA_BULAN[i]} ${b} hari`).join(", ")}</p>
+        </figure>
+      ) : null}
     </div>
   );
 }

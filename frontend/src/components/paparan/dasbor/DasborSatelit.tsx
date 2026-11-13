@@ -41,7 +41,7 @@ export function DasborSatelit({
     () =>
       strip.map((s) => {
         const ekstrem = tahunEkstrem.includes(s.tahun);
-        return { tahun: s.tahun, hari: s.detDays, titik: s.nDet, terpapar: s.terpapar, ekstrem, bulan: s.bulan };
+        return { tahun: s.tahun, hari: s.detDays, titik: s.nDet, terpapar: s.terpapar, ekstrem, bulan: s.bulan ?? Array<number>(12).fill(0) };
       }),
     [strip, tahunEkstrem],
   );
@@ -61,7 +61,9 @@ export function DasborSatelit({
   const awal = data[0]?.tahun ?? 2012;
   const dalam = (t: number) => (rentang === "semua" ? true : rentang === "lima" ? t > akhir - 5 : tahunEkstrem.includes(t));
 
-  const wawasan = buatWawasan({ data, paparan, kecamatan, kecNama, tampakAman });
+  // DB lama tanpa tabel desa_bulan: kartu musim, bilah per bulan, dan wawasan bulan disembunyikan.
+  const adaBulan = strip.length > 0 && strip.every((s) => s.bulan !== null);
+  const wawasan = buatWawasan({ data, paparan, kecamatan, kecNama, tampakAman, adaBulan });
 
   return (
     <div className="mx-auto max-w-[1200px] px-4 py-6 md:px-8 md:py-8">
@@ -93,16 +95,16 @@ export function DasborSatelit({
 
       <div className="mt-6 grid gap-4 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <GrafikRiwayat data={data} metrik={metrik} dalam={dalam} pilih={pilih} onPilih={setPilih} />
-        <KartuPaparan paparan={paparan} jumlahTahun={data.length} tahun={data.find((d) => d.tahun === pilih) ?? data[data.length - 1]} />
+        <KartuPaparan paparan={paparan} jumlahTahun={data.length} tahun={data.find((d) => d.tahun === pilih) ?? data[data.length - 1]} adaBulan={adaBulan} />
       </div>
 
-      <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)_minmax(0,1fr)]">
-        <KartuMusim data={data} dalam={dalam} tahun={pilih} semua={musimSemua} onSemua={setMusimSemua} />
+      <div className={`mt-4 grid gap-4 md:grid-cols-2 ${adaBulan ? "xl:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)_minmax(0,1fr)]" : ""}`}>
+        {adaBulan ? <KartuMusim data={data} dalam={dalam} tahun={pilih} semua={musimSemua} onSemua={setMusimSemua} /> : null}
         <div className="grid gap-4">
           <KartuMatriks id="kartu-hari" judul="Hari deteksi" satuan="hari" data={data} nilai={(d) => d.hari} dalam={dalam} jeda={160} />
           <KartuMatriks id="kartu-titik" judul="Titik api" satuan="titik" data={data} nilai={(d) => d.titik} dalam={dalam} jeda={200} />
         </div>
-        <div className="md:col-span-2 xl:col-span-1">
+        <div className={adaBulan ? "md:col-span-2 xl:col-span-1" : ""}>
           <KartuWawasan daftar={wawasan} />
         </div>
       </div>
@@ -200,12 +202,14 @@ function buatWawasan({
   kecamatan,
   kecNama,
   tampakAman,
+  adaBulan,
 }: {
   data: TahunDasbor[];
   paparan: DesaPaparan;
   kecamatan: KecamatanPaparan;
   kecNama: string;
   tampakAman: boolean;
+  adaBulan: boolean;
 }): Wawasan[] {
   const persen = (x: number) => `${formatAngka(Math.round(x * 100))}%`;
   const lajuDesa = paparan.nExt > 0 ? paparan.kExt / paparan.nExt : 0;
@@ -222,7 +226,7 @@ function buatWawasan({
 
   const bulan = Array.from({ length: 12 }, (_, i) => data.reduce((a, d) => a + d.bulan[i], 0));
   const total = bulan.reduce((a, b) => a + b, 0);
-  if (total > 0) {
+  if (adaBulan && total > 0) {
     const puncak = bulan.indexOf(Math.max(...bulan));
     const tiga = [puncak - 1, puncak, puncak + 1].filter((i) => i >= 0 && i < 12).reduce((a, i) => a + bulan[i], 0);
     daftar.push({
