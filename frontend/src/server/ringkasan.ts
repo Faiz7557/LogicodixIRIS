@@ -1,7 +1,10 @@
 import { kesimpulanBacktest } from "@/lib/backtest";
 import { formatAngka, formatPersen, formatRupiah, formatSkor } from "@/lib/format";
 import { LABEL_TIER, headlinePaparan, labelTampakAman } from "@/lib/kalimat";
+import { barisTindakan, urutkanKesenjangan } from "@/lib/kesiapan";
+import { NAMA_BULAN, statistikSatelit } from "@/lib/satelitBulanan";
 import type { CatalogItem, HalamanRingkasan, Ringkasan, Status } from "@/lib/types";
+import { getHargaEfektif } from "./efektif";
 import { HttpError } from "./http";
 import { getKesiapan } from "./kesiapan";
 import { modelPenulis, tulisJson } from "./llm";
@@ -95,6 +98,8 @@ export async function faktaRingkasan(halaman: HalamanRingkasan, kode?: string): 
 
   if (halaman === "paparan") {
     const p = card.paparan;
+    // Angka kalender satelit dari fungsi yang sama dengan yang dirender di layar (lib/satelitBulanan).
+    const st = statistikSatelit(card.strip);
     return {
       k_ext: formatAngka(p.kExt),
       n_ext: formatAngka(p.nExt),
@@ -102,9 +107,14 @@ export async function faktaRingkasan(halaman: HalamanRingkasan, kode?: string): 
       tahun_awal: "2012",
       tahun_ekstrem: card.tahunEkstrem.map(String),
       tahun_terdeteksi: card.strip.filter((s) => s.terpapar && card.tahunEkstrem.includes(s.tahun)).map((s) => String(s.tahun)),
+      jumlah_tahun_terdeteksi: st.totalTahun ? `${st.terdeteksi} dari ${st.totalTahun}` : "belum ada",
       tahun_tenang: formatAngka(p.tahunTenang),
       tingkat: LABEL_TIER[p.tier],
       porsi_gambut: formatPersen(card.desa.peatFrac),
+      bulan_ravan: st.rawan.hari > 0 ? NAMA_BULAN[st.rawan.i] : "belum ada",
+      musim: st.musim.length ? `${NAMA_BULAN[st.musim[0]]} sampai ${NAMA_BULAN[st.musim[st.musim.length - 1]]}` : "belum ada",
+      hari_terbanyak: formatAngka(st.terpadat.detDays),
+      tahun_hari_terbanyak: String(st.terpadat.tahun),
       tampak_aman: labelTampakAman({ tampakAman: p.tampakAman, keputusan: card.gerbang }) ? "ya" : "tidak",
       kecamatan_rata_rata: formatPersen(card.kecamatan.pMean),
       catatan_wajib,
@@ -114,11 +124,14 @@ export async function faktaRingkasan(halaman: HalamanRingkasan, kode?: string): 
   const [catalog, hasil] = await Promise.all([getCatalog(), getKesiapan(k)]);
 
   if (halaman === "kesiapan") {
+    // Tabel "Tangani ini lebih dulu" di layar memakai fungsi yang sama, jadi angkanya tidak bisa berbeda.
+    const baris = barisTindakan(urutkanKesenjangan(hasil.items, catalog), catalog, await getHargaEfektif(k));
     return {
       skor: formatSkor(hasil.skor),
       status: STATUS_TEKS[hasil.status],
       rantai_terlemah: hasil.rantaiTerlemah ? namaItem(catalog, hasil.rantaiTerlemah) : "tidak ada",
       lengkap: hasil.lengkap ? "ya" : "tidak",
+      tindakan: baris.map((b) => `${b.nama}: ${b.aksi}${b.biaya === null ? "" : `, ${formatRupiah(b.biaya)}`}`),
       item: hasil.items.map((it) => {
         const satuan = catalog.find((x) => x.kode === it.itemKode)?.satuan ?? "";
         const nama = namaItem(catalog, it.itemKode);
@@ -194,14 +207,19 @@ export function templateRingkasan(halaman: HalamanRingkasan, f: Fakta): { judul:
         : "Tidak ada tahun kering ekstrem yang terdeteksi satelit.";
       const gambut = teks(f, "porsi_gambut");
       const rata = teks(f, "kecamatan_rata_rata");
+      const musim = teks(f, "musim", "belum ada");
       const dua =
         `${teks(f, "tingkat", "Tingkat paparan belum ada")}${gambut ? `, porsi gambut ${gambut}` : ""}.` +
-        (rata ? ` Rata-rata kecamatan: ${rata} desa terdeteksi satelit pada tahun kering ekstrem.` : "");
+        (rata ? ` Rata-rata kecamatan: ${rata} desa terdeteksi satelit pada tahun kering ekstrem.` : "") +
+        (musim === "belum ada" ? "" : ` Titik api paling sering muncul ${musim}.`);
       return { judul, butir: [satu, dua, catatan] };
     }
     case "kesiapan": {
       const rantai = teks(f, "rantai_terlemah", "tidak ada");
-      const satu = rantai === "tidak ada" ? "Tidak ada mata rantai yang kurang." : `Mata rantai terlemah: ${rantai}.`;
+      const tindakan = larik(f, "tindakan")[0];
+      const satu =
+        (rantai === "tidak ada" ? "Tidak ada mata rantai yang kurang." : `Mata rantai terlemah: ${rantai}.`) +
+        (tindakan ? ` Langkah pertama: ${tindakan}.` : "");
       const gabung = `${larik(f, "item").join("; ")}.`;
       const dua =
         teks(f, "lengkap") === "tidak"
@@ -248,7 +266,8 @@ const ATURAN =
   'Untuk alat, pisahkan angka yang berfungsi dan angka yang kurang. Bila FAKTA menulis "kurang N", sebut kekurangan itu sebagai "kurang N", jangan menukarnya dengan angka yang berfungsi. ' +
   'Sebut desa sebagai "desa ini". Tulis "deteksi satelit", bukan "kebakaran". Jangan menyatakan desa aman. Jangan menyebut siapa yang membakar atau dari mana api berasal. ' +
   "Bahasa Indonesia baku yang sederhana, tanpa markdown. " +
-  "judul: satu hal terpenting, paling banyak 20 kata. butir: tepat tiga kalimat pendek; kalimat ketiga adalah langkah pertama yang bisa dilakukan. " +
+  "judul: satu hal terpenting, paling banyak 20 kata. butir: tepat tiga kalimat pendek; kalimat ketiga adalah langkah pertama yang bisa dilakukan, dan sebut biayanya bila FAKTA memuat biaya tindakan. " +
+  "Bila FAKTA memuat bulan rawan atau musim, sebut bulan awalnya sebagai waktu bersiap. " +
   "Isi catatan_wajib harus tetap benar dalam tulisanmu.";
 
 // Cache di memori proses, hilang saat cold start serverless. Batas biaya dijaga rate_limit di DB (route).

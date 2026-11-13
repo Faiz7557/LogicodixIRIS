@@ -13,7 +13,8 @@ import {
 import type { CatalogItem, DesaCard, HargaRow, Peran, ReadinessResult, ReferensiPergub } from "@/lib/types";
 import { KalenderSatelit } from "./KalenderSatelit";
 import { KotakPetaGudang } from "./model3d/KotakPetaGudang";
-import { KartuLebih, KartuSkor, TanganiDulu, barisTindakan } from "./RingkasanGudang";
+import { barisTindakan } from "@/lib/kesiapan";
+import { KartuLebih, KartuSkor, TanganiDulu } from "./RingkasanGudang";
 
 /**
  * Layar Kesiapan Desa (hero, App Flow v2 §3.7). Satu kesimpulan dalam satu kalimat, lalu buktinya.

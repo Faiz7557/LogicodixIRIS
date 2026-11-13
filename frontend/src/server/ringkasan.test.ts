@@ -131,11 +131,32 @@ describe("ringkasan kesiapan menyebut dua sisi", () => {
     expect(validasiRingkasan({ judul, butir: ["Selang keluar kurang 8.", ...lain] }, f).pelanggaran).toEqual(["angka:8"]);
   });
 
+  it("fakta memuat baris tindakan yang sama dengan tabel Tangani ini lebih dulu", async () => {
+    await isiInventaris();
+    const f = await faktaRingkasan("kesiapan", KODE_UJI);
+    expect(f.tindakan).toEqual(["Selang keluar: Beli 7 buah, Rp46.683.000", "Sumur bor: Beli 3 titik, Rp9.000.000"]);
+    expect(templateRingkasan("kesiapan", f).butir[0]).toContain("Langkah pertama: Selang keluar: Beli 7 buah, Rp46.683.000");
+  });
+
   it("template kesiapan menyalin angka kurang dari fakta", async () => {
     await isiInventaris();
     const f = await faktaRingkasan("kesiapan", KODE_UJI);
     const t = templateRingkasan("kesiapan", f);
     expect(t.butir[1]).toContain("kurang 7; Sumur bor: 2 dari 5 titik berfungsi, kurang 3");
+    expect(validasiRingkasan(t, f)).toEqual({ ok: true, pelanggaran: [] });
+  });
+});
+
+describe("ringkasan paparan memakai angka kalender satelit", () => {
+  useTestDb();
+
+  it("fakta memuat bulan rawan, hari terbanyak, dan jumlah tahun terdeteksi", async () => {
+    const f = await faktaRingkasan("paparan", KODE_UJI);
+    expect(f.bulan_ravan).toBe("September");
+    expect(f.hari_terbanyak).toBe("3");
+    expect(f.jumlah_tahun_terdeteksi).toBe("7 dari 15");
+    const t = templateRingkasan("paparan", f);
+    expect(t.butir[1]).toContain("Titik api paling sering muncul September sampai September");
     expect(validasiRingkasan(t, f)).toEqual({ ok: true, pelanggaran: [] });
   });
 });

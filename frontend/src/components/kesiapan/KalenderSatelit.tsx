@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { formatAngka } from "@/lib/format";
-import { NAMA_BULAN, NAMA_BULAN_PENDEK } from "@/lib/satelitBulanan";
+import { NAMA_BULAN, NAMA_BULAN_PENDEK, statistikSatelit } from "@/lib/satelitBulanan";
 import type { DesaPaparan, DesaTahun } from "@/lib/types";
 import { PilihTampilanSatelit } from "./PilihTampilanSatelit";
 import { TINGKAT, tingkat, type TahunSatelit } from "./skalaSatelit";
@@ -35,25 +35,17 @@ export function KalenderSatelit({
   });
 
   const terdeteksi = strip.filter((s) => s.terpapar);
-  // Tahun dengan hari deteksi terbanyak (hari berbeda yang ada titik api), bukan lama satu kebakaran.
-  const terpadat = strip.reduce((a, b) => (b.detDays > a.detDays ? b : a), strip[0]);
-  // Bulan paling rawan: paling sering ada titik api di antara tahun-tahun yang tercatat.
-  const perBulan = NAMA_BULAN.map((_, i) => ({
-    i,
-    tahunAda: data.filter((d) => d.bulan[i] > 0).length,
-    hari: data.reduce((a, d) => a + d.bulan[i], 0),
-  }));
-  const rawan = [...perBulan].sort((a, b) => b.tahunAda - a.tahunAda || b.hari - a.hari)[0];
-  const musim = perBulan.filter((b) => b.tahunAda >= Math.max(1, rawan.tahunAda / 2)).map((b) => b.i);
+  // Angka ringkas di bawah kalender: satu sumber dengan ringkasan AI (lib/satelitBulanan).
+  const { terpadat, rawan, musim, totalTahun } = statistikSatelit(strip);
 
   const angka = [
-    { judul: "Tahun terdeteksi", nilai: formatAngka(terdeteksi.length), satuan: `dari ${formatAngka(strip.length)} tahun`, catatan: `Sejak ${awal}` },
+    { judul: "Tahun terdeteksi", nilai: formatAngka(terdeteksi.length), satuan: `dari ${formatAngka(totalTahun)} tahun`, catatan: `Sejak ${awal}` },
     { judul: "Saat kering ekstrem", nilai: formatAngka(paparan.kExt), satuan: `dari ${formatAngka(paparan.nExt)} tahun`, catatan: "Tahun kering ekstrem terdeteksi" },
     {
       judul: "Bulan paling rawan",
       nilai: rawan.hari > 0 ? NAMA_BULAN_PENDEK[rawan.i] : "–",
       satuan: "",
-      catatan: rawan.hari > 0 ? `Ada titik api di ${formatAngka(rawan.tahunAda)} dari ${formatAngka(strip.length)} tahun` : "Belum ada titik api",
+      catatan: rawan.hari > 0 ? `Ada titik api di ${formatAngka(rawan.tahunAda)} dari ${formatAngka(totalTahun)} tahun` : "Belum ada titik api",
     },
     {
       judul: "Hari deteksi terbanyak",
