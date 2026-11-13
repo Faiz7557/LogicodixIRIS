@@ -29,6 +29,10 @@ describe("paket dan harga efektif", () => {
     expect((await getTargetEfektif("NONGAMBUT")).some((r) => r.itemKode === "sumur_bor")).toBe(false);
   });
 
+  it("sumur bor punya harga beli acuan dari Kompas 2019", async () => {
+    expect(harga(await getHargaEfektif("TINGGI"), "sumur_bor", "beli")).toMatchObject({ hargaRp: 3_000_000 });
+  });
+
   it("harga desa menimpa acuan", async () => {
     await setHarga("TINGGI", 1, "pompa_jinjing", "beli", 999, "Penawaran toko");
     expect(harga(await getHargaEfektif("TINGGI"), "pompa_jinjing", "beli").hargaRp).toBe(999);
@@ -36,13 +40,13 @@ describe("paket dan harga efektif", () => {
   });
 
   it("harga desa terbaca walau item tidak punya harga acuan", async () => {
-    expect(harga(await getHargaEfektif("TINGGI"), "sumur_bor", "beli")).toBeUndefined();
-    await setHarga("TINGGI", 1, "sumur_bor", "beli", 330_000, "Penawaran toko");
-    const baris = harga(await getHargaEfektif("TINGGI"), "sumur_bor", "beli");
+    expect(harga(await getHargaEfektif("TINGGI"), "sumur_bor", "perbaiki")).toBeUndefined();
+    await setHarga("TINGGI", 1, "sumur_bor", "perbaiki", 330_000, "Penawaran toko");
+    const baris = harga(await getHargaEfektif("TINGGI"), "sumur_bor", "perbaiki");
     expect(baris).toMatchObject({ hargaRp: 330_000 });
     expect(baris.sumber).toContain("Penawaran toko");
     // Aksi lain tanpa acuan dan tanpa isian desa tetap tidak muncul.
-    expect(harga(await getHargaEfektif("TINGGI"), "sumur_bor", "perbaiki")).toBeUndefined();
+    expect(harga(await getHargaEfektif("TINGGI"), "selang_keluar", "perbaiki")).toBeUndefined();
   });
 
   it("harga bukan bilangan bulat ditolak", async () => {
