@@ -6,6 +6,7 @@ import { Suspense } from "react";
 import { DasborSatelit } from "@/components/paparan/dasbor/DasborSatelit";
 import { KerangkaAkun } from "@/components/layout/KerangkaAkun";
 import { ErrorState, LoadingState } from "@/components/ui/PageState";
+import { RingkasanAi } from "@/components/ui/RingkasanAi";
 import { getDesaCard, getGerbang, getSesi } from "@/lib/dataSource";
 import { labelTampakAman } from "@/lib/kalimat";
 
@@ -45,6 +46,9 @@ async function Isi({ params }: { params: Promise<{ kode: string }> }) {
 
   const isi = (
     <>
+      <div className="mx-auto max-w-[1200px] px-4 pt-6 md:px-8">
+        <RingkasanAi halaman="paparan" kode={kode} />
+      </div>
       <DasborSatelit
         kode={kode}
         namaDesa={desa.nama}

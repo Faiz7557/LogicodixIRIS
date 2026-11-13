@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { RingkasanAi } from "@/components/ui/RingkasanAi";
 
 const LANGKAH = [
   { judul: "Pagu", pendek: "Pagu", href: (k: string) => `/desa/${k}/prioritas/pagu` },
@@ -83,6 +84,7 @@ export function KepalaPrioritas({
         <p aria-live="polite" className="mt-1 min-h-5 text-sm font-semibold text-muted">
           {menghitung ? "Menghitung…" : ""}
         </p>
+        <RingkasanAi halaman="prioritas" kode={kode} className="mt-2" />
       </header>
 
       {galat ? (

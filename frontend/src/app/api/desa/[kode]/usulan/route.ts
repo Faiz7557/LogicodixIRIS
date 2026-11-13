@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { assertOrigin, requireDesaAccess } from "@/server/auth";
+import { assertOrigin, hitRateLimit, requireDesaAccess } from "@/server/auth";
 import { HttpError, handle } from "@/server/http";
 import { listUsulanPage, terbitkanUsulan } from "@/server/usulan";
 
@@ -29,6 +29,10 @@ export const POST = handle(async (req, ctx: RouteContext<"/api/desa/[kode]/usula
   const { kode } = await ctx.params;
   const akun = await requireDesaAccess(req, kode, ["desa"]);
   const { kanal } = body.parse(await req.json().catch(() => null));
+  // Tiap terbit bisa memanggil OpenAI untuk narasi: dibatasi per akun.
+  if (!(await hitRateLimit(`narasi:${akun.id}`, 10, 60))) {
+    throw new HttpError(429, "terlalu_banyak", "Terlalu banyak usulan diterbitkan. Coba lagi dalam 1 jam.", { "Retry-After": "3600" });
+  }
   const id = await terbitkanUsulan(kode, akun.id, kanal);
   return Response.json({ id }, { status: 201, headers: { Location: `/api/desa/${kode}/usulan/${id}` } });
 });
