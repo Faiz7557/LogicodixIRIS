@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { RentangKecamatan } from "@/components/paparan/RentangKecamatan";
+import { useMemo, useState } from "react";
 import { formatAngka } from "@/lib/format";
-import { kalimatKecamatan, sebutKecamatan } from "@/lib/kalimat";
+import { sebutKecamatan } from "@/lib/kalimat";
 import { NAMA_BULAN } from "@/lib/satelitBulanan";
 import type { DesaPaparan, DesaTahun, KecamatanPaparan } from "@/lib/types";
 import { GrafikRiwayat } from "./GrafikRiwayat";
@@ -11,11 +10,11 @@ import { KartuMatriks } from "./KartuMatriks";
 import { KartuMusim } from "./KartuMusim";
 import { KartuPaparan } from "./KartuPaparan";
 import { KartuWawasan, type Wawasan } from "./KartuWawasan";
-import { KepalaKartu, METRIK, RENTANG, Segmen, gerakDikurangi, kelasKartu, type Metrik, type Rentang, type TahunDasbor } from "./dasar";
+import { METRIK, RENTANG, Segmen, type Metrik, type Rentang, type TahunDasbor } from "./dasar";
 
 /**
  * Dasbor Informasi detail (tata letak dari referensi "Overview"): kepala dengan pemilih ukuran dan rentang,
- * grafik riwayat + kartu paparan, lalu musim, dua kartu matriks, dan wawasan, lalu perbandingan dengan kecamatan.
+ * grafik riwayat + kartu paparan, lalu musim, dua kartu matriks, dan wawasan.
  * Pemilih di kepala mengubah semua kartu sekaligus.
  */
 export function DasborSatelit({
@@ -109,90 +108,8 @@ export function DasborSatelit({
         </div>
       </div>
 
-      <KartuKecamatan kecamatan={kecamatan} kecNama={kecNama} paparan={paparan} />
     </div>
   );
-}
-
-/**
- * Desa ini dibanding desa lain di kecamatan: dua angka besar (desa dan rata-rata kecamatan) dengan lencana
- * kesimpulan, lalu bilah rentang yang menempatkan desa di antara rentang kecamatan. Lebar penuh, tanpa ruang kosong.
- */
-function KartuKecamatan({ kecamatan, kecNama, paparan }: { kecamatan: KecamatanPaparan; kecNama: string; paparan: DesaPaparan }) {
-  const laju = paparan.nExt > 0 ? paparan.kExt / paparan.nExt : null;
-  const persen = (x: number) => `${formatAngka(Math.round(x * 100))}%`;
-  const lebih = laju !== null && Math.round(laju * 100) > Math.round(kecamatan.pMean * 100);
-  const sama = laju !== null && Math.round(laju * 100) === Math.round(kecamatan.pMean * 100);
-  const tampilLaju = useAngkaNaikMasuk(laju ?? 0);
-  const tampilRata = useAngkaNaikMasuk(kecamatan.pMean);
-
-  return (
-    <section aria-labelledby="kecamatan" className={`${kelasKartu} mt-4 md:p-6`} style={{ animationDelay: "280ms" }}>
-      <KepalaKartu
-        id="kecamatan"
-        judul="Dibanding desa lain di kecamatan"
-        keterangan={`Porsi tahun kering ekstrem yang terdeteksi satelit, desa ini dan rata-rata desa di ${sebutKecamatan(kecNama)}.`}
-        kanan={
-          laju !== null ? (
-            <span
-              className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${lebih ? "bg-ember text-white" : "bg-surface-2 text-ink"}`}
-            >
-              {lebih ? "Lebih sering dari rata-rata" : sama ? "Setara rata-rata" : "Lebih jarang dari rata-rata"}
-            </span>
-          ) : null
-        }
-      />
-
-      <div className="mt-5 grid items-center gap-6 md:grid-cols-[minmax(0,20rem)_minmax(0,1fr)] md:gap-10">
-        <dl className="grid grid-cols-2 gap-4 md:border-r md:border-line md:pr-8">
-          <div>
-            <dt className="text-sm text-muted">Desa ini</dt>
-            <dd>
-              <span className="tabular block text-4xl font-semibold leading-tight tracking-[-0.02em] text-ember">
-                {laju !== null ? persen(tampilLaju) : "–"}
-              </span>
-              <span className="tabular text-xs text-muted">
-                {laju !== null ? `${formatAngka(paparan.kExt)} dari ${formatAngka(paparan.nExt)} tahun ekstrem` : "belum ada tahun ekstrem"}
-              </span>
-            </dd>
-          </div>
-          <div>
-            <dt className="text-sm text-muted">Rata-rata kecamatan</dt>
-            <dd>
-              <span className="tabular block text-4xl font-semibold leading-tight tracking-[-0.02em]">{persen(tampilRata)}</span>
-              <span className="tabular text-xs text-muted">{formatAngka(kecamatan.nDesa)} desa</span>
-            </dd>
-          </div>
-        </dl>
-        <RentangKecamatan pMean={kecamatan.pMean} rateMin={kecamatan.rateMin} rateMax={kecamatan.rateMax} desa={laju} />
-      </div>
-
-      <p className="mt-5 border-t border-line pt-4 text-sm text-muted">{kalimatKecamatan(kecamatan, kecNama)}</p>
-    </section>
-  );
-}
-
-/**
- * Angka yang berhitung dari 0 saat kartu pertama tampil. Angka akhir sudah ada di HTML sejak awal; hitungan
- * baru dimulai di bingkai animasi pertama, jadi tanpa JS, di tab tersembunyi, atau saat gerak dikurangi
- * yang tampil langsung angka sebenarnya.
- */
-function useAngkaNaikMasuk(target: number, durasi = 900): number {
-  const [tampil, setTampil] = useState(target);
-  useEffect(() => {
-    if (gerakDikurangi()) return;
-    let id = 0;
-    let mulai = 0;
-    const langkah = (t: number) => {
-      mulai ||= t;
-      const p = Math.min((t - mulai) / durasi, 1);
-      setTampil(target * (1 - (1 - p) ** 4));
-      if (p < 1) id = requestAnimationFrame(langkah);
-    };
-    id = requestAnimationFrame(langkah);
-    return () => cancelAnimationFrame(id);
-  }, [target, durasi]);
-  return tampil;
 }
 
 /** Tiga sampai empat temuan singkat dari data desa, untuk kartu wawasan. */

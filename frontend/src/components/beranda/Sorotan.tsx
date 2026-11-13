@@ -35,7 +35,7 @@ export function Sorotan() {
         </span>
         <h3 className="font-bold">Hasil apa adanya</h3>
         <p className="mt-1 text-sm text-muted">
-          Time Machine membandingkan peringkat dengan deteksi nyata, termasuk saat peringkat kami kalah dari pembanding.
+          Sumber, batasan, dan uji data ditulis terbuka di halaman Data, termasuk hal yang tidak bisa dijawab data satelit.
         </p>
       </KartuMiring>
 
@@ -48,7 +48,7 @@ export function Sorotan() {
                 Isi anggaran desa, lihat urutan belanja beserta alasan tiap baris. Skor kesiapan sebelum dan sesudah belanja tampil berdampingan.
               </p>
               <Link href="/data" className="mt-1 inline-flex min-h-11 items-center text-sm font-bold text-water underline underline-offset-2">
-                Lihat sumber, harga, dan asumsi
+                Lihat sumber dan harga
               </Link>
             </div>
             <SkorContoh />

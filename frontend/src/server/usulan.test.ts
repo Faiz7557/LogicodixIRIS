@@ -23,10 +23,7 @@ describe("usulan", () => {
   });
 
   it("membagi daftar usulan dengan cursor", async () => {
-    await setPagu("D", 1, 15e6);
-    const baris = (await getPrioritas("D")).terpilih[0];
-    await setKeputusan("D", 1, baris.itemKode, baris.aksi, "setuju");
-    for (let i = 0; i < 3; i++) await terbitkanUsulan("D", 1, "csr");
+    for (let i = 0; i < 3; i++) await terbitkanPermohonanAnggaran("D", 1, "csr", { jumlahRp: 1_000_000 * (i + 1), tahun: 2027 });
 
     const satu = await listUsulanPage("D", 2);
     expect(satu.hasil).toHaveLength(2);
@@ -42,14 +39,31 @@ describe("usulan", () => {
     const terpilih = (await getPrioritas("D")).terpilih;
     expect(terpilih.length).toBeGreaterThanOrEqual(2);
     for (const b of terpilih) await setKeputusan("D", 1, b.itemKode, b.aksi, "setuju");
-    const [satu] = terpilih;
-    const semua = await getUsulan("D", await terbitkanUsulan("D", 1, "bpbd"));
+    const [satu, ...sisa] = terpilih;
     const pilih = await getUsulan("D", await terbitkanUsulan("D", 1, "bpbd", { pilih: [{ itemKode: satu.itemKode, aksi: satu.aksi }], nomor: " 140/12/XI/2026 " }));
     expect(pilih.baris).toHaveLength(1);
     expect(pilih.baris[0]).toMatchObject({ itemKode: satu.itemKode, aksi: satu.aksi, biayaRp: satu.biayaRp });
     expect(pilih.facts).toMatchObject({ jenis: "alat", nomor: "140/12/XI/2026" });
-    expect(semua.baris).toHaveLength(terpilih.length);
-    expect(pilih.facts.total_usulan).not.toBe(semua.facts.total_usulan);
+    // Yang belum masuk surat tetap disetujui dan bisa dibuatkan surat berikutnya.
+    const lain = await getUsulan("D", await terbitkanUsulan("D", 1, "bpbd"));
+    expect(lain.baris.map((b) => b.itemKode)).toEqual(sisa.map((b) => b.itemKode));
+  });
+
+  it("baris dalam surat terkunci: anggaran berkurang, keputusannya dihapus, tidak disarankan ulang", async () => {
+    await setPagu("D", 1, 15e6);
+    const sebelum = await getPrioritas("D");
+    const [a] = sebelum.terpilih;
+    await setKeputusan("D", 1, a.itemKode, a.aksi, "setuju");
+    const id = await terbitkanUsulan("D", 1, "bpbd");
+
+    const sesudah = await getPrioritas("D");
+    expect(sesudah.paguRp).toBe(15e6);
+    expect(sesudah.terkunciRp).toBe(a.biayaRp);
+    expect(sesudah.terkunci).toEqual([expect.objectContaining({ itemKode: a.itemKode, aksi: a.aksi, qty: a.qty, usulanId: id })]);
+    expect(sesudah.keputusan.some((k) => k.itemKode === a.itemKode && k.aksi === a.aksi)).toBe(false);
+    // Saran baru dihitung dari sisa anggaran, jadi totalnya tidak melebihi sisa itu.
+    expect(sesudah.terpakaiRp).toBeLessThanOrEqual(15e6 - a.biayaRp);
+    await expect(terbitkanUsulan("D", 1, "bpbd")).rejects.toMatchObject({ status: 409 });
   });
 
   it("menolak alat yang belum disetujui", async () => {

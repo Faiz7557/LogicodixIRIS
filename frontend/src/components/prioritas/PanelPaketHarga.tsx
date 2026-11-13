@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { GambarItem } from "@/components/kesiapan/GambarItem";
-import { AssumptionNote } from "@/components/ui/AssumptionNote";
 import { formatAngka, formatRupiah } from "@/lib/format";
 import { ALASAN_MIN, namaAksi, parsePagu } from "@/lib/prioritas";
 import type { Aksi, CatalogItem, HargaRow, PaketRow } from "@/lib/types";
@@ -38,7 +37,6 @@ export function PanelPaketHarga({
         Paket minimum dan harga
       </h2>
       <div className="space-y-4 border-t border-line px-4 py-4">
-        <AssumptionNote>Target, bobot, dan sebagian harga bukan standar yang mengikat desa. Desa boleh mengubahnya dengan alasan.</AssumptionNote>
         <ul className="grid gap-3 md:grid-cols-2">
           {catalog.map((c) => {
             const p = paket.find((x) => x.itemKode === c.kode);

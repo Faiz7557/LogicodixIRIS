@@ -11,6 +11,7 @@ import {
   keyBaris,
   ringkasKeputusan,
   skorSetelahDisetujui,
+  tambahTerkunci,
   totalBiaya,
   type KeputusanMap,
 } from "@/lib/prioritas";
@@ -124,7 +125,13 @@ export function usePrioritas({ kode, catalog, awal, kesiapan, paket: paketAwal, 
   const satuan = (k: string) => catalog.find((c) => c.kode === k)?.satuan ?? "";
   const sumberHarga = (k: string, aksi: Aksi) => harga.find((h) => h.itemKode === k && h.aksi === aksi)?.sumber;
 
-  const skorSekarang = readiness.skor;
+  // Angka "asli": yang sudah masuk surat usulan dianggap sudah dibeli dan anggarannya sudah terpakai.
+  // Keputusan Disetujui yang belum dibuat surat hanya simulasi dan tidak mengubah angka ini.
+  const terkunci = useMemo(() => hasil.terkunci ?? [], [hasil]);
+  const terkunciRp = hasil.terkunciRp ?? 0;
+  const readinessAsli = useMemo(() => tambahTerkunci(readiness, terkunci, catalog), [readiness, terkunci, catalog]);
+  const paguBebas = Math.max(0, pagu - terkunciRp);
+  const skorSekarang = readinessAsli.skor;
 
   /** Tulis putusan lokal lebih dulu supaya tombol terasa langsung menanggapi. */
   const ubahLokal = useCallback((itemKode: string, aksi: Aksi, ubah: { keputusan?: Keputusan; catatan: string | null }) => {
@@ -251,20 +258,21 @@ export function usePrioritas({ kode, catalog, awal, kesiapan, paket: paketAwal, 
 
   const ringkas = ringkasKeputusan(hasil.terpilih, keputusan);
   const disetujui = barisDisetujui(hasil.terpilih, keputusan);
-  const sementara = anggaranSementara(pagu, disetujui);
+  const sementara = anggaranSementara(paguBebas, disetujui);
   // Satu kalimat keadaan untuk penunjuk tiga langkah.
   const ringkasLangkah: [string, string, string] = [
     disetujui.length > 0
-      ? `Anggaran ${formatRupiah(pagu)}, sisa sementara ${formatRupiah(sementara.sisaRp)}`
-      : `Anggaran ${formatRupiah(pagu)}, skor ${formatSkor(skorSekarang)} → ${formatSkor(hasil.skorSesudah)}`,
-    hasil.terpilih.length > 0 ? `${hasil.terpilih.length} saran, ${ringkas.belum} belum diputuskan` : "Belum ada saran untuk anggaran ini",
+      ? `Sisa ${formatRupiah(paguBebas)}, simulasi ${formatRupiah(sementara.sisaRp)}`
+      : `Sisa ${formatRupiah(paguBebas)}, skor ${formatSkor(skorSekarang)} → ${formatSkor(hasil.skorSesudah)}`,
+    hasil.terpilih.length > 0 ? `${hasil.terpilih.length} saran, ${ringkas.belum + ringkas.tunda} belum diputuskan` : "Belum ada saran untuk anggaran ini",
     disetujui.length > 0 ? `${disetujui.length} disetujui, ${formatRupiah(totalBiaya(disetujui))}` : "Setujui minimal satu saran",
   ];
 
   return {
     hasil,
     ringkasLangkah,
-    readiness,
+    /** Kesiapan dengan baris terkunci dihitung sudah ada. */
+    readiness: readinessAsli,
     paket,
     harga,
     pagu,
@@ -274,9 +282,17 @@ export function usePrioritas({ kode, catalog, awal, kesiapan, paket: paketAwal, 
     keputusan,
     skorSekarang,
     selisih: Math.round((hasil.skorSesudah - skorSekarang) * 10) / 10,
-    sisa: Math.max(0, pagu - hasil.terpakaiRp),
-    keadaan: keadaanPagu(pagu, hasil, harga),
-    kalimat: kalimatPrioritas(pagu, skorSekarang, hasil, harga, catalog),
+    sisa: Math.max(0, paguBebas - hasil.terpakaiRp),
+    /** Baris dari surat usulan yang sudah dibuat (terkunci, data riwayat). */
+    terkunci,
+    terkunciRp,
+    /** Anggaran yang belum terpakai surat usulan: dasar saran baru. */
+    paguBebas,
+    keadaan: keadaanPagu(paguBebas, hasil, harga),
+    kalimat:
+      paguBebas === 0 && terkunciRp > 0
+        ? "Anggaran sudah habis dipakai surat usulan. Tambah anggaran bila masih ada kebutuhan."
+        : kalimatPrioritas(paguBebas, skorSekarang, hasil, harga, catalog),
     ringkas,
     disetujui,
     /** Total belanja yang disetujui; mengurangi anggaran sementara. */
@@ -284,7 +300,7 @@ export function usePrioritas({ kode, catalog, awal, kesiapan, paket: paketAwal, 
     /** Anggaran dikurangi belanja yang disetujui. */
     sisaSementara: sementara.sisaRp,
     /** Skor bila hanya yang disetujui dibeli atau diperbaiki. */
-    skorDisetujui: skorSetelahDisetujui(readiness, catalog, disetujui),
+    skorDisetujui: skorSetelahDisetujui(readinessAsli, catalog, disetujui),
     nama,
     satuan,
     sumberHarga,

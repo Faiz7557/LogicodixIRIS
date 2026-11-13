@@ -1,4 +1,6 @@
 import Link from "next/link";
+import type { CSSProperties } from "react";
+import { AngkaHitung } from "@/components/ui/AngkaHitung";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { formatAngka, formatRupiah, formatSkor } from "@/lib/format";
 import type { ItemView } from "@/lib/kesiapan";
@@ -84,8 +86,8 @@ export function TanganiDulu({ kode, baris }: { kode: string; baris: Baris[] }) {
         <p className="border-t border-line px-5 py-4 text-muted md:px-6">Tidak ada yang mendesak. Semua item paket minimum sudah terpenuhi.</p>
       ) : (
         <ul className="divide-y divide-surface border-t border-line">
-          {baris.map((b) => (
-            <li key={b.kunci}>
+          {baris.map((b, i) => (
+            <li key={b.kunci} data-muncul="kiri" style={{ ["--tunda" as string]: `${140 + i * 90}ms` } as CSSProperties}>
               <Link
                 href={`/desa/${kode}/kesiapan/${b.kode}`}
                 className={`group grid gap-x-6 gap-y-0.5 px-5 py-3.5 transition-colors md:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,1.3fr)_auto] md:items-center md:px-6 ${
@@ -126,7 +128,7 @@ export function TanganiDulu({ kode, baris }: { kode: string; baris: Baris[] }) {
  * kepala (judul + label kanan), angka besar, visual, baris angka di bawah (garis atas), lalu tautan di pojok kanan bawah.
  */
 
-const kelasKartu = "flex flex-col rounded-panel border border-line bg-surface p-5 shadow-card md:p-6";
+const kelasKartu = "flex w-full flex-col rounded-panel border border-line bg-surface p-5 shadow-card md:p-6";
 
 function Kepala({ id, judul, kanan }: { id: string; judul: string; kanan: React.ReactNode }) {
   return (
@@ -145,11 +147,11 @@ function Lencana({ ragam, children }: { ragam: "ok" | "kurang" | "netral"; child
   return <span className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold ${warna}`}>{children}</span>;
 }
 
-function AngkaBesar({ nilai, keterangan }: { nilai: string; keterangan: string }) {
+function AngkaBesar({ nilai, keterangan, hitung }: { nilai: string; keterangan: string; hitung?: number }) {
   return (
     <p className="mt-4 flex h-[3.75rem] items-end gap-x-2.5 overflow-hidden">
       <span className={`tabular shrink-0 font-semibold leading-none tracking-[-0.03em] ${nilai.length > 8 ? "text-4xl" : nilai.length > 6 ? "text-5xl" : "text-6xl"}`}>
-        {nilai}
+        {hitung !== undefined ? <AngkaHitung nilai={hitung} jenis="skor" tunda={200} durasi={1300} /> : nilai}
       </span>
       {/* Keterangan boleh dua baris di samping angka, tidak dipotong. */}
       <span className="line-clamp-2 min-w-0 pb-0.5 leading-tight text-muted">{keterangan}</span>
@@ -234,7 +236,7 @@ export function KartuSkor({
   return (
     <section aria-labelledby="skor-kartu" className={kelasKartu}>
       <Kepala id="skor-kartu" judul="Skor kesiapan" kanan={<StatusBadge status={status} />} />
-      <AngkaBesar nilai={formatSkor(skor)} keterangan="dari 100" />
+      <AngkaBesar nilai={formatSkor(skor)} hitung={skor} keterangan="dari 100" />
       <AreaVisual
         keterangan={
           <>
@@ -278,7 +280,7 @@ export function KartuLebih({ kode, items, hargaRows }: { kode: string; items: It
         {lebih.length === 0 ? null : (
           <>
           <ul className="space-y-4">
-            {lebih.slice(0, 3).map((it) => {
+            {lebih.slice(0, 3).map((it, i) => {
               const sisa = it.berfungsi - it.target;
               return (
                 <li key={it.itemKode}>
@@ -291,7 +293,8 @@ export function KartuLebih({ kode, items, hargaRows }: { kode: string; items: It
                   <div
                     role="img"
                     aria-label={`${it.nama}: paket minimum ${formatAngka(it.target)} ${it.satuan}, cadangan ${formatAngka(sisa)} ${it.satuan}`}
-                    className="mt-1.5 flex h-3 gap-0.5 overflow-hidden rounded-full"
+                    className="tunggu-terlihat bilah-tumbuh mt-1.5 flex h-3 gap-0.5 overflow-hidden rounded-full"
+                    style={{ animationDelay: `${250 + i * 120}ms` }}
                   >
                     <span className="rounded-l-full bg-ok" style={{ width: `${(it.target / it.berfungsi) * 100}%` }} />
                     <span className="flex-1 rounded-r-full bg-water" />
@@ -368,8 +371,23 @@ function SpeedometerApi({ skor, skorSesudah, paguRp }: { skor: number; skorSesud
           </linearGradient>
         </defs>
         <path d={busur(0, 100)} fill="none" stroke="var(--line)" strokeWidth="16" strokeLinecap="round" />
-        {skorSesudah > skor ? <path d={busur(0, skorSesudah)} fill="none" stroke="var(--ink)" strokeOpacity="0.12" strokeWidth="16" strokeLinecap="round" /> : null}
-        {skor > 0 ? <path d={busur(0, skor)} fill="none" stroke="url(#gradien-skor)" strokeWidth="16" strokeLinecap="round" /> : null}
+        {/* Busur tergambar dari 0 bersama jarum; busur abu (sesudah belanja) menyusul memudar masuk. */}
+        {skorSesudah > skor ? (
+          <path
+            d={busur(0, skorSesudah)}
+            pathLength={1}
+            className="tunggu-terlihat busur-gambar"
+            style={{ animationDelay: "700ms" }}
+            fill="none"
+            stroke="var(--ink)"
+            strokeOpacity="0.12"
+            strokeWidth="16"
+            strokeLinecap="round"
+          />
+        ) : null}
+        {skor > 0 ? (
+          <path d={busur(0, skor)} pathLength={1} className="tunggu-terlihat busur-gambar" fill="none" stroke="url(#gradien-skor)" strokeWidth="16" strokeLinecap="round" />
+        ) : null}
 
         {TANDA.map((v, i) => {
           // Makin rendah skor, makin besar apinya. Hanya api terdekat dengan skor sekarang yang menyala.
@@ -379,12 +397,17 @@ function SpeedometerApi({ skor, skorSesudah, paguRp }: { skor: number; skorSesud
           const nyala = i === Math.round(Math.min(Math.max(skor, 0), 100) / 25);
           return (
             <g key={v} transform={`translate(${x.toFixed(2)} ${y.toFixed(2)}) scale(${besar}) translate(-12 -12)`}>
-              <path d={API} fill={nyala ? "var(--ember)" : "none"} stroke={nyala ? "var(--ember)" : "var(--line-2)"} strokeWidth={1.6 / besar} strokeLinejoin="round" />
+              <path d={API} className={nyala ? "tunggu-terlihat kedip-api" : undefined} fill={nyala ? "var(--ember)" : "none"} stroke={nyala ? "var(--ember)" : "var(--line-2)"} strokeWidth={1.6 / besar} strokeLinejoin="round" />
             </g>
           );
         })}
 
-        <line x1={CX} y1={CY} x2={jx.toFixed(2)} y2={jy.toFixed(2)} stroke="var(--ink)" strokeWidth="4" strokeLinecap="round" />
+        <g
+          className="tunggu-terlihat jarum-putar"
+          style={{ transformOrigin: `${CX}px ${CY}px`, ["--dari-sudut" as string]: `${-Math.min(Math.max(skor, 0), 100) * 1.8}deg` } as CSSProperties}
+        >
+          <line x1={CX} y1={CY} x2={jx.toFixed(2)} y2={jy.toFixed(2)} stroke="var(--ink)" strokeWidth="4" strokeLinecap="round" />
+        </g>
         <circle cx={CX} cy={CY} r="7" fill="var(--ink)" />
         <circle cx={CX} cy={CY} r="2.5" fill="var(--surface)" />
 

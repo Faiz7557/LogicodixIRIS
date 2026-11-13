@@ -150,7 +150,7 @@ body {
     stroke 300ms ease-out;
 }
 
-/* Penanda 2026 muncul bertahap di Time Machine: 200 ms per elemen, tertunda maksimal 760 ms. */
+/* Elemen yang baru muncul: pudar dan naik sedikit dalam 200 ms. */
 @keyframes muncul {
   from {
     opacity: 0;
@@ -295,6 +295,61 @@ body {
 .gerak-siap .tirai {
   clip-path: inset(calc((1 - var(--p, 1)) * 5%) calc((1 - var(--p, 1)) * 4%) 0 round calc((1 - var(--p, 1)) * 48px));
 }
+/*
+ * Kesiapan dan rincian alat. Animasi di dalam [data-muncul] menunggu sampai bagiannya terlihat
+ * (dijeda, tetap di keadaan awal), lalu berjalan saat PenggerakGulir memberi data-terlihat.
+ */
+.gerak-siap [data-muncul]:not([data-terlihat]) .tunggu-terlihat {
+  animation-play-state: paused;
+}
+/* Jarum speedometer berputar dari 0 ke skor (--dari-sudut = -skor x 1,8 derajat). */
+@keyframes jarum-putar {
+  from {
+    transform: rotate(var(--dari-sudut, -90deg));
+  }
+}
+.jarum-putar {
+  transform-box: view-box;
+  animation: jarum-putar 1300ms var(--pegas) 200ms both;
+}
+.busur-gambar {
+  stroke-dasharray: 1;
+  animation: gambar-garis 1300ms var(--pegas) 200ms both;
+}
+/* Api yang menyala di speedometer berkedip pelan, mulai setelah jarum berhenti. */
+@keyframes kedip-api {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.14);
+  }
+}
+.kedip-api {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: kedip-api 1500ms ease-in-out 1500ms infinite;
+}
+/* Gambar alat melenting masuk. */
+@keyframes letup {
+  from {
+    opacity: 0;
+    transform: scale(0.6) rotate(-8deg);
+  }
+  60% {
+    transform: scale(1.06) rotate(2deg);
+  }
+}
+.letup {
+  animation: letup 720ms var(--pegas) both;
+}
+/* Bilah tumbuh dari kiri (durasi dan jeda dari style). */
+.bilah-tumbuh {
+  transform-origin: left;
+  animation: isi-maju 900ms var(--pegas) both;
+}
+
 /* Puncak "Enam tahun tanpa api": bara naik dan pergantian tahun. */
 @keyframes bara-naik {
   0% {

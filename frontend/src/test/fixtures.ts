@@ -126,6 +126,8 @@ export const mockReadiness: ReadinessResult = {
 // ---------- Prioritas, pagu default Rp15.000.000 ----------
 export const mockPrioritas: PrioritasPayload = {
   paguRp: 15_000_000,
+  terkunci: [],
+  terkunciRp: 0,
   terpakaiRp: 13_338_000,
   skorSesudah: 63.3,
   terpilih: [

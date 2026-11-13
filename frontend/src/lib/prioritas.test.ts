@@ -9,6 +9,7 @@ import {
   parsePagu,
   ringkasKeputusan,
   skorSetelahDisetujui,
+  tambahTerkunci,
   totalBiaya,
 } from "./prioritas";
 import type { PriorityRow } from "./types";
@@ -39,6 +40,11 @@ describe("keadaan dan kalimat", () => {
   });
   it("pagu di bawah harga termurah menyebut item dan harganya", () => {
     expect(keadaanPagu(1000, hitung(1000), mockHarga)).toBe("kurang");
+  });
+  it("tidak ada kebutuhan tersisa: terpenuhi, bukan kurang", () => {
+    const kosong = { paguRp: 300e6, terpakaiRp: 0, skorSesudah: 100, terpilih: [], tidakTerdanai: [], tanpaHarga: [] };
+    expect(keadaanPagu(300e6, kosong, mockHarga)).toBe("terpenuhi");
+    expect(kalimatPrioritas(300e6, 100, kosong, mockHarga, mockCatalog)).toContain("sudah terpenuhi");
     expect(kalimatPrioritas(1000, 56.7, hitung(1000), mockHarga, mockCatalog)).toBe(
       "Anggaran belum cukup untuk satu alat pun. Yang termurah: Pompa jinjing, Rp510.000.",
     );
@@ -97,5 +103,21 @@ describe("anggaran sementara", () => {
   it("perbaikan dan pembelian item yang sama dijumlah, cakupan dibatasi 100%", () => {
     expect(skorSetelahDisetujui(mockReadiness, mockCatalog, [selang2, baris("selang_keluar", "perbaiki", 1, 1)])).toBe(66.7);
     expect(skorSetelahDisetujui(mockReadiness, mockCatalog, [baris("selang_keluar", "beli", 20, 1)])).toBe(80);
+  });
+});
+
+describe("tambahTerkunci", () => {
+  const kunci = (itemKode: string, aksi: "beli" | "perbaiki", qty: number) => ({ itemKode, aksi, qty, biayaRp: 1, usulanId: 1, tanggal: "2026-11-13" });
+  it("tanpa surat: kesiapan tidak berubah", () => {
+    expect(tambahTerkunci(mockReadiness, [], mockCatalog)).toBe(mockReadiness);
+  });
+  it("beli dari surat dihitung sudah ada", () => {
+    const r = tambahTerkunci(mockReadiness, [kunci("selang_keluar", "beli", 2)], mockCatalog);
+    expect(r.items.find((i) => i.itemKode === "selang_keluar")).toMatchObject({ berfungsi: 5, coverage: 0.5 });
+    expect(r.skor).toBe(63.3);
+  });
+  it("perbaikan dari surat memulihkan yang rusak, tidak lebih dari jumlah rusak", () => {
+    const r = tambahTerkunci(mockReadiness, [kunci("sumur_bor", "perbaiki", 3)], mockCatalog);
+    expect(r.items.find((i) => i.itemKode === "sumur_bor")).toMatchObject({ berfungsi: 3, rusak: 0, coverage: 0.6 });
   });
 });
