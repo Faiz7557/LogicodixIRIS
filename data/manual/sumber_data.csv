@@ -1,14 +1,14 @@
 kode,nama,url,lisensi,periode,diakses
-firms_viirs_snpp,NASA FIRMS VIIRS S-NPP (SP dan NRT),https://firms.modaps.eosdis.nasa.gov/,PERLU_DIISI,2012-01-20 sampai 2026-11-02,2026-11-10
+firms_viirs_snpp,NASA FIRMS VIIRS S-NPP (SP dan NRT),https://firms.modaps.eosdis.nasa.gov/,CC0 (kebijakan data NASA Earthdata); sitasi FIRMS diminta,2012-01-20 sampai 2026-11-02,2026-11-13
 hdx_cod_ab,HDX COD-AB Indonesia,https://data.humdata.org/dataset/cod-ab-idn,CC BY-IGO,"Geometri April 2020, ditinjau 30 Okt 2025",2026-11-10
-wri_peatlands,WRI Global Peatlands,https://data.globalforestwatch.org/datasets/gfw::indonesia-peat-lands/about,PERLU_DIISI,PERLU_DIISI,2026-11-10
-pergub_kalteng_35_2025,Pergub Kalteng 35/2025,https://jdih.kalteng.go.id/storage/app/uploads/public/689/c0c/3fa/689c0c3fa7a0a341137340.pdf,PERLU_DIISI,2025,2026-11-10
-pergub_kalbar_56_2025,Pergub Kalbar 56/2025,https://jdih.kalbarprov.go.id/media/peraturan/2025/2025pergub056.pdf,PERLU_DIISI,2025,2026-11-10
-permendesa_pdt_16_2025,Permendesa PDT 16/2025,https://www.peraturan.go.id/filespengundangan/permendespdt-no-16-tahun-2025.pdf,PERLU_DIISI,TA 2026,2026-11-10
-perbup_sanggau_32_2025,Perbup Sanggau 32/2025,https://jdih.sanggau.go.id/uploads/produkhukum/jdihsgu_perbup_32_2025_06vnb3_20251111.pdf,PERLU_DIISI,TA 2026,2026-11-10
-perwal_kediri_3_2025,Perwal Kediri 3/2025,https://jdih.kedirikota.go.id/produk-hukum/download/1439,PERLU_DIISI,2025,2026-11-10
-nurhidayah_2023,Nurhidayah dkk. 2023,https://doi.org/10.1007/978-3-031-15904-6_8,cc-by,2019,2026-11-10
-mongabay_kalibandung,Mongabay Kalibandung,https://mongabay.co.id/2026/08/31/kebakaran-gambut-kalbar-tak-kunjung-padam/,PERLU_DIISI,2026-08-31,2026-11-10
-mongabay_talio_hulu,Mongabay Talio Hulu,https://mongabay.co.id/2021/10/06/melihat-kesiapan-desa-di-wilayah-gambut-kalimantan-tengah-hadapi-karhutla/,PERLU_DIISI,2021-10-06,2026-11-10
-kompas_sumur_bor_2019,Kompas: Evaluasi Sumur Bor di Kalteng,https://www.kompas.id/artikel/evaluasi-sumur-bor-di-kalteng,PERLU_DIISI,2019-09-06,2026-11-13
-antara_brg_sumur_bor_2016,ANTARA Kalteng: BRG Kalteng Bangun 2.000 Sumur Bor,https://kalteng.antaranews.com/berita/260788/brg-kalteng-bangun-2000-sumur-bor-di-lahan-gambut,PERLU_DIISI,2016-12-24,2026-11-13
+wri_peatlands,GFW Indonesia Peat Lands (WRI),https://data.globalforestwatch.org/datasets/gfw::indonesia-peat-lands/about,Tidak tertulis di metadata layer GFW; tunduk pada Ketentuan WRI Data Platforms (lisensi per dataset),Tidak tertulis di metadata layer,2026-11-13
+pergub_kalteng_35_2025,Pergub Kalteng 35/2025,https://jdih.kalteng.go.id/storage/app/uploads/public/689/c0c/3fa/689c0c3fa7a0a341137340.pdf,Bukan objek hak cipta (UU 28/2014 Pasal 42: peraturan perundang-undangan),2025,2026-11-13
+pergub_kalbar_56_2025,Pergub Kalbar 56/2025,https://jdih.kalbarprov.go.id/media/peraturan/2025/2025pergub056.pdf,Bukan objek hak cipta (UU 28/2014 Pasal 42: peraturan perundang-undangan),2025,2026-11-13
+permendesa_pdt_16_2025,Permendesa PDT 16/2025,https://www.peraturan.go.id/filespengundangan/permendespdt-no-16-tahun-2025.pdf,Bukan objek hak cipta (UU 28/2014 Pasal 42: peraturan perundang-undangan),TA 2026,2026-11-13
+perbup_sanggau_32_2025,Perbup Sanggau 32/2025,https://jdih.sanggau.go.id/uploads/produkhukum/jdihsgu_perbup_32_2025_06vnb3_20251111.pdf,Bukan objek hak cipta (UU 28/2014 Pasal 42: peraturan perundang-undangan),TA 2026,2026-11-13
+perwal_kediri_3_2025,Perwal Kediri 3/2025,https://jdih.kedirikota.go.id/produk-hukum/download/1439,Bukan objek hak cipta (UU 28/2014 Pasal 42: peraturan perundang-undangan),2025,2026-11-13
+nurhidayah_2023,Nurhidayah dkk. 2023,https://doi.org/10.1007/978-3-031-15904-6_8,CC BY 4.0,2019,2026-11-13
+mongabay_kalibandung,Mongabay Kalibandung,https://mongabay.co.id/2026/08/31/kebakaran-gambut-kalbar-tak-kunjung-padam/,Tidak tertulis di mongabay.co.id; artikel Mongabay global berlisensi CC BY-ND 4.0,2026-08-31,2026-11-13
+mongabay_talio_hulu,Mongabay Talio Hulu,https://mongabay.co.id/2021/10/06/melihat-kesiapan-desa-di-wilayah-gambut-kalimantan-tengah-hadapi-karhutla/,Tidak tertulis di mongabay.co.id; artikel Mongabay global berlisensi CC BY-ND 4.0,2021-10-06,2026-11-13
+kompas_sumur_bor_2019,Kompas: Evaluasi Sumur Bor di Kalteng,https://www.kompas.id/artikel/evaluasi-sumur-bor-di-kalteng,"Hak cipta Kompas; hanya angka yang dirujuk, teks tidak disalin",2019-09-06,2026-11-13
+antara_brg_sumur_bor_2016,ANTARA Kalteng: BRG Kalteng Bangun 2.000 Sumur Bor,https://kalteng.antaranews.com/berita/260788/brg-kalteng-bangun-2000-sumur-bor-di-lahan-gambut,"Hak cipta ANTARA; hanya angka yang dirujuk, teks tidak disalin",2016-12-24,2026-11-13
