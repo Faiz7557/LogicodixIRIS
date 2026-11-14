@@ -29,7 +29,7 @@ pipeline/*.py          komputasi offline: FIRMS, wilayah, paparan, backtest
 db/schema.sql          otoritas skema SQLite/libSQL
 data/manual/*.csv      katalog, paket minimum, harga acuan, sumber, catatan data
 data/dev.db            data uji lokal (dibuat scripts/dev-db.ts, diabaikan git)
-data/siapkemarau.db    target keluaran pipeline (belum dihasilkan)
+data/siapkemarau.db    DB nyata keluaran pipeline (ikut git)
 
 frontend/src/app/**    halaman Next.js App Router dan route handler tipis
 frontend/src/server/   logika bisnis, auth, audit, query berparameter
@@ -189,8 +189,10 @@ Selama `data/siapkemarau.db` belum dihasilkan, aplikasi lokal memakai `data/dev.
 
 ### Membagikan data pipeline
 
-Seluruh data mentah dan DB hasil pipeline diabaikan git. Untuk membagikannya tanpa
-mengunduh ulang:
+`data/siapkemarau.db` (DB nyata hasil pipeline) ikut git, jadi clone baru langsung bisa
+memakainya. DB ini tidak berisi akun maupun data isian; pengguna membuat akun sendiri
+lewat halaman daftar untuk desa yang terdaftar. Data mentah `data/raw/` tetap diabaikan git.
+Untuk membagikan data mentah tanpa mengunduh ulang:
 
 ```bash
 make bundle        # menulis ../siapkemarau-data.zip (DB + data/raw, ±220 MB)
@@ -205,7 +207,7 @@ Penerima menjalankan, dari akar clone baru:
 ```bash
 unzip siapkemarau-data.zip -d .
 # frontend/.env: DATABASE_URL=file:../data/siapkemarau.db
-cd frontend && npx tsx scripts/seed-accounts.ts   # reset akun demo ke DEMO_PASSWORD sendiri
+cd frontend && npx tsx scripts/seed-accounts.ts   # opsional: buat akun demo dengan DEMO_PASSWORD sendiri
 ```
 
 `make bundle` menolak jalan bila `data/siapkemarau.db` belum ada. Paket ini tidak memuat
