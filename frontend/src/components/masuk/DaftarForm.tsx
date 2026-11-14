@@ -129,7 +129,7 @@ function CariDesa({ onPilih, memuat }: { onPilih: (d: DesaHit) => void; memuat: 
       <label htmlFor="cari-desa" className="font-bold">
         Nama desa
       </label>
-      <p className="text-sm text-muted">Ketik nama desa, kecamatan, atau kabupaten. Hanya desa yang terdaftar di SiapKemarau yang bisa dipilih.</p>
+      <p className="text-sm text-muted">Ketik nama desa, kecamatan, atau kabupaten. Hanya desa yang terdaftar di TetesPas yang bisa dipilih.</p>
       <input
         ref={ref}
         id="cari-desa"

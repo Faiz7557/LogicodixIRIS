@@ -61,7 +61,7 @@ export default async function BerandaPage() {
           ) : null}
 
           <p className="mx-auto mt-4 max-w-[56ch] text-muted">
-            SiapKemarau membantu desa rawan karhutla di Kalimantan Barat dan Kalimantan Tengah melihat riwayat paparan dari deteksi satelit, mencatat alat yang benar-benar berfungsi, dan
+            TetesPas membantu desa rawan karhutla di Kalimantan Barat dan Kalimantan Tengah melihat riwayat paparan dari deteksi satelit, mencatat alat yang benar-benar berfungsi, dan
             mengurutkan belanja kesiapan di bawah pagu kecil.
           </p>
 
@@ -96,7 +96,7 @@ export default async function BerandaPage() {
               bukan gambaran semua desa.
             </p>
             <p data-muncul style={{ ["--tunda" as string]: "260ms" }} className="mt-3 text-muted">
-              SiapKemarau tidak memadamkan api. Alat ini membantu desa menyusun prioritas belanja dari data publik, dengan sumber yang ditulis terbuka.
+              TetesPas tidak memadamkan api. Alat ini membantu desa menyusun prioritas belanja dari data publik, dengan sumber yang ditulis terbuka.
             </p>
             <a
               data-muncul
