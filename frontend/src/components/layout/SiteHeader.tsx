@@ -92,7 +92,7 @@ function Logo() {
           <path d="M12 2.5c3.2 4 6 7.1 6 10.7a6 6 0 0 1-12 0C6 9.6 8.8 6.500 12 2.500z" />
         </svg>
       </span>
-      TetesPas
+      Sigap Desa
     </Link>
   );
 }

@@ -19,8 +19,8 @@ const sourceSerif = Source_Serif_4({
 
 export const metadata: Metadata = {
   title: {
-    default: "TetesPas",
-    template: "%s · TetesPas",
+    default: "Sigap Desa",
+    template: "%s · Sigap Desa",
   },
   description:
     "Kesiapan desa rawan karhutla: paparan dari deteksi satelit, kondisi alat padam, dan prioritas pendanaan sebelum musim kering.",

@@ -5,11 +5,11 @@ import { useEffect, useState } from "react";
 /*
  * Intro pembuka beranda, tampil setiap kali beranda dibuka (termasuk saat kembali dari halaman lain).
  * Urutan (CSS murni, lihat `.intro` di globals.css): tetes air jatuh, memercik menjadi ubin logo
- * dengan riak air, nama "TetesPas" terbuka di sampingnya, lalu layar terangkat seperti tirai.
+ * dengan riak air, nama "Sigap Desa" terbuka di sampingnya, lalu layar terangkat seperti tirai.
  * Dirender di server supaya menutup layar sejak cat pertama; dilepas dari DOM setelah tirai selesai.
  * Klik atau tombol apa pun mempercepat keluar. Tanpa JS tetap selesai sendiri; gerak dikurangi: tidak tampil.
  */
-const NAMA = "TetesPas";
+const NAMA = "Sigap Desa";
 
 export function IntroLogo() {
   const [tampil, setTampil] = useState(true);
@@ -54,7 +54,7 @@ export function IntroLogo() {
           <span className="intro-kata-dalam">
             {NAMA.split("").map((h, i) => (
               <span key={i} style={{ ["--i" as string]: i }}>
-                {h}
+                {h === " " ? " " : h}
               </span>
             ))}
           </span>

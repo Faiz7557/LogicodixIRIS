@@ -9,7 +9,7 @@ export type Tingkat = "info" | "peringatan" | "batasan";
 
 export const KEPALA = {
   kicker: "Sumber dan batasan · berlaku untuk semua desa",
-  judul: "Dari mana angka TetesPas berasal?",
+  judul: "Dari mana angka Sigap Desa berasal?",
   ringkas: "Semua yang dipakai produk ini, asalnya, dan batasnya. Isi halaman ini sama untuk setiap desa.",
 } as const;
 
