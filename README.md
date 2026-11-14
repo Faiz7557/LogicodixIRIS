@@ -1,8 +1,8 @@
-# SiapKemarau
+# TetesPas
 
 > *Enam tahun tanpa api bukan berarti aman.*
 
-SiapKemarau membantu desa rawan karhutla mengetahui seberapa terpapar mereka di tahun kering ekstrem, alat padam apa yang benar-benar berfungsi, dan apa yang harus didanai lebih dulu, sebelum musim kering tiba.
+TetesPas membantu desa rawan karhutla mengetahui seberapa terpapar mereka di tahun kering ekstrem, alat padam apa yang benar-benar berfungsi, dan apa yang harus didanai lebih dulu, sebelum musim kering tiba.
 
 Berbasis data publik dan belum diuji pengguna.
 
