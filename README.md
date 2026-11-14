@@ -116,11 +116,15 @@ Buka <http://localhost:3000>, pilih **Masuk**, dan gunakan `demo-mpa` (ketua MPA
 
 ### Memakai data desa nyata
 
-`data/dev.db` hanya berisi data uji dan tidak boleh tampil sebagai hasil. Angka desa nyata ada di `data/siapkemarau.db`, yang dihasilkan pipeline atau dibagikan anggota tim (lihat [Menerima data dari anggota tim](#menerima-data-dari-anggota-tim)). Setelah berkas itu ada:
+`data/dev.db` hanya berisi data uji dan tidak boleh tampil sebagai hasil. Angka desa nyata ada di **`data/siapkemarau.db`**, yaitu DB hasil pipeline (13 November 2026, ±18 MB) yang **ikut git**, jadi sudah tersedia begitu repo di-clone tanpa perlu menjalankan pipeline.
+
+DB ini tidak berisi akun, sesi, catatan rate limit, maupun isian desa (`inventaris_item`, `target_desa`, `harga_desa`, `rencana`, `keputusan`, `usulan`, `audit_log`). Untuk memakainya:
 
 1. Ubah `DATABASE_URL` di `frontend/.env` menjadi `file:../data/siapkemarau.db`.
-2. Jalankan seed lagi supaya akun demo memakai password milikmu.
-3. Jalankan ulang `npm run dev`.
+2. Jalankan ulang `npm run dev`.
+3. Buat akun lewat halaman **Daftar** untuk desa yang terdaftar. Bisa juga, opsional, menjalankan seed untuk membuat akun demo dengan `DEMO_PASSWORD` milikmu.
+
+Akun dan isian yang dibuat saat mencoba aplikasi ikut tersimpan di berkas ini, sehingga `git status` akan menandai `data/siapkemarau.db` berubah. **Jangan commit perubahan itu.** Kembalikan ke versi repo dengan `git restore data/siapkemarau.db` (hentikan `npm run dev` dulu, karena di Windows berkas yang sedang dibuka server tidak bisa ditimpa).
 
 Untuk membuat banyak akun desa sekaligus (bukan akun demo), dari `frontend/`:
 
@@ -135,7 +139,8 @@ Nama penggunanya `mpa-<namadesa>` dan `sekdes-<namadesa>`, misalnya `sekdes-kali
 | Gejala | Penyebab dan solusi |
 |---|---|
 | `DEMO_PASSWORD kosong` saat seed | Isi `DEMO_PASSWORD` di `frontend/.env` |
-| Halaman menampilkan galat 503 | Tabel pipeline belum ada di DB yang ditunjuk `DATABASE_URL`. Buat `data/dev.db` atau pakai `data/siapkemarau.db` |
+| Halaman menampilkan galat 503 | Tabel pipeline belum ada di DB yang ditunjuk `DATABASE_URL`. Buat `data/dev.db` atau pakai `data/siapkemarau.db` yang ikut repo |
+| `git pull` atau `git restore` gagal dengan "unable to unlink" pada `data/siapkemarau.db` | Server dev masih membuka berkas DB. Hentikan `npm run dev`, lalu ulangi |
 | Grafik per bulan dan kalender satelit tidak tampil | DB lama belum punya tabel `desa_bulan`. Jalankan `uv run python pipeline/tambah_desa_bulan.py` (tidak menghapus akun dan isian desa) |
 | Tampilan 3D kosong | Peramban tidak mendukung WebGL. Bagian lain tetap berjalan |
 | "Baca dengan AI" memakai parser biasa | Tidak ada kunci AI di `frontend/.env`. Ini perilaku yang disengaja; lihat [Penggunaan AI di aplikasi](#penggunaan-ai-di-aplikasi) |
@@ -316,11 +321,11 @@ Padanannya dengan Make: `make pipeline-inputs`, `make pipeline-fetch`, `make pip
 | `pipeline/run_all.py` | Jalankan seluruh pipeline dan tulis angka kontrol |
 | `pipeline/tambah_desa_bulan.py` | Tambahkan tabel `desa_bulan` ke DB yang sudah ada tanpa membangun ulang |
 
-`data/raw/` diabaikan git, jadi unduh ulang setelah clone baru. **`run_all.py` menghapus dan membuat ulang DB**, sehingga akun, inventaris, dan usulan ikut hilang. Untuk DB yang sudah dipakai, gunakan `tambah_desa_bulan.py`.
+`data/raw/` diabaikan git, jadi unduh ulang bila ingin menjalankan pipeline sendiri. DB hasilnya, `data/siapkemarau.db`, sudah ikut repo. **`run_all.py` menghapus dan membuat ulang DB**, sehingga akun, inventaris, dan usulan ikut hilang. Untuk DB yang sudah dipakai, gunakan `tambah_desa_bulan.py`.
 
 ### Menerima data dari anggota tim
 
-Aplikasi hanya membaca `DATABASE_URL`, jadi hasil akhirnya harus berada di **`data/siapkemarau.db`**. Simpan zip di luar repo, lalu ambil DB-nya saja:
+Clone baru sudah membawa `data/siapkemarau.db`, jadi langkah ini hanya perlu bila anggota tim mengirim DB yang lebih baru di luar git. Aplikasi hanya membaca `DATABASE_URL`, jadi hasil akhirnya harus berada di **`data/siapkemarau.db`**. Simpan zip di luar repo, lalu ambil DB-nya saja:
 
 ```bash
 unzip -j ../siapkemarau.db-nyata-*.zip siapkemarau.db -d data/   # zip dari anggota tim, isinya datar
@@ -328,15 +333,27 @@ unzip ../siapkemarau-data.zip -d .                              # zip dari make 
 ls -lh data/siapkemarau.db                                      # ±18 MB, ada tabel desa_bulan
 ```
 
-Jangan menjalankan `make pipeline-run` sesudahnya, karena perintah itu menimpa DB beserta akun dan isian desa.
+Jangan menjalankan `make pipeline-run` sesudahnya, karena perintah itu menimpa DB beserta akun dan isian desa. Bila DB baru itu memang mau dibagikan lewat git, pastikan dulu tidak ada akun maupun isian desa di dalamnya sebelum di-commit.
 
 ### Membagikan data pipeline
+
+DB hasil pipeline dibagikan lewat git. Data mentah `data/raw/` tetap diabaikan git karena besar; untuk membagikannya tanpa mengunduh ulang:
 
 ```bash
 make bundle        # tulis ../siapkemarau-data.zip (data/siapkemarau.db + data/raw + data/dev.db bila ada, ±220 MB)
 ```
 
-Berkas `.env`, `.venv/`, `node_modules/`, dan `.next/` tidak ikut. Penerima mengekstrak zip di akar clone, mengatur `DATABASE_URL`, lalu menjalankan seed untuk mengatur password akun demo sendiri.
+Berkas `.env`, `.venv/`, `node_modules/`, dan `.next/` tidak ikut. Penerima mengekstrak zip di akar clone, mengatur `DATABASE_URL`, lalu (opsional) menjalankan seed untuk membuat akun demo dengan `DEMO_PASSWORD` sendiri.
+
+Yang ikut dan tidak ikut git di folder `data/`:
+
+| Berkas | Git |
+|---|---|
+| `data/siapkemarau.db` (DB nyata hasil pipeline, tanpa akun dan isian desa) | ikut |
+| `data/manual/*.csv` | ikut |
+| `data/dev.db` (data uji) | diabaikan |
+| `data/siapkemarau.db-*`, `-journal`, cadangan, dan sejenisnya | diabaikan |
+| `data/raw/`, `data/*.zip`, `data/siapkemarau-data/` | diabaikan |
 
 ## Basis data
 
@@ -347,8 +364,8 @@ Skema lengkap ada di `db/schema.sql`, yang menjadi acuan untuk pipeline (`export
 | Acuan | `meta`, `sumber_data`, `dq_issue`, `katalog_item`, `paket_minimum`, `referensi_pergub`, `harga_item` | Pipeline, dari `data/manual/*.csv` |
 | Wilayah dan satelit | `desa`, `desa_gambut`, `deteksi_ringkas`, `desa_tahun`, `desa_bulan`, `desa_paparan`, `kecamatan_paparan` | Pipeline |
 | Uji mundur | `backtest_metric`, `backtest_grup` | Pipeline |
-| Akun | `akun`, `sesi`, `rate_limit` | Aplikasi |
-| Isian desa | `inventaris_item`, `target_desa`, `harga_desa`, `rencana`, `keputusan`, `usulan` | Aplikasi |
+| Akun | `akun`, `sesi`, `rate_limit` | Aplikasi (kosong di DB yang ikut repo) |
+| Isian desa | `inventaris_item`, `target_desa`, `harga_desa`, `rencana`, `keputusan`, `usulan` | Aplikasi (kosong di DB yang ikut repo) |
 | Jejak | `audit_log` | Aplikasi |
 
 `data/manual/*.csv` ikut git dan berisi katalog alat, paket minimum, harga acuan beserta sumbernya, daftar sumber data, dan catatan kualitas data.
@@ -384,7 +401,8 @@ Bila menambah dependency, jalankan `npm install <paket>` dari `frontend/`, lalu 
 | `db/schema.sql` | DDL lengkap |
 | `pipeline/` | Komputasi offline dan tes pytest |
 | `data/manual/` | CSV acuan yang ikut repo |
-| `data/` (lainnya) | `dev.db`, `siapkemarau.db`, `raw/`; semuanya diabaikan git |
+| `data/siapkemarau.db` | DB nyata hasil pipeline, ikut git (tanpa akun dan isian desa) |
+| `data/` (lainnya) | `dev.db`, `raw/`, cadangan DB, dan zip; semuanya diabaikan git |
 | `docs/v2/` | PRD, TRD, App Flow, Design Brief, skema, rencana implementasi, audit |
 | `docs/FRONTEND.md` | Panduan UI/UX dan keadaan layar |
 | `reports/`, `research_notes/`, `papers/` | Riset pemilihan masalah, literatur, dan regulasi |

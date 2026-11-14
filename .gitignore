@@ -10,9 +10,12 @@
 
 # data mentah pipeline (README menjelaskan cara mengunduhnya)
 /data/raw/
-# basis data lokal (data uji dan keluaran pipeline). Dibagikan lewat make bundle, bukan git.
+# basis data lokal. data/siapkemarau.db (DB nyata hasil pipeline) ikut git;
+# data uji, cadangan, journal, dan paket zip tidak.
 /data/dev.db*
-/data/siapkemarau.db*
+/data/siapkemarau.db?*
+/data/*.zip
+/data/siapkemarau-data/
 # jaring aman: zip kiriman anggota tim isinya datar, jadi ekstrak yang salah tempat
 # meninggalkan DB/folder di akar repo. Lokasi standarnya tetap data/siapkemarau.db.
 /siapkemarau.db*
