@@ -39,6 +39,11 @@ export function computeReadiness(catalog: CatalogItem[], targets: TargetRow[], i
     });
   }
 
+  return hasilDariItems(items, catalog);
+}
+
+/** Skor, status, dan rantai terlemah dari daftar item yang sudah dihitung cakupannya. */
+export function hasilDariItems(items: ReadinessItem[], catalog: CatalogItem[]): ReadinessResult {
   const skor = round1(skorDari(items, catalog));
   const kritis = items.filter((i) => i.kritis);
   let status: Status = "sebagian";

@@ -268,7 +268,7 @@ function KartuItem({
       </legend>
       <div className="clear-both" />
       {targetItem !== undefined ? (
-        <p className="mb-3 text-sm text-muted">Paket minimum: {formatAngka(targetItem)} {item.satuan} (asumsi tim)</p>
+        <p className="mb-3 text-sm text-muted">Paket minimum: {formatAngka(targetItem)} {item.satuan}</p>
       ) : null}
 
       {item.punyaRusak ? (

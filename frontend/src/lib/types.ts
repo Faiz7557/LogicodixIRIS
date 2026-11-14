@@ -1,5 +1,5 @@
 /*
- * Kontrak data frontend <-> backend (SiapKemarau v2).
+ * Kontrak data frontend <-> backend (TetesPas v2).
  * Sumber: docs/v2/02_TRD.md §6 dan §8, docs/v2/05_BACKEND_SCHEMA.md §3.
  * Frontend hanya MENGONSUMSI tipe ini. Ubah hanya setelah disepakati dengan pemilik mesin/API.
  * Bagian bertanda USULAN KONTRAK belum ada di dokumen dan harus dikonfirmasi.
@@ -16,7 +16,7 @@ export type Kanal = "apbdes_perubahan" | "bpbd" | "daops" | "csr";
 export type SumberTeks = "ai" | "template";
 
 /** Halaman yang punya tombol "Ringkasan AI" (plan 09 Bagian C). */
-export type HalamanRingkasan = "paparan" | "kesiapan" | "prioritas" | "timemachine";
+export type HalamanRingkasan = "paparan" | "kesiapan" | "prioritas" | "anggaran" | "usulan";
 /** Balasan `POST /api/ringkasan`: satu kalimat inti dan tepat tiga butir. */
 export interface Ringkasan {
   judul: string;
@@ -122,7 +122,28 @@ export interface KeputusanRow {
   keputusan: Keputusan;
   catatan?: string | null;
 }
-export type PrioritasPayload = PriorityResult & { keputusan: KeputusanRow[] };
+/**
+ * Baris belanja yang sudah masuk surat usulan (dibekukan saat surat dibuat). Terkunci: tidak bisa dipindah,
+ * dianggap data riwayat. Mengurangi anggaran dan dihitung sebagai alat yang sudah ada saat menyusun saran baru.
+ */
+export interface BarisTerkunci {
+  itemKode: string;
+  aksi: Aksi;
+  qty: number;
+  biayaRp: number;
+  usulanId: number;
+  tanggal: string;
+  /** Sumber harga saat surat dibuat (dibekukan). */
+  sumberHarga?: string;
+}
+
+export type PrioritasPayload = PriorityResult & {
+  keputusan: KeputusanRow[];
+  /** Baris dari surat usulan yang sudah dibuat. */
+  terkunci: BarisTerkunci[];
+  /** Total biaya baris terkunci; anggaran untuk saran baru = paguRp - terkunciRp. */
+  terkunciRp: number;
+};
 
 // ---------- Wilayah dan paparan (Schema §3) ----------
 export interface DesaHit {

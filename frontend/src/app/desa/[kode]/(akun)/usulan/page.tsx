@@ -54,11 +54,13 @@ async function Isi({ params }: { params: Promise<{ kode: string }> }) {
   const tahunSekarang = new Date().getFullYear();
   const disetujui = barisDisetujui(prioritas.terpilih, keputusan);
   const ringkas = ringkasKeputusan(prioritas.terpilih, keputusan);
+  // Sisa asli: anggaran dikurangi surat usulan yang sudah dibuat (sama dengan layar Pagu dan Keputusan).
+  const paguBebas = Math.max(0, prioritas.paguRp - prioritas.terkunciRp);
   const ringkasLangkah: [string, string, string] = [
     disetujui.length > 0
-      ? `Anggaran ${formatRupiah(prioritas.paguRp)}, sisa sementara ${formatRupiah(anggaranSementara(prioritas.paguRp, disetujui).sisaRp)}`
-      : `Anggaran ${formatRupiah(prioritas.paguRp)}`,
-    prioritas.terpilih.length > 0 ? `${prioritas.terpilih.length} saran, ${ringkas.belum} belum diputuskan` : "Belum ada saran untuk anggaran ini",
+      ? `Sisa ${formatRupiah(paguBebas)}, simulasi ${formatRupiah(anggaranSementara(paguBebas, disetujui).sisaRp)}`
+      : `Sisa ${formatRupiah(paguBebas)}`,
+    prioritas.terpilih.length > 0 ? `${prioritas.terpilih.length} saran, ${ringkas.belum + ringkas.tunda} belum diputuskan` : "Belum ada saran untuk anggaran ini",
     disetujui.length > 0 ? `${disetujui.length} disetujui, ${formatRupiah(totalBiaya(disetujui))}` : "Setujui minimal satu saran",
   ];
   return (

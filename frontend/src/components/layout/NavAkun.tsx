@@ -38,7 +38,6 @@ const kelompok: Kelompok[] = [
     tanya: "Bisa dipercaya?",
     items: [
       { href: (k) => `/desa/${k}`, label: "Informasi detail", peran: ["mpa", "desa"], icon: <IconSatelit />, aktifSampai: "persis" },
-      { href: () => "/time-machine", label: "Time Machine", peran: ["mpa", "desa"], icon: <IconWaktu /> },
       { href: () => "/data", label: "Sumber dan batasan", peran: ["mpa", "desa"], icon: <IconData /> },
     ],
   },
@@ -291,14 +290,6 @@ function IconSatelit() {
     <svg {...ikon}>
       <circle cx="12" cy="12" r="3" />
       <path d="M12 3v3M12 18v3M3 12h3M18 12h3" />
-    </svg>
-  );
-}
-function IconWaktu() {
-  return (
-    <svg {...ikon}>
-      <circle cx="12" cy="12" r="8" />
-      <path d="M12 7v5l3 2" />
     </svg>
   );
 }

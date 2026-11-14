@@ -3,7 +3,7 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { formatAngka, formatRupiah, formatSkor } from "@/lib/format";
 import { keyBaris, namaAksi, type KeputusanMap } from "@/lib/prioritas";
-import type { Aksi, Keputusan, PriorityRow } from "@/lib/types";
+import type { Aksi, PriorityRow } from "@/lib/types";
 
 /*
  * Grafik dasbor Prioritas. Aturan (skill dataviz):
@@ -347,7 +347,9 @@ export function BatangPagu({
       {terpilih.length > 0 ? (
         <ol className="mt-3 divide-y divide-line overflow-hidden rounded-card border border-line">
           {terpilih.map((b, i) => {
-            const k = keputusan?.[keyBaris(b)]?.keputusan ?? "belum";
+            // Ditunda sama dengan belum diputuskan (kolom Ditunda sudah dihapus dari papan).
+            const asli = keputusan?.[keyBaris(b)]?.keputusan;
+            const k: StatusKeputusan = asli === "setuju" || asli === "tolak" ? asli : "belum";
             const st = STATUS.find((x) => x.kunci === k)!;
             return (
               <li
@@ -512,14 +514,15 @@ export function CakupanSesudah({ baris, labelSesudah = "Setelah belanja" }: { ba
 /* Ringkasan keputusan desa                                                                         */
 /* ---------------------------------------------------------------------------------------------- */
 
-const STATUS: { kunci: Keputusan | "belum"; label: string; warna: string; ikon: React.ReactNode }[] = [
+type StatusKeputusan = "setuju" | "tolak" | "belum";
+
+const STATUS: { kunci: StatusKeputusan; label: string; warna: string; ikon: React.ReactNode }[] = [
   { kunci: "setuju", label: "Disetujui", warna: "var(--ok)", ikon: <path d="M5 12l5 5 9-10" /> },
-  { kunci: "tunda", label: "Ditunda", warna: "var(--warn)", ikon: <path d="M12 7v5l3 2M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z" /> },
   { kunci: "tolak", label: "Ditolak", warna: "var(--danger)", ikon: <path d="M6 6l12 12M18 6L6 18" /> },
-  { kunci: "belum", label: "Belum diputus", warna: "var(--line-2)", ikon: <path d="M12 8v5M12 16h.01" /> },
+  { kunci: "belum", label: "Perlu diputuskan", warna: "var(--line-2)", ikon: <path d="M12 8v5M12 16h.01" /> },
 ];
 
-export function RingkasKeputusan({ jumlah }: { jumlah: Record<Keputusan | "belum", number> }) {
+export function RingkasKeputusan({ jumlah }: { jumlah: Record<StatusKeputusan, number> }) {
   const total = Object.values(jumlah).reduce((a, b) => a + b, 0);
   const isi = useMemo(() => STATUS.filter((s) => jumlah[s.kunci] > 0), [jumlah]);
   return (
@@ -533,7 +536,7 @@ export function RingkasKeputusan({ jumlah }: { jumlah: Record<Keputusan | "belum
           <div key={s.kunci} style={{ width: `${(jumlah[s.kunci] / Math.max(total, 1)) * 100}%`, background: s.warna }} />
         ))}
       </div>
-      <ul className="mt-3 grid grid-cols-2 gap-2">
+      <ul className="mt-3 grid grid-cols-3 gap-2">
         {STATUS.map((s) => (
           <li key={s.kunci} className="flex items-center gap-2 rounded-xl bg-surface-2 px-3 py-2">
             <span aria-hidden="true" className="flex size-7 shrink-0 items-center justify-center rounded-full" style={{ background: s.warna }}>

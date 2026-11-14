@@ -1,8 +1,8 @@
-# SiapKemarau
+# TetesPas
 
 > *Enam tahun tanpa api bukan berarti aman.*
 
-SiapKemarau membantu desa rawan karhutla mengetahui seberapa terpapar mereka di tahun kering ekstrem, alat padam apa yang benar-benar berfungsi, dan apa yang harus didanai lebih dulu, sebelum musim kering tiba.
+TetesPas membantu desa rawan karhutla mengetahui seberapa terpapar mereka di tahun kering ekstrem, alat padam apa yang benar-benar berfungsi, dan apa yang harus didanai lebih dulu, sebelum musim kering tiba.
 
 Berbasis data publik dan belum diuji pengguna.
 
@@ -186,6 +186,33 @@ Modul yang ada:
 | `pipeline/run_all.py` | Jalankan seluruh pipeline dan tulis angka kontrol |
 
 Selama `data/siapkemarau.db` belum dihasilkan, aplikasi lokal memakai `data/dev.db` berisi data uji. `scripts/dev-db.ts` membaca `db/schema.sql` dan `data/manual/*.csv`, bukan menyalin angka dari dokumen.
+
+### Menerima data dari anggota tim
+
+Aplikasi hanya membaca satu jalur: `DATABASE_URL` di `frontend/.env`, bawaannya
+`file:../data/siapkemarau.db`. Jadi apa pun nama berkas yang dikirim, hasil akhirnya
+harus **`data/siapkemarau.db`**. Nama folder atau tanggal pada zip kiriman tidak dipakai kode.
+
+| Isi | Lokasi standar | Git |
+|---|---|---|
+| DB yang dibaca aplikasi | `data/siapkemarau.db` | diabaikan |
+| DB data uji | `data/dev.db` | diabaikan |
+| Data mentah pipeline | `data/raw/` | diabaikan |
+| CSV manual (katalog, harga, paket) | `data/manual/` | ikut git |
+| Zip kiriman anggota tim | di **luar** repo (`../`), seperti `make bundle` | tidak perlu diabaikan |
+
+Simpan zip di luar repo, lalu ambil hanya DB-nya:
+
+```bash
+unzip -j ../siapkemarau.db-nyata-*.zip siapkemarau.db -d data/   # zip dari anggota tim, isinya datar
+unzip ../siapkemarau-data.zip -d .                              # zip dari make bundle, sudah berawalan data/
+ls -lh data/siapkemarau.db                                      # ±18 MB, ada tabel desa_bulan
+cd frontend && npm run dev
+```
+
+`-j` membuang struktur folder di dalam zip, jadi tidak ada folder bertanggal di akar repo
+dan `BACA-DULU.txt` tidak ikut tersalin. Jangan menjalankan `make pipeline-run` sesudahnya:
+perintah itu menimpa `data/siapkemarau.db` dan menghapus akun serta isian desa.
 
 ### Membagikan data pipeline
 

@@ -1,5 +1,5 @@
 /*
- * Teks halaman Data dan Asumsi yang tidak disimpan di basis data: pengantar, keterangan bagian,
+ * Teks halaman Sumber dan Batasan Data yang tidak disimpan di basis data: pengantar, keterangan bagian,
  * catatan batas, gerbang, dan penggunaan AI. Daftar sumber, sensor, batasan, paket, harga, dan
  * parameter dibaca dari GET /api/data (tabel sumber_data, deteksi_ringkas, dq_issue, paket_minimum,
  * harga_item, meta). Sumber dokumen: PRD §6-8, TRD §4-5, Schema §6.
@@ -9,13 +9,8 @@ export type Tingkat = "info" | "peringatan" | "batasan";
 
 export const KEPALA = {
   kicker: "Sumber dan batasan · berlaku untuk semua desa",
-  judul: "Dari mana angka SiapKemarau berasal?",
+  judul: "Dari mana angka TetesPas berasal?",
   ringkas: "Semua yang dipakai produk ini, asalnya, dan batasnya. Isi halaman ini sama untuk setiap desa.",
-} as const;
-
-export const STATUS = {
-  judul: "Status produk",
-  isi: "Peran pengguna dan kebutuhannya berasal dari sumber sekunder. Produk belum diuji dengan sekdes atau ketua MPA. Isian demo adalah data uji.",
 } as const;
 
 /** Keterangan kotak ringkasan. Angka dan rentang tahun dihitung dari data. */
@@ -32,8 +27,8 @@ export const KETERANGAN = {
     "Satu sensor agar jumlah deteksi konsisten: VIIRS S-NPP, hanya titik dengan confidence nominal atau high. Data dibagi menurut sumber SP (arsip standar) dan NRT (hampir waktu nyata).",
   sensorCatatan: "Jumlah deteksi per tahun, tanggal terakhir data 2026, dan celah SP–NRT ditulis di sini setelah pipeline selesai.",
   batasan: "Hal yang tidak bisa disimpulkan dari data ini.",
-  paket: "Asumsi tim, bukan standar yang mengikat desa. Desa boleh mengubahnya dengan alasan.",
-  parameter: "Angka yang mengatur perhitungan. Label menunjukkan mana yang asumsi tim dan mana yang hasil.",
+  paket: "Jumlah minimum alat per desa beserta dasarnya. Desa boleh mengubahnya dengan alasan.",
+  parameter: "Angka yang mengatur perhitungan beserta jenisnya.",
   gerbang: "Dua uji yang ditetapkan sebelum data 2026 dibuka. Hasilnya menentukan klaim apa yang boleh dipakai, dan dilaporkan apa adanya.",
   ai: "AI hanya membantu menulis kalimat; angka dan nama selalu dari sistem.",
 } as const;

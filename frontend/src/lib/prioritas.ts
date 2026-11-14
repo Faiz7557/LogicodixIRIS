@@ -2,9 +2,9 @@
  * Logika tampilan layar Prioritas (App Flow v2 §3.8). Fungsi murni.
  * Urutan dan skor datang dari mesin backend; di sini hanya pagu, keadaan, kalimat, dan keputusan.
  */
-import { round1, skorDari } from "./engine/readiness";
+import { hasilDariItems, round1, skorDari } from "./engine/readiness";
 import { formatRupiah, formatSkor } from "./format";
-import type { Aksi, CatalogItem, Keputusan, PriceRow, PriorityResult, PriorityRow, ReadinessResult } from "./types";
+import type { Aksi, BarisTerkunci, CatalogItem, Keputusan, PriceRow, PrioritasPayload, PriorityResult, PriorityRow, ReadinessResult } from "./types";
 
 export const PAGU_DEFAULT = 15_000_000;
 export const PAGU_MAKS = 1_000_000_000;
@@ -31,11 +31,13 @@ export function itemTermurah(harga: PriceRow[], catalog: CatalogItem[]): { nama:
   return { nama, hargaRp: termurah.hargaRp, aksi: termurah.aksi };
 }
 
-export type KeadaanPagu = "tanpaHarga" | "nol" | "kurang" | "ok";
+export type KeadaanPagu = "tanpaHarga" | "nol" | "terpenuhi" | "kurang" | "ok";
 
 export function keadaanPagu(paguRp: number, hasil: PriorityResult, harga: PriceRow[]): KeadaanPagu {
   if (harga.length === 0) return "tanpaHarga";
   if (paguRp <= 0) return "nol";
+  // Tidak ada yang perlu dibeli atau diperbaiki lagi (mis. sudah tercakup surat usulan): bukan "kurang".
+  if (hasil.terpilih.length === 0 && hasil.tidakTerdanai.length === 0 && hasil.tanpaHarga.length === 0) return "terpenuhi";
   if (hasil.terpilih.length === 0) return "kurang";
   return "ok";
 }
@@ -47,6 +49,8 @@ export function kalimatPrioritas(paguRp: number, skorSekarang: number, hasil: Pr
       return "Belum ada harga. Isi harga dari penawaran setempat.";
     case "nol":
       return "Isi anggaran untuk melihat urutan belanja.";
+    case "terpenuhi":
+      return "Semua kebutuhan paket minimum sudah terpenuhi, termasuk yang sudah dibuat surat usulan.";
     case "kurang": {
       const t = itemTermurah(harga, catalog);
       return t
@@ -76,7 +80,7 @@ export function ringkasKeputusan(terpilih: PriorityRow[], keputusan: KeputusanMa
   return { setuju, tolak, tunda, belum: terpilih.length - setuju - tolak - tunda };
 }
 
-export function totalBiaya(baris: PriorityRow[]): number {
+export function totalBiaya(baris: Pick<PriorityRow, "biayaRp">[]): number {
   return baris.reduce((s, r) => s + r.biayaRp, 0);
 }
 
@@ -100,4 +104,91 @@ export function skorSetelahDisetujui(readiness: ReadinessResult, catalog: Catalo
   return round1(skorDari(sesudah, catalog));
 }
 
+/**
+ * Kesiapan dengan baris terkunci (sudah masuk surat usulan) dianggap sudah dibeli atau diperbaiki.
+ * Dipakai untuk skor "asli" di layar Prioritas dan sebagai titik awal saran baru, supaya sistem tidak
+ * menyarankan ulang alat yang sudah diusulkan. Kesiapan fisik di layar Kesiapan tidak ikut berubah.
+ */
+export function tambahTerkunci(readiness: ReadinessResult, terkunci: BarisTerkunci[], catalog: CatalogItem[]): ReadinessResult {
+  if (terkunci.length === 0) return readiness;
+  const beli = new Map<string, number>();
+  const perbaiki = new Map<string, number>();
+  for (const t of terkunci) {
+    const peta = t.aksi === "perbaiki" ? perbaiki : beli;
+    peta.set(t.itemKode, (peta.get(t.itemKode) ?? 0) + t.qty);
+  }
+  const items = readiness.items.map((i) => {
+    const pulih = Math.min(perbaiki.get(i.itemKode) ?? 0, i.rusak);
+    const berfungsi = i.berfungsi + (beli.get(i.itemKode) ?? 0) + pulih;
+    return { ...i, berfungsi, rusak: i.rusak - pulih, coverage: i.target > 0 ? Math.min(berfungsi / i.target, 1) : i.coverage };
+  });
+  return { ...hasilDariItems(items, catalog), lengkap: readiness.lengkap };
+}
+
 export const ALASAN_MIN = 5;
+
+export type RingkasAnggaran = {
+  /** Biaya semua kebutuhan yang punya harga; dasar kurva "skor menurut besar anggaran". */
+  kebutuhan: number;
+  kekurangan: number;
+  /** Biaya baris yang sudah masuk surat usulan; sudah tidak bisa dipakai saran baru. */
+  terkunciRp: number;
+  jumlahTerkunci: number;
+  /** Belanja yang disetujui di halaman Keputusan (masih simulasi, belum jadi surat). */
+  disetujuiRp: number;
+  jumlahDisetujui: number;
+  /** Sisa setelah belanja yang disetujui: kartu "Sisa anggaran sementara" di halaman Keputusan. */
+  sisaSementara: number;
+  skorDisetujui: number;
+  cukup: boolean;
+  /** Pagu dua kali lipat atau lebih dari seluruh kebutuhan hampir pasti salah ketik (mis. kelebihan nol). */
+  berlebih: boolean;
+  cakupan: { kode: string; nama: string; satuan: string; target: number; sebelum: number; sesudah: number; persenSebelum: number; persenSesudah: number }[];
+};
+
+/**
+ * Angka halaman Anggaran (langkah 1) dan Keputusan. `paguBebas` = pagu dikurangi baris yang sudah masuk surat.
+ * Dipakai `PaguView` dan fakta ringkasan AI, supaya keduanya menyebut angka yang sama.
+ */
+export function ringkasAnggaran(
+  prioritas: PrioritasPayload,
+  readiness: ReadinessResult,
+  catalog: CatalogItem[],
+  paguBebas: number,
+  keputusan: KeputusanMap,
+): RingkasAnggaran {
+  const disetujui = barisDisetujui(prioritas.terpilih, keputusan);
+  const sementara = anggaranSementara(paguBebas, disetujui);
+  const kebutuhan = totalBiaya([...prioritas.terpilih, ...prioritas.tidakTerdanai]);
+  const kekurangan = totalBiaya(prioritas.tidakTerdanai);
+  const nama = (kode: string) => catalog.find((c) => c.kode === kode)?.nama ?? kode;
+  const satuan = (kode: string) => catalog.find((c) => c.kode === kode)?.satuan ?? "";
+  const persen = (ada: number, target: number) => Math.round(Math.min(ada / target, 1) * 100);
+  return {
+    kebutuhan,
+    kekurangan,
+    terkunciRp: prioritas.terkunciRp ?? 0,
+    jumlahTerkunci: (prioritas.terkunci ?? []).length,
+    disetujuiRp: sementara.disetujuiRp,
+    jumlahDisetujui: disetujui.length,
+    sisaSementara: sementara.sisaRp,
+    skorDisetujui: skorSetelahDisetujui(readiness, catalog, disetujui),
+    cukup: kekurangan === 0,
+    berlebih: kebutuhan > 0 && paguBebas >= kebutuhan * 2,
+    cakupan: readiness.items
+      .filter((i) => i.target > 0)
+      .map((i) => {
+        const sesudah = i.berfungsi + prioritas.terpilih.filter((b) => b.itemKode === i.itemKode).reduce((a, b) => a + b.qty, 0);
+        return {
+          kode: i.itemKode,
+          nama: nama(i.itemKode),
+          satuan: satuan(i.itemKode),
+          target: i.target,
+          sebelum: i.berfungsi,
+          sesudah,
+          persenSebelum: persen(i.berfungsi, i.target),
+          persenSesudah: persen(sesudah, i.target),
+        };
+      }),
+  };
+}

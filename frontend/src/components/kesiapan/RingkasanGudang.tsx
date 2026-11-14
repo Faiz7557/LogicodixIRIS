@@ -1,7 +1,9 @@
 import Link from "next/link";
+import type { CSSProperties } from "react";
+import { AngkaHitung } from "@/components/ui/AngkaHitung";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { formatAngka, formatRupiah, formatSkor } from "@/lib/format";
-import type { ItemView } from "@/lib/kesiapan";
+import { hargaItem, type BarisTindakan, type ItemView } from "@/lib/kesiapan";
 import type { CatalogItem, HargaRow, Status } from "@/lib/types";
 
 /*
@@ -10,68 +12,7 @@ import type { CatalogItem, HargaRow, Status } from "@/lib/types";
  * Murni tampilan: semua angka datang dari props.
  */
 
-type Baris = {
-  kunci: string;
-  kode: string;
-  nama: string;
-  keadaan: string;
-  aksi: string;
-  biaya: number | null;
-  ragam: "kurang" | "rusak" | "kosong";
-};
-
-const harga = (rows: HargaRow[], kode: string, aksi: "beli" | "perbaiki") => rows.find((h) => h.itemKode === kode && h.aksi === aksi)?.hargaRp ?? null;
-
-/**
- * Baris tindakan terurut dari item paling genting (urutan `items` sudah dari kesenjangan terbesar).
- * Ukurannya sama dengan mesin prioritas (engine/priority.ts): kekurangan = target dikurangi yang berfungsi;
- * unit rusak diperbaiki dulu sampai menutup kekurangan, sisanya baru dibeli. Unit rusak tanpa harga perbaikan
- * ikut dibeli. Unit rusak di luar kekurangan tidak dimasukkan karena paket minimum sudah terpenuhi tanpanya.
- */
-export function barisTindakan(items: ItemView[], catalog: CatalogItem[], hargaRows: HargaRow[]): Baris[] {
-  const out: Baris[] = [];
-  for (const it of items) {
-    const c = catalog.find((x) => x.kode === it.itemKode);
-    const alat = c?.punyaRusak ?? true;
-    const n = (x: number) => `${formatAngka(x)} ${it.satuan}`;
-    if (it.belumDiisi) {
-      out.push({ kunci: `${it.itemKode}:catat`, kode: it.itemKode, nama: it.nama, keadaan: "Belum dicatat, dihitung 0", aksi: "Catat jumlahnya", biaya: null, ragam: "kosong" });
-      continue;
-    }
-    const kurang = Math.max(it.target - it.berfungsi, 0);
-    if (kurang === 0) continue;
-    const hPerbaiki = harga(hargaRows, it.itemKode, "perbaiki");
-    const perbaiki = alat && hPerbaiki !== null ? Math.min(it.rusak, kurang) : 0;
-    const beli = kurang - perbaiki;
-    const keadaan = alat ? `Ada ${formatAngka(it.berfungsi)}, butuh ${n(it.target)}` : `Tersedia ${formatAngka(it.berfungsi)}, butuh ${n(it.target)}`;
-    if (perbaiki > 0) {
-      out.push({
-        kunci: `${it.itemKode}:perbaiki`,
-        kode: it.itemKode,
-        nama: it.nama,
-        keadaan: `${keadaan}, ${n(it.rusak)} rusak`,
-        aksi: `Perbaiki ${n(perbaiki)}`,
-        biaya: perbaiki * (hPerbaiki ?? 0),
-        ragam: "rusak",
-      });
-    }
-    if (beli > 0) {
-      const h = harga(hargaRows, it.itemKode, "beli");
-      out.push({
-        kunci: `${it.itemKode}:beli`,
-        kode: it.itemKode,
-        nama: it.nama,
-        keadaan: perbaiki > 0 ? `Masih kurang ${n(beli)} setelah diperbaiki` : keadaan,
-        aksi: alat ? `Beli ${n(beli)}` : `Tambah dana ${n(beli)}`,
-        biaya: h === null ? null : beli * h,
-        ragam: "kurang",
-      });
-    }
-  }
-  return out;
-}
-
-export function TanganiDulu({ kode, baris }: { kode: string; baris: Baris[] }) {
+export function TanganiDulu({ kode, baris }: { kode: string; baris: BarisTindakan[] }) {
   return (
     <section aria-labelledby="tangani" className="overflow-hidden rounded-panel border border-line bg-surface shadow-card">
       <div className="flex flex-wrap items-baseline justify-between gap-2 px-5 py-4 md:px-6">
@@ -84,8 +25,8 @@ export function TanganiDulu({ kode, baris }: { kode: string; baris: Baris[] }) {
         <p className="border-t border-line px-5 py-4 text-muted md:px-6">Tidak ada yang mendesak. Semua item paket minimum sudah terpenuhi.</p>
       ) : (
         <ul className="divide-y divide-surface border-t border-line">
-          {baris.map((b) => (
-            <li key={b.kunci}>
+          {baris.map((b, i) => (
+            <li key={b.kunci} data-muncul="kiri" style={{ ["--tunda" as string]: `${140 + i * 90}ms` } as CSSProperties}>
               <Link
                 href={`/desa/${kode}/kesiapan/${b.kode}`}
                 className={`group grid gap-x-6 gap-y-0.5 px-5 py-3.5 transition-colors md:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,1.3fr)_auto] md:items-center md:px-6 ${
@@ -126,7 +67,7 @@ export function TanganiDulu({ kode, baris }: { kode: string; baris: Baris[] }) {
  * kepala (judul + label kanan), angka besar, visual, baris angka di bawah (garis atas), lalu tautan di pojok kanan bawah.
  */
 
-const kelasKartu = "flex flex-col rounded-panel border border-line bg-surface p-5 shadow-card md:p-6";
+const kelasKartu = "flex w-full flex-col rounded-panel border border-line bg-surface p-5 shadow-card md:p-6";
 
 function Kepala({ id, judul, kanan }: { id: string; judul: string; kanan: React.ReactNode }) {
   return (
@@ -145,11 +86,11 @@ function Lencana({ ragam, children }: { ragam: "ok" | "kurang" | "netral"; child
   return <span className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold ${warna}`}>{children}</span>;
 }
 
-function AngkaBesar({ nilai, keterangan }: { nilai: string; keterangan: string }) {
+function AngkaBesar({ nilai, keterangan, hitung }: { nilai: string; keterangan: string; hitung?: number }) {
   return (
     <p className="mt-4 flex h-[3.75rem] items-end gap-x-2.5 overflow-hidden">
       <span className={`tabular shrink-0 font-semibold leading-none tracking-[-0.03em] ${nilai.length > 8 ? "text-4xl" : nilai.length > 6 ? "text-5xl" : "text-6xl"}`}>
-        {nilai}
+        {hitung !== undefined ? <AngkaHitung nilai={hitung} jenis="skor" tunda={200} durasi={1300} /> : nilai}
       </span>
       {/* Keterangan boleh dua baris di samping angka, tidak dipotong. */}
       <span className="line-clamp-2 min-w-0 pb-0.5 leading-tight text-muted">{keterangan}</span>
@@ -222,7 +163,7 @@ export function KartuSkor({
   status: Status;
   skorSesudah: number;
   paguRp: number;
-  baris: Baris[];
+  baris: BarisTindakan[];
   kode: string;
   bisaPrioritas: boolean;
 }) {
@@ -234,7 +175,7 @@ export function KartuSkor({
   return (
     <section aria-labelledby="skor-kartu" className={kelasKartu}>
       <Kepala id="skor-kartu" judul="Skor kesiapan" kanan={<StatusBadge status={status} />} />
-      <AngkaBesar nilai={formatSkor(skor)} keterangan="dari 100" />
+      <AngkaBesar nilai={formatSkor(skor)} hitung={skor} keterangan="dari 100" />
       <AreaVisual
         keterangan={
           <>
@@ -264,7 +205,7 @@ export function KartuLebih({ kode, items, hargaRows }: { kode: string; items: It
   const lebih = items
     .filter((it) => !it.belumDiisi && it.berfungsi > it.target)
     .sort((a, b) => b.berfungsi - b.target - (a.berfungsi - a.target));
-  const nilai = lebih.reduce((a, it) => a + (it.berfungsi - it.target) * (harga(hargaRows, it.itemKode, "beli") ?? 0), 0);
+  const nilai = lebih.reduce((a, it) => a + (it.berfungsi - it.target) * (hargaItem(hargaRows, it.itemKode, "beli") ?? 0), 0);
   const teratas = lebih[0];
 
   return (
@@ -278,7 +219,7 @@ export function KartuLebih({ kode, items, hargaRows }: { kode: string; items: It
         {lebih.length === 0 ? null : (
           <>
           <ul className="space-y-4">
-            {lebih.slice(0, 3).map((it) => {
+            {lebih.slice(0, 3).map((it, i) => {
               const sisa = it.berfungsi - it.target;
               return (
                 <li key={it.itemKode}>
@@ -291,7 +232,8 @@ export function KartuLebih({ kode, items, hargaRows }: { kode: string; items: It
                   <div
                     role="img"
                     aria-label={`${it.nama}: paket minimum ${formatAngka(it.target)} ${it.satuan}, cadangan ${formatAngka(sisa)} ${it.satuan}`}
-                    className="mt-1.5 flex h-3 gap-0.5 overflow-hidden rounded-full"
+                    className="tunggu-terlihat bilah-tumbuh mt-1.5 flex h-3 gap-0.5 overflow-hidden rounded-full"
+                    style={{ animationDelay: `${250 + i * 120}ms` }}
                   >
                     <span className="rounded-l-full bg-ok" style={{ width: `${(it.target / it.berfungsi) * 100}%` }} />
                     <span className="flex-1 rounded-r-full bg-water" />
@@ -368,8 +310,23 @@ function SpeedometerApi({ skor, skorSesudah, paguRp }: { skor: number; skorSesud
           </linearGradient>
         </defs>
         <path d={busur(0, 100)} fill="none" stroke="var(--line)" strokeWidth="16" strokeLinecap="round" />
-        {skorSesudah > skor ? <path d={busur(0, skorSesudah)} fill="none" stroke="var(--ink)" strokeOpacity="0.12" strokeWidth="16" strokeLinecap="round" /> : null}
-        {skor > 0 ? <path d={busur(0, skor)} fill="none" stroke="url(#gradien-skor)" strokeWidth="16" strokeLinecap="round" /> : null}
+        {/* Busur tergambar dari 0 bersama jarum; busur abu (sesudah belanja) menyusul memudar masuk. */}
+        {skorSesudah > skor ? (
+          <path
+            d={busur(0, skorSesudah)}
+            pathLength={1}
+            className="tunggu-terlihat busur-gambar"
+            style={{ animationDelay: "700ms" }}
+            fill="none"
+            stroke="var(--ink)"
+            strokeOpacity="0.12"
+            strokeWidth="16"
+            strokeLinecap="round"
+          />
+        ) : null}
+        {skor > 0 ? (
+          <path d={busur(0, skor)} pathLength={1} className="tunggu-terlihat busur-gambar" fill="none" stroke="url(#gradien-skor)" strokeWidth="16" strokeLinecap="round" />
+        ) : null}
 
         {TANDA.map((v, i) => {
           // Makin rendah skor, makin besar apinya. Hanya api terdekat dengan skor sekarang yang menyala.
@@ -379,12 +336,17 @@ function SpeedometerApi({ skor, skorSesudah, paguRp }: { skor: number; skorSesud
           const nyala = i === Math.round(Math.min(Math.max(skor, 0), 100) / 25);
           return (
             <g key={v} transform={`translate(${x.toFixed(2)} ${y.toFixed(2)}) scale(${besar}) translate(-12 -12)`}>
-              <path d={API} fill={nyala ? "var(--ember)" : "none"} stroke={nyala ? "var(--ember)" : "var(--line-2)"} strokeWidth={1.6 / besar} strokeLinejoin="round" />
+              <path d={API} className={nyala ? "tunggu-terlihat kedip-api" : undefined} fill={nyala ? "var(--ember)" : "none"} stroke={nyala ? "var(--ember)" : "var(--line-2)"} strokeWidth={1.6 / besar} strokeLinejoin="round" />
             </g>
           );
         })}
 
-        <line x1={CX} y1={CY} x2={jx.toFixed(2)} y2={jy.toFixed(2)} stroke="var(--ink)" strokeWidth="4" strokeLinecap="round" />
+        <g
+          className="tunggu-terlihat jarum-putar"
+          style={{ transformOrigin: `${CX}px ${CY}px`, ["--dari-sudut" as string]: `${-Math.min(Math.max(skor, 0), 100) * 1.8}deg` } as CSSProperties}
+        >
+          <line x1={CX} y1={CY} x2={jx.toFixed(2)} y2={jy.toFixed(2)} stroke="var(--ink)" strokeWidth="4" strokeLinecap="round" />
+        </g>
         <circle cx={CX} cy={CY} r="7" fill="var(--ink)" />
         <circle cx={CX} cy={CY} r="2.5" fill="var(--surface)" />
 

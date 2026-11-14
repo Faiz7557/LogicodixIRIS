@@ -1,69 +1,24 @@
 "use client";
 
-import { formatAngka, formatRupiah } from "@/lib/format";
+import type { DragEvent, ReactNode } from "react";
+import { formatAngka, formatRupiah, formatTanggal } from "@/lib/format";
 import { namaAksi } from "@/lib/prioritas";
-import type { Aksi, Keputusan, PriorityRow as Baris } from "@/lib/types";
+import type { Aksi, BarisTerkunci, Keputusan, PriorityRow as Baris } from "@/lib/types";
 
 export const idKartu = (b: Pick<Baris, "itemKode" | "aksi">) => `kartu-${b.itemKode}-${b.aksi}`;
 
 /** Jumlah alat berfungsi dan target paket untuk bilah "Ada X dari Y". */
 export type Stok = { berfungsi: number; target: number };
 
-const TOMBOL_IKON: Record<Exclude<Keputusan, "setuju">, { label: string; kelas: string; ikon: React.ReactNode }> = {
-  tunda: {
-    label: "Tunda",
-    kelas: "text-warn hover:bg-warn-soft",
-    ikon: (
-      <>
-        <circle cx="12" cy="12" r="8" />
-        <path d="M12 8v4l2.5 1.5" />
-      </>
-    ),
-  },
-  tolak: { label: "Tolak", kelas: "text-danger hover:bg-danger-soft", ikon: <path d="M7 7l10 10M17 7L7 17" /> },
-};
+type IsiProps = { nomor: number; baris: Baris; namaItem: string; satuan: string; sumberHarga?: string; stok?: Stok };
 
-/**
- * Satu kartu saran belanja (pola kartu tugas Sparekit): chip aksi, nama item, sumber harga,
- * bilah "Ada X dari Y", cakupan sesudah dan biaya, lalu tombol keputusan.
- * Setujui jadi tombol utama; Tunda dan Tolak tombol ikon berlabel. Kolom yang sedang ditempati tidak diberi tombol.
- */
-export function KartuBelanja({
-  nomor,
-  baris,
-  namaItem,
-  satuan,
-  sumberHarga,
-  stok,
-  keputusan,
-  catatan,
-  onKeputusan,
-  onCatatan,
-}: {
-  nomor: number;
-  baris: Baris;
-  namaItem: string;
-  satuan: string;
-  sumberHarga?: string;
-  stok?: Stok;
-  keputusan?: Keputusan;
-  catatan?: string;
-  onKeputusan: (k: Keputusan) => void;
-  onCatatan: (c: string) => void;
-}) {
-  const id = idKartu(baris);
+/** Isi kartu yang sama untuk kartu asli dan kartu bayangan: chip aksi, nama, sumber harga, bilah stok, biaya. */
+function IsiKartu({ nomor, baris, namaItem, satuan, sumberHarga, stok }: IsiProps) {
   const persen = stok && stok.target > 0 ? Math.min(stok.berfungsi / stok.target, 1) : 0;
   const sesudah = stok && stok.target > 0 ? Math.min((stok.berfungsi + baris.qty) / stok.target, 1) : null;
-  const ikon = (["tunda", "tolak"] as const).filter((k) => k !== keputusan);
-
   return (
-    <li
-      id={id}
-      tabIndex={-1}
-      style={{ viewTransitionName: id }}
-      className="rounded-xl border border-line bg-surface p-3 shadow-card outline-none focus-visible:ring-2 focus-visible:ring-ember"
-    >
-      <div className="flex items-center justify-between gap-2">
+    <>
+      <span className="flex items-center justify-between gap-2">
         <span
           className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-semibold ${
             baris.aksi === "beli" ? "bg-water-soft text-water" : "bg-ok-soft text-ok"
@@ -71,36 +26,91 @@ export function KartuBelanja({
         >
           {namaAksi(baris.aksi)} {formatAngka(baris.qty)} {satuan}
         </span>
-        <span className="tabular text-xs text-muted">
-          <span className="sr-only">Urutan </span>#{nomor}
-        </span>
-      </div>
+        <span className="tabular text-xs text-muted">#{nomor}</span>
+      </span>
 
-      <h3 className="mt-2 font-semibold leading-snug">{namaItem}</h3>
+      <span className="mt-2 block font-semibold leading-snug">{namaItem}</span>
       {sumberHarga ? (
-        <p title={sumberHarga} className="truncate text-xs text-muted">
+        <span title={sumberHarga} className="block truncate text-xs text-muted">
           Harga: {sumberHarga}
-        </p>
+        </span>
       ) : null}
 
       {stok ? (
-        <div className="mt-2.5 flex items-center gap-3">
-          <span aria-hidden="true" className="h-1.5 flex-1 overflow-hidden rounded-full bg-line">
+        <span className="mt-2.5 flex items-center gap-3">
+          <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-line">
             <span className="block h-full rounded-full bg-ember" style={{ width: `${persen * 100}%` }} />
           </span>
           <span className="tabular shrink-0 text-xs text-muted">
             Ada <span className="font-semibold text-ink">{formatAngka(stok.berfungsi)}</span> dari {formatAngka(stok.target)} {satuan}
           </span>
-        </div>
+        </span>
       ) : null}
 
-      <div className="mt-2.5 flex items-baseline justify-between gap-2 border-t border-line pt-2.5 text-sm">
+      <span className="mt-2.5 flex items-baseline justify-between gap-2 border-t border-line pt-2.5 text-sm">
         <span className="text-muted">{sesudah !== null ? `Naik ke ${Math.round(sesudah * 100)}%` : baris.alasan}</span>
         <span className="tabular font-semibold">{formatRupiah(baris.biayaRp)}</span>
-      </div>
+      </span>
+    </>
+  );
+}
 
-      {keputusan === "tolak" || keputusan === "tunda" ? (
-        <div className="mt-2.5">
+/**
+ * Satu kartu saran belanja (pola kartu tugas Sparekit). Tanpa tombol keputusan: kartu diketuk atau diseret.
+ * Mengetuk memunculkan kartu bayangan (simulasi) di kolom lain, masing-masing dengan tombol "Pilih ini";
+ * menyeret ke kolom lain langsung memindahkannya. Kartu yang ditolak punya kolom catatan di luar area ketuk.
+ */
+export function KartuBelanja({
+  keputusan,
+  catatan,
+  dipilih,
+  diseret = false,
+  onPilih,
+  onCatatan,
+  onSeretMulai,
+  onSeretSelesai,
+  ...isi
+}: IsiProps & {
+  keputusan?: Keputusan;
+  catatan?: string;
+  /** Kartu sedang diketuk: kartu bayangan tampil di kolom lain. */
+  dipilih: boolean;
+  /** Kartu sedang diseret: tampil pudar di tempat asalnya. */
+  diseret?: boolean;
+  onPilih: () => void;
+  onCatatan: (c: string) => void;
+  onSeretMulai: (e: DragEvent<HTMLLIElement>) => void;
+  onSeretSelesai: () => void;
+}) {
+  const { baris, namaItem, satuan } = isi;
+  const id = idKartu(baris);
+
+  return (
+    <li
+      id={id}
+      tabIndex={-1}
+      draggable
+      onDragStart={onSeretMulai}
+      onDragEnd={onSeretSelesai}
+      style={{ viewTransitionName: id }}
+      className={`cursor-grab rounded-xl border bg-surface shadow-card outline-none transition-[border-color,box-shadow,opacity] duration-200 focus-visible:ring-2 focus-visible:ring-ember active:cursor-grabbing ${
+        dipilih ? "border-ink ring-2 ring-ink/15" : "border-line hover:border-line-2"
+      } ${diseret ? "opacity-40" : ""}`}
+    >
+      <button
+        type="button"
+        onClick={onPilih}
+        aria-expanded={dipilih}
+        aria-label={`${namaAksi(baris.aksi)} ${formatAngka(baris.qty)} ${satuan} ${namaItem}, ${formatRupiah(baris.biayaRp)}. ${
+          dipilih ? "Pilihan pindah terbuka di kolom lain; ketuk lagi untuk menutup." : "Ketuk atau seret untuk memindahkan."
+        }`}
+        className="tekan block w-full cursor-[inherit] rounded-xl p-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ember"
+      >
+        <IsiKartu {...isi} />
+      </button>
+
+      {keputusan === "tolak" ? (
+        <div className="px-3 pb-3">
           <label htmlFor={`${id}-catatan`} className="sr-only">
             Catatan untuk {namaItem}
           </label>
@@ -110,47 +120,59 @@ export function KartuBelanja({
             maxLength={200}
             value={catatan ?? ""}
             onChange={(e) => onCatatan(e.target.value)}
-            placeholder={keputusan === "tunda" ? "Catatan: tunggu APBDes perubahan" : "Catatan: sudah dibantu BPBD"}
+            placeholder="Catatan: sudah dibantu BPBD"
             className="min-h-9 w-full rounded-lg border border-line bg-paper px-2.5 text-sm"
           />
         </div>
       ) : null}
+    </li>
+  );
+}
 
-      <div role="group" aria-label={`Keputusan untuk ${namaAksi(baris.aksi).toLowerCase()} ${namaItem}`} className="mt-3 flex items-center gap-2">
-        {keputusan !== "setuju" ? (
-          <button
-            type="button"
-            onClick={() => onKeputusan("setuju")}
-            className="flex min-h-9 flex-1 items-center justify-center gap-1.5 rounded-lg bg-ink px-3 text-sm font-semibold text-white hover:bg-ink/85"
-          >
-            Setujui
-            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M5 12h14M13 6l6 6-6 6" />
-            </svg>
-          </button>
-        ) : (
-          <span className="flex min-h-9 flex-1 items-center gap-1.5 text-sm font-semibold text-ok">
-            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M5 12l5 5 9-10" />
-            </svg>
-            Masuk usulan
-          </span>
-        )}
-        {ikon.map((k) => (
-          <button
-            key={k}
-            type="button"
-            onClick={() => onKeputusan(k)}
-            aria-label={TOMBOL_IKON[k].label}
-            title={TOMBOL_IKON[k].label}
-            className={`flex size-9 shrink-0 items-center justify-center rounded-lg border border-line bg-surface ${TOMBOL_IKON[k].kelas}`}
-          >
-            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              {TOMBOL_IKON[k].ikon}
-            </svg>
-          </button>
-        ))}
+/**
+ * Kartu bayangan: kartu yang sama persis, tetapi samar dan bergaris putus-putus, di kolom tujuan.
+ * Di bawahnya hasil simulasi dan tombol "Pilih ini". Tidak bisa diketuk selain tombolnya.
+ */
+export function KartuBayangan({ simulasi, aksi, ...isi }: IsiProps & { simulasi: ReactNode; aksi: ReactNode }) {
+  return (
+    <li className="muncul">
+      <div aria-hidden="true" className="pointer-events-none select-none rounded-xl border-2 border-dashed border-line-2 bg-surface/60 p-3 opacity-50">
+        <IsiKartu {...isi} />
       </div>
+      <div className="mt-2 px-1 text-xs text-muted">{simulasi}</div>
+      <div className="mt-2">{aksi}</div>
+    </li>
+  );
+}
+
+/** Kartu yang sudah masuk surat usulan: terkunci, tidak bisa diketuk atau diseret. Data riwayat. */
+export function KartuTerkunci({ baris, namaItem, satuan }: { baris: BarisTerkunci; namaItem: string; satuan: string }) {
+  return (
+    <li className="rounded-xl border border-line bg-surface/70 p-3">
+      <span className="flex items-center justify-between gap-2">
+        <span className="inline-flex items-center gap-1 rounded-md bg-surface-2 px-2 py-0.5 text-xs font-semibold text-muted">
+          {namaAksi(baris.aksi)} {formatAngka(baris.qty)} {satuan}
+        </span>
+        <span className="inline-flex items-center gap-1 text-xs font-semibold text-muted">
+          <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="5" y="11" width="14" height="9" rx="2" />
+            <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+          </svg>
+          Terkunci
+        </span>
+      </span>
+      <span className="mt-2 block font-semibold leading-snug text-ink/80">{namaItem}</span>
+      {baris.sumberHarga ? (
+        <span title={baris.sumberHarga} className="block truncate text-xs text-muted">
+          Harga: {baris.sumberHarga}
+        </span>
+      ) : null}
+      <span className="mt-2 flex items-baseline justify-between gap-2 border-t border-line pt-2 text-sm">
+        <span className="text-muted">
+          Disetujui di surat #{baris.usulanId} · {formatTanggal(baris.tanggal)}
+        </span>
+        <span className="tabular font-semibold text-muted">{formatRupiah(baris.biayaRp)}</span>
+      </span>
     </li>
   );
 }

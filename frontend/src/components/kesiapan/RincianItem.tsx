@@ -1,4 +1,7 @@
 import Link from "next/link";
+import type { CSSProperties } from "react";
+import { PenggerakGulir } from "@/components/beranda/gerak/PenggerakGulir";
+import { AngkaHitung } from "@/components/ui/AngkaHitung";
 import { Panel } from "@/components/ui/Panel";
 import { TanggalHariIni } from "@/components/ui/TanggalHariIni";
 import { formatAngka, formatRupiah, formatTanggal, keteranganMeter } from "@/lib/format";
@@ -10,6 +13,9 @@ import { KotakModel3D } from "./model3d/KotakModel3D";
 import { PUNYA_MODEL_3D } from "./model3d/daftarModel";
 import { ReadinessGauge } from "./ReadinessGauge";
 
+/** Jeda muncul bertahap untuk [data-muncul] (dibaca CSS sebagai --tunda). */
+const tunda = (ms: number) => ({ ["--tunda" as string]: `${ms}ms` }) as CSSProperties;
+
 /** Status satu item dari cakupannya, dengan ambang yang sama dengan mesin (TRD §6). */
 function statusItem(coverage: number): Status {
   if (coverage >= 1) return "siap";
@@ -17,10 +23,9 @@ function statusItem(coverage: number): Status {
   return "sebagian";
 }
 
-
 // Keterangan khusus tiap item, ditulis sebagai fakta paket, bukan klaim dampak.
 const CATATAN_ITEM: Record<string, string> = {
-  selang_keluar: "Panjang dihitung dengan asumsi 30 m per buah (satu roll).",
+  selang_keluar: "Panjang dihitung 30 m per buah (satu roll).",
   sumur_bor: "Hanya dihitung untuk desa yang memiliki lahan gambut.",
   pompa_jinjing: "Pompa yang rusak dihitung terpisah dari yang berfungsi.",
 };
@@ -68,32 +73,47 @@ export function RincianItem({
 
   return (
     <div className="mx-auto max-w-[1120px] px-4 py-6 md:px-8 md:py-8">
-      <Link href={`/desa/${kode}/kesiapan`} className="inline-flex min-h-11 items-center gap-1.5 text-sm text-muted hover:text-ink">
-        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      {/* Animasi masuk: tiap bagian muncul bertahap saat terlihat (tanpa JS atau gerak dikurangi: tampil biasa). */}
+      <PenggerakGulir />
+      <Link data-muncul="kiri" href={`/desa/${kode}/kesiapan`} className="inline-flex min-h-11 items-center gap-1.5 text-sm text-muted hover:text-ink">
+        <svg
+          aria-hidden="true"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
           <path d="M19 12H5M11 6l-6 6 6 6" />
         </svg>
         Kesiapan
       </Link>
 
       <header className="flex items-center gap-4">
-        <GambarItem kode={item.kode} className="size-14" />
+        <GambarItem kode={item.kode} className="letup size-14" />
         <div className="min-w-0">
-          <h1 className="text-balance text-3xl font-semibold leading-tight tracking-tight md:text-4xl">{item.nama}</h1>
-          <p className="mt-1">
+          <h1 data-muncul style={tunda(120)} className="text-balance text-3xl font-semibold leading-tight tracking-tight md:text-4xl">
+            {item.nama}
+          </h1>
+          <p data-muncul style={tunda(200)} className="mt-1">
             <KataCakupan coverage={hasil.coverage} />
           </p>
         </div>
       </header>
 
-      <p className="mt-4 max-w-[70ch] text-lg leading-snug">
+      <p data-muncul style={tunda(260)} className="mt-4 max-w-[70ch] text-lg leading-snug">
         {hasil.belumDiisi ? (
           <>
             <span className="font-semibold text-ember">Belum dicatat.</span> Item ini dihitung 0 sampai jumlahnya diisi di bawah.
           </>
         ) : kurang > 0 ? (
           <>
-            <span className="font-semibold text-ember">Kurang {n(kurang)}</span> untuk memenuhi paket minimum {n(hasil.target)}. Saat ini{" "}
-            {n(hasil.berfungsi)} {kataAda}{item.punyaRusak ? ` dan ${n(hasil.rusak)} rusak` : ""}.
+            <span className="font-semibold text-ember">Kurang {n(kurang)}</span> untuk memenuhi paket minimum {n(hasil.target)}. Saat ini {n(hasil.berfungsi)}{" "}
+            {kataAda}
+            {item.punyaRusak ? ` dan ${n(hasil.rusak)} rusak` : ""}.
           </>
         ) : (
           <>
@@ -105,6 +125,8 @@ export function RincianItem({
       {/* Baris atas: kotak model 3D (placeholder) di kiri, gauge dan daftar kondisi di kanan. */}
       <div className="mt-6 grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
         <section
+          data-muncul="besar"
+          style={tunda(320)}
           aria-labelledby="model-judul"
           className="relative flex min-h-[320px] flex-col overflow-hidden rounded-panel border border-line bg-gradient-to-b from-[#f3f1ec] to-[#e4e0d6] lg:min-h-[460px]"
         >
@@ -136,47 +158,56 @@ export function RincianItem({
         </section>
 
         <div className="flex flex-col gap-4">
-          <Panel className="p-5">
-            <div className="flex items-start justify-between gap-3">
-              <h2 className="font-bold leading-snug">Cakupan paket minimum</h2>
-              <span className="whitespace-nowrap text-sm text-muted">target {n(hasil.target)}</span>
-            </div>
-            <div className="mx-auto mt-3 w-full max-w-[240px]">
-              <ReadinessGauge skor={persen} status={statusItem(hasil.coverage)} label={{ teks: `${persen}%`, sr: " dari paket minimum" }} />
-            </div>
-            <p className="mt-2 text-center text-sm text-muted">
-              {formatAngka(hasil.berfungsi)} dari {n(hasil.target)} {kataAda}
-            </p>
-          </Panel>
-
-          <Panel className="overflow-hidden">
-            <div className="flex items-center justify-between gap-3 px-5 py-4">
-              <h2 className="font-bold">{item.punyaRusak ? "Kondisi alat" : "Kondisi"}</h2>
-              {kurang > 0 ? <span className="text-sm font-semibold text-ember">{n(kurang)} kurang</span> : null}
-            </div>
-            <ul className="divide-y divide-line border-t border-line">
-              <BarisKondisi
-                ragam="ok"
-                judul={item.punyaRusak ? "Berfungsi" : "Tersedia"}
-                isi={item.punyaRusak ? `Ada ${n(hasil.berfungsi)} siap dipakai` : `Ada ${n(hasil.berfungsi)} tersedia`}
-                kanan="Siap"
-              />
-              {item.punyaRusak ? (
-                <BarisKondisi
-                  ragam={hasil.rusak > 0 ? "danger" : "netral"}
-                  judul="Rusak"
-                  isi={`${n(hasil.rusak)} perlu diperbaiki`}
-                  kanan={hasil.rusak > 0 ? "Perbaiki" : "–"}
+          <div data-muncul="kanan" style={tunda(400)}>
+            <Panel className="p-5">
+              <div className="flex items-start justify-between gap-3">
+                <h2 className="font-bold leading-snug">Cakupan paket minimum</h2>
+                <span className="whitespace-nowrap text-sm text-muted">target {n(hasil.target)}</span>
+              </div>
+              <div className="mx-auto mt-3 w-full max-w-[240px]">
+                <ReadinessGauge
+                  skor={persen}
+                  status={statusItem(hasil.coverage)}
+                  durasi={1200}
+                  label={{ teks: <AngkaHitung nilai={persen} jenis="persen" tunda={200} durasi={1200} />, sr: " dari paket minimum" }}
                 />
-              ) : null}
-              <BarisKondisi
-                ragam={kurang > 0 ? "warn" : "netral"}
-                judul="Kurang dari paket"
-                isi={`${n(kurang)} perlu ditambah`}
-                kanan={kurang > 0 ? "Tambah" : "–"}
-              />
-            </ul>
-          </Panel>
+              </div>
+              <p className="mt-2 text-center text-sm text-muted">
+                {formatAngka(hasil.berfungsi)} dari {n(hasil.target)} {kataAda}
+              </p>
+            </Panel>
+          </div>
+
+          <div data-muncul="kanan" style={tunda(500)}>
+            <Panel className="overflow-hidden">
+              <div className="flex items-center justify-between gap-3 px-5 py-4">
+                <h2 className="font-bold">{item.punyaRusak ? "Kondisi alat" : "Kondisi"}</h2>
+                {kurang > 0 ? <span className="text-sm font-semibold text-ember">{n(kurang)} kurang</span> : null}
+              </div>
+              <ul className="divide-y divide-line border-t border-line">
+                <BarisKondisi
+                  ragam="ok"
+                  judul={item.punyaRusak ? "Berfungsi" : "Tersedia"}
+                  isi={item.punyaRusak ? `Ada ${n(hasil.berfungsi)} siap dipakai` : `Ada ${n(hasil.berfungsi)} tersedia`}
+                  kanan="Siap"
+                />
+                {item.punyaRusak ? (
+                  <BarisKondisi
+                    ragam={hasil.rusak > 0 ? "danger" : "netral"}
+                    judul="Rusak"
+                    isi={`${n(hasil.rusak)} perlu diperbaiki`}
+                    kanan={hasil.rusak > 0 ? "Perbaiki" : "–"}
+                  />
+                ) : null}
+                <BarisKondisi
+                  ragam={kurang > 0 ? "warn" : "netral"}
+                  judul="Kurang dari paket"
+                  isi={`${n(kurang)} perlu ditambah`}
+                  kanan={kurang > 0 ? "Tambah" : "–"}
+                />
+              </ul>
+            </Panel>
+          </div>
         </div>
       </div>
 
@@ -187,15 +218,19 @@ export function RincianItem({
         </h2>
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <KartuAngka
+            urut={0}
             gelap={kurang > 0}
             ikon={<IconPeringatan />}
+            hitung={kurang}
             nilai={formatAngka(kurang)}
             satuan={satuan}
             label="Kurang dari paket minimum"
           />
           {item.punyaRusak ? (
             <KartuAngka
+              urut={1}
               ikon={<IconKunci />}
+              hitung={hasil.rusak}
               nilai={formatAngka(hasil.rusak)}
               satuan={satuan}
               label="Perlu diperbaiki"
@@ -215,7 +250,9 @@ export function RincianItem({
           ) : (
             // Item tanpa keadaan rusak: kartu ini menunjukkan cadangan di atas paket minimum.
             <KartuAngka
+              urut={1}
               ikon={<IconCadangan />}
+              hitung={lebih}
               nilai={formatAngka(lebih)}
               satuan={satuan}
               label="Lebih dari paket minimum"
@@ -227,6 +264,7 @@ export function RincianItem({
             />
           )}
           <KartuAngka
+            urut={2}
             ikon={<IconRupiah />}
             nilai={biayaBeli !== null ? formatRupiah(biayaBeli) : "–"}
             label="Perkiraan biaya menambah"
@@ -236,6 +274,7 @@ export function RincianItem({
           {/* Harga satuan dengan tanggal hari ini (berganti sendiri tiap hari). Sumber dan tanggal cek tetap ditulis:
               ini harga acuan dokumen, bukan harga pasar harian. */}
           <KartuAngka
+            urut={3}
             ikon={<IconKalender />}
             nilai={beli ? formatRupiah(beli.hargaRp) : "–"}
             satuan={beli ? `/ ${satuan}` : ""}
@@ -251,19 +290,21 @@ export function RincianItem({
             }
           />
         </div>
-        <p className="mt-3 text-sm text-muted">
+        <p data-muncul className="mt-3 text-sm text-muted">
           {item.kode === "selang_keluar" ? `${keteranganMeter(hasil.berfungsi)}. ` : ""}
-          {CATATAN_ITEM[item.kode] ?? ""} Paket minimum {n(hasil.target)} adalah asumsi tim dan bisa diubah desa. Perkiraan biaya hanya harga satuan × jumlah,
-          bukan usulan.
+          {CATATAN_ITEM[item.kode] ?? ""} Paket minimum {n(hasil.target)} bisa diubah desa. Perkiraan biaya hanya harga satuan × jumlah, bukan usulan.
         </p>
       </section>
 
       {/* Catat alat khusus item ini. */}
-      <section aria-labelledby="catat" className="mt-8">
+      <section data-muncul aria-labelledby="catat" className="mt-8">
         <h2 id="catat" className="text-xl font-bold">
           Catat {item.nama.toLowerCase()}
         </h2>
-        <p className="mt-1 text-sm text-muted">{item.punyaRusak ? "Perbarui jumlah yang ada dan yang masih berfungsi." : "Perbarui jumlah yang tersedia."} Item lain tidak ikut berubah. Prediksi di bawahnya ikut bergerak saat angka diubah.</p>
+        <p className="mt-1 text-sm text-muted">
+          {item.punyaRusak ? "Perbarui jumlah yang ada dan yang masih berfungsi." : "Perbarui jumlah yang tersedia."} Item lain tidak ikut berubah. Prediksi di
+          bawahnya ikut bergerak saat angka diubah.
+        </p>
         <div className="mt-4">
           <CatatDenganPratinjau
             kode={kode}
@@ -281,6 +322,7 @@ export function RincianItem({
 
       {/* Ajakan lanjut (pola "Lihat 97 suku cadang di papan Tugas"). */}
       <Link
+        data-muncul
         href={peran === "desa" ? `/desa/${kode}/prioritas` : `/desa/${kode}/inventaris`}
         className="group mt-8 flex items-center gap-4 rounded-panel border border-line bg-surface p-5 shadow-card hover:border-ink/40"
       >
@@ -288,12 +330,21 @@ export function RincianItem({
         <span className="min-w-0 flex-1">
           <span className="block font-semibold">{peran === "desa" ? "Susun prioritas belanja desa" : "Catat semua alat sekaligus"}</span>
           <span className="block text-sm text-muted">
-            {peran === "desa"
-              ? `Lihat apakah ${item.nama.toLowerCase()} masuk daftar belanja di bawah pagu.`
-              : "Buka formulir Catat Alat untuk semua item."}
+            {peran === "desa" ? `Lihat apakah ${item.nama.toLowerCase()} masuk daftar belanja di bawah pagu.` : "Buka formulir Catat Alat untuk semua item."}
           </span>
         </span>
-        <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 transition-transform group-hover:translate-x-0.5">
+        <svg
+          aria-hidden="true"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="shrink-0 transition-transform group-hover:translate-x-0.5"
+        >
           <path d="M5 12h14M13 6l6 6-6 6" />
         </svg>
       </Link>
@@ -322,7 +373,9 @@ function BarisKondisi({ ragam, judul, isi, kanan }: { ragam: keyof typeof RAGAM;
 }
 
 function KartuAngka({
+  urut,
   ikon,
+  hitung,
   nilai,
   satuan,
   label,
@@ -330,7 +383,11 @@ function KartuAngka({
   tautan,
   gelap = false,
 }: {
+  /** Urutan kartu: jeda muncul bertahap. */
+  urut: number;
   ikon: React.ReactNode;
+  /** Angka yang menghitung naik saat terlihat; tanpa ini `nilai` tampil apa adanya. */
+  hitung?: number;
   nilai: string;
   satuan?: string;
   label: React.ReactNode;
@@ -341,20 +398,19 @@ function KartuAngka({
 }) {
   return (
     <div
+      data-muncul
+      style={tunda(urut * 90)}
       className={`flex flex-col gap-3 rounded-panel border p-5 shadow-card ${
         gelap ? "border-transparent bg-gradient-to-br from-[#1f2a36] via-[#2b3440] to-[#4a3a2e] text-white" : "border-line bg-surface"
       }`}
     >
-      <span
-        aria-hidden="true"
-        className={`flex size-11 items-center justify-center rounded-xl ${gelap ? "bg-white text-danger" : "bg-paper text-ink"}`}
-      >
+      <span aria-hidden="true" className={`flex size-11 items-center justify-center rounded-xl ${gelap ? "bg-white text-danger" : "bg-paper text-ink"}`}>
         {ikon}
       </span>
       <p>
         {/* Angka panjang (mis. Rp28.028.610) dikecilkan supaya tidak terpotong di kartu sempit. */}
         <span className={`tabular block font-semibold leading-tight tracking-[-0.03em] ${nilai.length > 10 ? "text-2xl" : "text-3xl"}`}>
-          {nilai}
+          {hitung !== undefined ? <AngkaHitung nilai={hitung} tunda={150 + urut * 90} /> : nilai}
           {satuan ? <span className={`ml-1 text-base font-normal ${gelap ? "text-white/70" : "text-muted"}`}>{satuan}</span> : null}
         </span>
         <span className={`mt-1 block text-sm font-semibold ${gelap ? "text-white/90" : ""}`}>{label}</span>
@@ -374,7 +430,16 @@ function KartuAngka({
   );
 }
 
-const ikon = { width: 22, height: 22, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2.2, strokeLinecap: "round", strokeLinejoin: "round" } as const;
+const ikon = {
+  width: 22,
+  height: 22,
+  viewBox: "0 0 24 24",
+  fill: "none",
+  stroke: "currentColor",
+  strokeWidth: 2.2,
+  strokeLinecap: "round",
+  strokeLinejoin: "round",
+} as const;
 
 function IconPeringatan() {
   return (

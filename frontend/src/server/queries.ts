@@ -1,18 +1,9 @@
 import type { InArgs, Row } from "@libsql/client";
-import type { MetricRow } from "@/lib/backtest";
 import type {
   CatalogItem, DesaCard, DesaGambut, DesaHit, DesaTahun, HargaRow, KeputusanGerbang, PaketRow, Tier,
 } from "@/lib/types";
 import { db } from "./db";
 import { HttpError } from "./http";
-
-export interface Backtest {
-  metrik: MetricRow[];
-  grup: { grup: string; strata: string; nDesa: number; nTerpapar2026: number; rate: number }[];
-  gerbang: { a: boolean; b: boolean; keputusan: KeputusanGerbang };
-  teratas: { kode: string; nama: string; kecNama: string; skor: number; terpapar2026: boolean }[];
-  dataAkhir2026: string | null;
-}
 
 export interface DataPage {
   sumber: { kode: string; nama: string; url: string; lisensi: string; periode: string; diakses: string }[];
@@ -66,7 +57,7 @@ export async function searchDesa(teks: string): Promise<DesaHit[]> {
 const GERBANG: KeputusanGerbang[] = ["pertahankan", "lunakkan", "buang"];
 const GERBANG_BAWAAN = { a: false, b: false, keputusan: "buang" as KeputusanGerbang };
 
-async function gerbangPenuh(): Promise<Backtest["gerbang"]> {
+async function gerbangPenuh(): Promise<{ a: boolean; b: boolean; keputusan: KeputusanGerbang }> {
   const nilai = await metaNilai("gate_hasil");
   if (!nilai) return GERBANG_BAWAAN;
   try {
@@ -174,34 +165,6 @@ export async function getCatalog(): Promise<CatalogItem[]> {
     kritis: Number(r.kritis) === 1, bisaDibeli: Number(r.bisa_dibeli) === 1,
     punyaRusak: Number(r.punya_rusak) === 1, hanyaGambut: Number(r.hanya_gambut) === 1,
   }));
-}
-
-export async function getBacktest(): Promise<Backtest> {
-  const [metrik, grup, gerbang, teratas, dataAkhir2026] = await Promise.all([
-    q("SELECT * FROM backtest_metric ORDER BY tahun_uji, unit, strategi, metrik"),
-    q("SELECT * FROM backtest_grup ORDER BY grup, strata"),
-    gerbangPenuh(),
-    q(`SELECT d.kode, d.nama, d.kec_nama, p.skor, COALESCE(t.terpapar, 0) AS terpapar
-       FROM desa_paparan p
-       JOIN desa d ON d.kode = p.kode
-       LEFT JOIN desa_tahun t ON t.kode = p.kode AND t.tahun = 2026
-       WHERE p.mode = 'frozen'
-       ORDER BY p.skor DESC, d.kode LIMIT 20`),
-    metaNilai("data_akhir_2026"),
-  ]);
-  return {
-    metrik: metrik.map((r) => ({
-      tahunUji: Number(r.tahun_uji), unit: str(r.unit), strategi: str(r.strategi), metrik: str(r.metrik), nilai: Number(r.nilai),
-    }) as MetricRow),
-    grup: grup.map((r) => ({
-      grup: str(r.grup), strata: str(r.strata), nDesa: Number(r.n_desa), nTerpapar2026: Number(r.n_terpapar_2026), rate: Number(r.rate),
-    })),
-    gerbang,
-    teratas: teratas.map((r) => ({
-      kode: str(r.kode), nama: str(r.nama), kecNama: str(r.kec_nama), skor: Number(r.skor), terpapar2026: Number(r.terpapar) === 1,
-    })),
-    dataAkhir2026,
-  };
 }
 
 export async function getDesaGambut(opsi: { geom?: boolean } = {}): Promise<DesaGambut[]> {

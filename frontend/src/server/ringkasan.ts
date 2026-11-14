@@ -1,12 +1,16 @@
-import { kesimpulanBacktest } from "@/lib/backtest";
 import { formatAngka, formatPersen, formatRupiah, formatSkor } from "@/lib/format";
 import { LABEL_TIER, headlinePaparan, labelTampakAman } from "@/lib/kalimat";
-import type { CatalogItem, HalamanRingkasan, Ringkasan, Status } from "@/lib/types";
+import { barisTindakan, urutkanKesenjangan } from "@/lib/kesiapan";
+import { keyBaris, ringkasAnggaran, ringkasKeputusan, tambahTerkunci, type KeputusanMap } from "@/lib/prioritas";
+import { NAMA_BULAN, statistikSatelit } from "@/lib/satelitBulanan";
+import type { CatalogItem, HalamanRingkasan, Kanal, Ringkasan, Status } from "@/lib/types";
+import { labelKanal } from "@/lib/usulan";
+import { getHargaEfektif } from "./efektif";
 import { HttpError } from "./http";
 import { getKesiapan } from "./kesiapan";
 import { modelPenulis, tulisJson } from "./llm";
 import { getPrioritas } from "./prioritas";
-import { getBacktest, getCatalog, getDesaCard } from "./queries";
+import { getCatalog, getDesaCard, q } from "./queries";
 
 /*
  * Ringkasan satu halaman (plan 09 Bagian C). Server menyusun fakta yang sudah diformat persis seperti di layar,
@@ -19,7 +23,6 @@ export type Fakta = Record<string, string | string[]>;
 const ANGKA = /\d+(?:[.,]\d+)*/g;
 const MAKS_JUDUL = 160;
 const MAKS_BUTIR = 240;
-const TAHUN_UJI = 2026;
 
 export const KATA_TERLARANG = [
   "penyebab",
@@ -36,12 +39,15 @@ export const KATA_TERLARANG = [
 
 const STATUS_TEKS: Record<Status, string> = { siap: "siap", sebagian: "sebagian siap", rawan: "rawan" };
 const AKSI_TEKS = { beli: "Beli", perbaiki: "Perbaiki" } as const;
+// Kolom "Ditunda" sudah dihapus: keputusan lama "tunda" tampil sebagai belum diputuskan.
+const STATUS_KEPUTUSAN = { setuju: "disetujui", tunda: "belum diputuskan", tolak: "ditolak", belum: "belum diputuskan" } as const;
 
 const CATATAN_WAJIB: Record<HalamanRingkasan, string> = {
   paparan: "Tanpa deteksi satelit bukan berarti aman. Ini deteksi satelit, bukan luas terbakar.",
-  kesiapan: "Skor mengukur kelengkapan paket minimum asumsi tim, bukan jaminan api bisa dipadamkan.",
-  prioritas: "Urutan ini hasil hitungan dengan sebagian harga asumsi tim; keputusan tetap di musyawarah desa.",
-  timemachine: "Ini uji mundur pada deteksi satelit, bukan ramalan kebakaran di desa tertentu.",
+  kesiapan: "Skor mengukur kelengkapan paket minimum, bukan jaminan api bisa dipadamkan.",
+  prioritas: "Urutan ini hasil hitungan dari harga acuan; keputusan tetap di musyawarah desa.",
+  anggaran: "Anggaran dan harga memakai acuan tim; sisa anggaran bukan berarti alat sudah cukup.",
+  usulan: "Angka di surat dibekukan saat terbit dan memakai harga acuan, bukan penawaran setempat.",
 };
 
 const SKEMA = {
@@ -72,29 +78,14 @@ function wajibKode(kode: string | undefined): string {
 export async function faktaRingkasan(halaman: HalamanRingkasan, kode?: string): Promise<Fakta> {
   const catatan_wajib = CATATAN_WAJIB[halaman];
 
-  if (halaman === "timemachine") {
-    const bt = await getBacktest();
-    const cap = (s: string) =>
-      bt.metrik.find((m) => m.tahunUji === TAHUN_UJI && m.unit === "desa" && m.metrik === "capture_20" && m.strategi === s)?.nilai;
-    const paparan = cap("paparan");
-    const acak = cap("acak");
-    return {
-      tahun_uji: String(TAHUN_UJI),
-      keputusan_gerbang: bt.gerbang.keputusan,
-      kesimpulan_2026: kesimpulanBacktest(bt.metrik, TAHUN_UJI),
-      data_akhir_2026: bt.dataAkhir2026 ?? "belum ada",
-      capture_20_paparan: paparan === undefined ? "belum ada" : formatPersen(paparan),
-      capture_20_acak: acak === undefined ? "belum ada" : formatPersen(acak),
-      catatan_wajib,
-    };
-  }
-
   const k = wajibKode(kode);
   const card = await getDesaCard(k);
   if (!card) throw new HttpError(404, "desa_tidak_ada", "Desa tidak ditemukan.");
 
   if (halaman === "paparan") {
     const p = card.paparan;
+    // Angka kalender satelit dari fungsi yang sama dengan yang dirender di layar (lib/satelitBulanan).
+    const st = statistikSatelit(card.strip);
     return {
       k_ext: formatAngka(p.kExt),
       n_ext: formatAngka(p.nExt),
@@ -104,7 +95,13 @@ export async function faktaRingkasan(halaman: HalamanRingkasan, kode?: string): 
       tahun_terdeteksi: card.strip.filter((s) => s.terpapar && card.tahunEkstrem.includes(s.tahun)).map((s) => String(s.tahun)),
       tahun_tenang: formatAngka(p.tahunTenang),
       tingkat: LABEL_TIER[p.tier],
-      porsi_gambut: formatPersen(card.desa.peatFrac),
+      bulan_ravan: st.rawan.hari > 0 ? NAMA_BULAN[st.rawan.i] : "belum ada",
+      musim: st.musim.length ? `${NAMA_BULAN[st.musim[0]]} sampai ${NAMA_BULAN[st.musim[st.musim.length - 1]]}` : "belum ada",
+      hari_terbanyak: formatAngka(st.terpadat.detDays),
+      tahun_hari_terbanyak: String(st.terpadat.tahun),
+      titik_total: formatAngka(st.titikTotal),
+      hari_total: formatAngka(st.hariTotal),
+      tahun_titik_terbanyak: st.tahunTitikTerbanyak ? String(st.tahunTitikTerbanyak) : "belum ada",
       tampak_aman: labelTampakAman({ tampakAman: p.tampakAman, keputusan: card.gerbang }) ? "ya" : "tidak",
       kecamatan_rata_rata: formatPersen(card.kecamatan.pMean),
       catatan_wajib,
@@ -114,33 +111,92 @@ export async function faktaRingkasan(halaman: HalamanRingkasan, kode?: string): 
   const [catalog, hasil] = await Promise.all([getCatalog(), getKesiapan(k)]);
 
   if (halaman === "kesiapan") {
+    // Tabel "Tangani ini lebih dulu" di layar memakai fungsi yang sama, jadi angkanya tidak bisa berbeda.
+    const baris = barisTindakan(urutkanKesenjangan(hasil.items, catalog), catalog, await getHargaEfektif(k));
     return {
       skor: formatSkor(hasil.skor),
       status: STATUS_TEKS[hasil.status],
       rantai_terlemah: hasil.rantaiTerlemah ? namaItem(catalog, hasil.rantaiTerlemah) : "tidak ada",
       lengkap: hasil.lengkap ? "ya" : "tidak",
+      tindakan: baris.map((b) => `${b.nama}: ${b.aksi}${b.biaya === null ? "" : `, ${formatRupiah(b.biaya)}`}`),
       item: hasil.items.map((it) => {
         const satuan = catalog.find((x) => x.kode === it.itemKode)?.satuan ?? "";
         const nama = namaItem(catalog, it.itemKode);
         if (it.belumDiisi) return `${nama}: belum dicatat, paket minimum ${formatAngka(it.target)} ${satuan}`;
-        return `${nama}: ${formatAngka(it.berfungsi)} berfungsi dari ${formatAngka(it.target)} ${satuan}`;
+        // Dua sisi sekaligus: angka yang berfungsi dan angka yang kurang. Label peta memakai sisi "kurang",
+        // jadi fakta harus memuatnya supaya ringkasan tidak menyebut hal yang berlawanan tanpa angka pembanding.
+        const ada = `${formatAngka(it.berfungsi)} dari ${formatAngka(it.target)} ${satuan} berfungsi`;
+        const kurang = Math.max(it.target - it.berfungsi, 0);
+        return kurang > 0 ? `${nama}: ${ada}, kurang ${formatAngka(kurang)}` : `${nama}: ${ada}, paket minimum terpenuhi`;
       }),
       catatan_wajib,
     };
   }
 
-  // prioritas. Kolom catatan keputusan tidak dibaca sama sekali.
+  // prioritas dan anggaran. Kolom catatan keputusan tidak dibaca sama sekali.
   const pr = await getPrioritas(k);
+  const keputusan: KeputusanMap = Object.fromEntries(pr.keputusan.map((x) => [keyBaris(x), { keputusan: x.keputusan }]));
+  // Sama seperti layar: baris yang sudah masuk surat dihitung sudah ada, dan sisa anggaran jadi dasar saran baru.
+  const siap = tambahTerkunci(hasil, pr.terkunci ?? [], catalog);
+  const paguBebas = Math.max(0, pr.paguRp - (pr.terkunciRp ?? 0));
+  const dana = ringkasAnggaran(pr, siap, catalog, paguBebas, keputusan);
+  const rk = ringkasKeputusan(pr.terpilih, keputusan);
+  const barisTerpilih = pr.terpilih.map((b) => {
+    const c = catalog.find((x) => x.kode === b.itemKode);
+    const status = keputusan[keyBaris(b)]?.keputusan ?? "belum";
+    return `${AKSI_TEKS[b.aksi]} ${c?.nama ?? b.itemKode} ${formatAngka(b.qty)} ${c?.satuan ?? ""}, ${formatRupiah(b.biayaRp)}, ${STATUS_KEPUTUSAN[status]}`;
+  });
+
+  if (halaman === "anggaran") {
+    return {
+      pagu: formatRupiah(pr.paguRp),
+      sisa_anggaran: formatRupiah(paguBebas),
+      terkunci_rp: formatRupiah(dana.terkunciRp),
+      terkunci_jumlah: formatAngka(dana.jumlahTerkunci),
+      terkunci_persen: pr.paguRp > 0 ? formatPersen(dana.terkunciRp / pr.paguRp) : "0%",
+      skor: formatSkor(siap.skor),
+      skor_sesudah: formatSkor(pr.skorSesudah),
+      skor_naik: formatSkor(Math.max(pr.skorSesudah - siap.skor, 0)),
+      kurang_rp: formatRupiah(dana.kekurangan),
+      kebutuhan_rp: formatRupiah(dana.kebutuhan),
+      cukup: dana.cukup ? "ya" : "tidak",
+      pagu_berlebih: dana.berlebih ? "ya" : "tidak",
+      cakupan: dana.cakupan.map((c) => `${c.nama}: ${formatAngka(c.persenSebelum)}% menjadi ${formatAngka(c.persenSesudah)}%`),
+      jumlah_terpilih: formatAngka(pr.terpilih.length),
+      terpilih: barisTerpilih,
+      catatan_wajib,
+    };
+  }
+
+  if (halaman === "usulan") {
+    // Halaman Usulan punya angka sendiri: bahan surat (belanja disetujui) dan riwayat surat.
+    const [jumlah, terakhir] = await Promise.all([
+      q("SELECT COUNT(*) AS n FROM usulan WHERE desa_kode = ?", [k]),
+      q("SELECT kanal, baris_json FROM usulan WHERE desa_kode = ? ORDER BY id DESC LIMIT 1", [k]),
+    ]);
+    const surat = terakhir[0];
+    return {
+      kekurangan_anggaran: formatRupiah(dana.kekurangan),
+      disetujui_jumlah: formatAngka(dana.jumlahDisetujui),
+      nilai_disetujui: formatRupiah(dana.disetujuiRp),
+      jumlah_surat: formatAngka(Number(jumlah[0]?.n ?? 0)),
+      kanal_terakhir: surat ? labelKanal(String(surat.kanal) as Kanal) : "belum ada",
+      alat_surat_terakhir: surat ? formatAngka((JSON.parse(String(surat.baris_json)) as unknown[]).length) : "0",
+      catatan_wajib,
+    };
+  }
+
   return {
     pagu: formatRupiah(pr.paguRp),
     total_terpilih: formatRupiah(pr.terpakaiRp),
     skor: formatSkor(hasil.skor),
     skor_sesudah: formatSkor(pr.skorSesudah),
+    skor_disetujui: formatSkor(dana.skorDisetujui),
+    disetujui_rp: formatRupiah(dana.disetujuiRp),
+    sisa_anggaran: formatRupiah(dana.sisaSementara),
+    keputusan: `${rk.setuju} disetujui, ${rk.tolak} ditolak, ${rk.belum + rk.tunda} belum diputuskan`,
     jumlah_terpilih: formatAngka(pr.terpilih.length),
-    terpilih: pr.terpilih.map((b) => {
-      const c = catalog.find((x) => x.kode === b.itemKode);
-      return `${AKSI_TEKS[b.aksi]} ${c?.nama ?? b.itemKode} ${formatAngka(b.qty)} ${c?.satuan ?? ""}, ${formatRupiah(b.biayaRp)}`;
-    }),
+    terpilih: barisTerpilih,
     jumlah_tidak_terpilih: formatAngka(pr.tidakTerdanai.length),
     catatan_wajib,
   };
@@ -188,16 +244,20 @@ export function templateRingkasan(halaman: HalamanRingkasan, f: Fakta): { judul:
       const satu = terdeteksi.length
         ? `Tahun kering ekstrem yang terdeteksi satelit: ${daftar(terdeteksi)}.`
         : "Tidak ada tahun kering ekstrem yang terdeteksi satelit.";
-      const gambut = teks(f, "porsi_gambut");
       const rata = teks(f, "kecamatan_rata_rata");
+      const musim = teks(f, "musim", "belum ada");
       const dua =
-        `${teks(f, "tingkat", "Tingkat paparan belum ada")}${gambut ? `, porsi gambut ${gambut}` : ""}.` +
-        (rata ? ` Rata-rata kecamatan: ${rata} desa terdeteksi satelit pada tahun kering ekstrem.` : "");
+        `${teks(f, "tingkat", "Tingkat paparan belum ada")}.` +
+        (rata ? ` Rata-rata kecamatan: ${rata} desa terdeteksi satelit pada tahun kering ekstrem.` : "") +
+        (musim === "belum ada" ? "" : ` Titik api paling sering muncul ${musim}.`);
       return { judul, butir: [satu, dua, catatan] };
     }
     case "kesiapan": {
       const rantai = teks(f, "rantai_terlemah", "tidak ada");
-      const satu = rantai === "tidak ada" ? "Tidak ada mata rantai yang kurang." : `Mata rantai terlemah: ${rantai}.`;
+      const tindakan = larik(f, "tindakan")[0];
+      const satu =
+        (rantai === "tidak ada" ? "Tidak ada mata rantai yang kurang." : `Mata rantai terlemah: ${rantai}.`) +
+        (tindakan ? ` Langkah pertama: ${tindakan}.` : "");
       const gabung = `${larik(f, "item").join("; ")}.`;
       const dua =
         teks(f, "lengkap") === "tidak"
@@ -220,19 +280,29 @@ export function templateRingkasan(halaman: HalamanRingkasan, f: Fakta): { judul:
         butir: [satu, dua, catatan],
       };
     }
-    case "timemachine": {
-      const kes = teks(f, "kesimpulan_2026", "Hasil uji belum tersedia.");
-      // Kalimat pertama kesimpulan menjadi judul; sisanya (bila ada) menjadi butir pertama.
-      const titik = kes.indexOf(". ");
-      const judul = titik > 0 ? kes.slice(0, titik + 1) : kes;
-      const sisa = titik > 0 ? kes.slice(titik + 2) : "";
-      const pap = teks(f, "capture_20_paparan", "belum ada");
-      const satu =
-        sisa ||
-        (pap === "belum ada"
-          ? `Angka uji ${teks(f, "tahun_uji")} belum tersedia.`
-          : `Pada uji ${teks(f, "tahun_uji")}, peringkat riwayat menangkap ${pap} dan urutan acak ${teks(f, "capture_20_acak", "belum ada")}.`);
-      const dua = `Keputusan gerbang data: ${teks(f, "keputusan_gerbang")}. Data ${teks(f, "tahun_uji")} sampai: ${teks(f, "data_akhir_2026", "belum ada")}.`;
+    case "anggaran": {
+      const berlebih = teks(f, "pagu_berlebih") === "ya";
+      const judul = berlebih
+        ? `Anggaran ${teks(f, "pagu")} jauh di atas kebutuhan ${teks(f, "kebutuhan_rp")}.`
+        : `Belanja ${teks(f, "disetujui_rp")} dari anggaran ${teks(f, "pagu")} menaikkan skor dari ${teks(f, "skor")} menjadi ${teks(f, "skor_sesudah")}.`;
+      const satu = `Surat usulan sudah memakai ${teks(f, "terkunci_rp")} untuk ${teks(f, "terkunci_jumlah", "0")} belanja; sisa anggaran ${teks(f, "sisa_anggaran")}.`;
+      const cak = larik(f, "cakupan")[0];
+      const dua = berlebih
+        ? `Sisa ${teks(f, "sisa_anggaran")} masih jauh di atas kebutuhan alat; periksa lagi angkanya.`
+        : (cak ? `Cakupan ${cak}. ` : "") +
+          (teks(f, "cukup") === "ya"
+            ? "Anggaran sudah cukup untuk semua alat yang harganya diketahui."
+            : `Uang yang masih kurang ${teks(f, "kurang_rp")}.`);
+      return { judul, butir: [satu, dua, catatan] };
+    }
+    case "usulan": {
+      const jumlahSurat = teks(f, "jumlah_surat", "0");
+      const judul = `Bahan surat: ${teks(f, "disetujui_jumlah", "0")} baris belanja disetujui senilai ${teks(f, "nilai_disetujui")}.`;
+      const satu = `Anggaran yang masih kurang ${teks(f, "kekurangan_anggaran")}.`;
+      const dua =
+        jumlahSurat === "0"
+          ? "Belum ada surat yang diterbitkan."
+          : `${jumlahSurat} surat sudah diterbitkan; yang terakhir ke ${teks(f, "kanal_terakhir", "belum ada")}, berisi ${teks(f, "alat_surat_terakhir", "0")} alat.`;
       return { judul, butir: [satu, dua, catatan] };
     }
   }
@@ -241,9 +311,12 @@ export function templateRingkasan(halaman: HalamanRingkasan, f: Fakta): { judul:
 const ATURAN =
   "Kamu menulis ringkasan satu halaman aplikasi kesiapan karhutla desa untuk perangkat desa. " +
   "Pakai hanya angka yang ada di FAKTA dan salin persis seperti tertulis. Jangan menghitung, membulatkan, atau menambah angka, tahun, nama, maupun sebab. " +
+  'Untuk alat, pisahkan angka yang berfungsi dan angka yang kurang. Bila FAKTA menulis "kurang N", sebut kekurangan itu sebagai "kurang N", jangan menukarnya dengan angka yang berfungsi. ' +
   'Sebut desa sebagai "desa ini". Tulis "deteksi satelit", bukan "kebakaran". Jangan menyatakan desa aman. Jangan menyebut siapa yang membakar atau dari mana api berasal. ' +
   "Bahasa Indonesia baku yang sederhana, tanpa markdown. " +
-  "judul: satu hal terpenting, paling banyak 20 kata. butir: tepat tiga kalimat pendek; kalimat ketiga adalah langkah pertama yang bisa dilakukan. " +
+  "judul: satu hal terpenting, paling banyak 20 kata. butir: tepat tiga kalimat pendek; kalimat ketiga adalah langkah pertama yang bisa dilakukan, dan sebut biayanya bila FAKTA memuat biaya tindakan. " +
+  "Bila FAKTA memuat bulan rawan atau musim, sebut bulan awalnya sebagai waktu bersiap. " +
+  'Bila FAKTA memuat "pagu_berlebih" bernilai "ya", ingatkan memeriksa angka anggaran karena sisanya jauh melebihi kebutuhan alat. ' +
   "Isi catatan_wajib harus tetap benar dalam tulisanmu.";
 
 // Cache di memori proses, hilang saat cold start serverless. Batas biaya dijaga rate_limit di DB (route).
@@ -257,6 +330,8 @@ export function kosongkanCacheRingkasan(): void {
 
 export async function getRingkasan(halaman: HalamanRingkasan, kode?: string): Promise<Ringkasan> {
   const fakta = await faktaRingkasan(halaman, kode);
+  // Muncul di terminal `make dev`. Isinya persis yang dikirim ke model; tanpa nama wilayah.
+  if (process.env.NODE_ENV !== "production") console.log("[ringkasan]", halaman, JSON.stringify(fakta));
   const kunci = `${halaman}:${JSON.stringify(fakta)}`;
   const ada = cache.get(kunci);
   if (ada) return ada;

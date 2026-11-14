@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { jawabOpenAI as jawab } from "@/test/openaiUji";
 import { useTestDb } from "@/test/testDb";
+import { db } from "./db";
 import { getDesaCard } from "./queries";
 import { faktaRingkasan, getRingkasan, kosongkanCacheRingkasan, templateRingkasan, validasiRingkasan } from "./ringkasan";
 
@@ -72,8 +73,8 @@ describe("templateRingkasan", () => {
     expect(t.butir).toHaveLength(3);
     expect(validasiRingkasan(t, FAKTA).ok).toBe(true);
   });
-  it.each(["paparan", "kesiapan", "prioritas", "timemachine"] as const)("template %s dari DB uji lolos pengaman", async (h) => {
-    const f = await faktaRingkasan(h, h === "timemachine" ? undefined : KODE_UJI);
+  it.each(["paparan", "kesiapan", "prioritas", "anggaran", "usulan"] as const)("template %s dari DB uji lolos pengaman", async (h) => {
+    const f = await faktaRingkasan(h, KODE_UJI);
     expect(validasiRingkasan(templateRingkasan(h, f), f)).toEqual({ ok: true, pelanggaran: [] });
   });
   it.each(["KOSONG", "NONGAMBUT", "D"])("template paparan desa %s lolos pengaman", async (kode) => {
@@ -97,6 +98,87 @@ describe("faktaRingkasan", () => {
   });
   it("kode kosong untuk halaman berdesa 400", async () => {
     await expect(faktaRingkasan("kesiapan")).rejects.toMatchObject({ status: 400 });
+  });
+});
+
+describe("ringkasan kesiapan menyebut dua sisi", () => {
+  useTestDb();
+
+  // Peta gudang menghitung angka "kurang"; fakta dan template harus memuat angka yang sama.
+  const isiInventaris = () =>
+    db().batch([
+      { sql: "INSERT INTO inventaris_item (desa_kode, item_kode, total, berfungsi, updated_by, updated_at) VALUES (?,?,?,?,?,?)", args: [KODE_UJI, "pompa_jinjing", 1, 1, 1, "2026-11-13T00:00:00.000Z"] },
+      { sql: "INSERT INTO inventaris_item (desa_kode, item_kode, total, berfungsi, updated_by, updated_at) VALUES (?,?,?,?,?,?)", args: [KODE_UJI, "selang_keluar", 10, 3, 1, "2026-11-13T00:00:00.000Z"] },
+      { sql: "INSERT INTO inventaris_item (desa_kode, item_kode, total, berfungsi, updated_by, updated_at) VALUES (?,?,?,?,?,?)", args: [KODE_UJI, "sumur_bor", 5, 2, 1, "2026-11-13T00:00:00.000Z"] },
+    ]);
+
+  it("fakta memuat angka kurang di samping angka berfungsi", async () => {
+    await isiInventaris();
+    const f = await faktaRingkasan("kesiapan", KODE_UJI);
+    expect(f.item).toEqual([
+      "Pompa jinjing: 1 dari 1 unit berfungsi, paket minimum terpenuhi",
+      "Selang keluar: 3 dari 10 buah berfungsi, kurang 7",
+      "Sumur bor: 2 dari 5 titik berfungsi, kurang 3",
+    ]);
+  });
+
+  it("pengaman menerima angka kurang dari fakta dan menolak angka lain", async () => {
+    await isiInventaris();
+    const f = await faktaRingkasan("kesiapan", KODE_UJI);
+    const judul = "Selang keluar paling genting.";
+    const lain = ["Skor kesiapan sebagian siap.", "Periksa sumur bor."];
+    expect(validasiRingkasan({ judul, butir: ["Selang keluar kurang 7.", ...lain] }, f).ok).toBe(true);
+    expect(validasiRingkasan({ judul, butir: ["Selang keluar kurang 8.", ...lain] }, f).pelanggaran).toEqual(["angka:8"]);
+  });
+
+  it("fakta memuat baris tindakan yang sama dengan tabel Tangani ini lebih dulu", async () => {
+    await isiInventaris();
+    const f = await faktaRingkasan("kesiapan", KODE_UJI);
+    expect(f.tindakan).toEqual(["Selang keluar: Beli 7 buah, Rp46.683.000", "Sumur bor: Beli 3 titik, Rp9.000.000"]);
+    expect(templateRingkasan("kesiapan", f).butir[0]).toContain("Langkah pertama: Selang keluar: Beli 7 buah, Rp46.683.000");
+  });
+
+  it("template kesiapan menyalin angka kurang dari fakta", async () => {
+    await isiInventaris();
+    const f = await faktaRingkasan("kesiapan", KODE_UJI);
+    const t = templateRingkasan("kesiapan", f);
+    expect(t.butir[1]).toContain("kurang 7; Sumur bor: 2 dari 5 titik berfungsi, kurang 3");
+    expect(validasiRingkasan(t, f)).toEqual({ ok: true, pelanggaran: [] });
+  });
+});
+
+describe("ringkasan paparan memakai angka kalender satelit", () => {
+  useTestDb();
+
+  it("fakta memuat bulan rawan, hari terbanyak, dan jumlah tahun terdeteksi", async () => {
+    const f = await faktaRingkasan("paparan", KODE_UJI);
+    expect(f.bulan_ravan).toBe("September");
+    expect(f.titik_total).toBe("42");
+    expect(f.hari_total).toBe("21");
+    expect(f.hari_terbanyak).toBe("3");
+    const t = templateRingkasan("paparan", f);
+    expect(t.butir[1]).toContain("Titik api paling sering muncul September sampai September");
+    expect(validasiRingkasan(t, f)).toEqual({ ok: true, pelanggaran: [] });
+  });
+});
+
+describe("ringkasan anggaran", () => {
+  useTestDb();
+
+  it("fakta memuat sisa, cukup, dan cakupan per alat", async () => {
+    const f = await faktaRingkasan("anggaran", KODE_UJI);
+    expect(f).toMatchObject({ terkunci_rp: "Rp0", terkunci_jumlah: "0", cukup: "tidak", pagu_berlebih: "tidak" });
+    expect(Number(String(f.kurang_rp).replace(/[^0-9]/g, ""))).toBeGreaterThan(0);
+    expect((f.cakupan as string[]).length).toBe(3);
+    expect((f.cakupan as string[])[0]).toMatch(/^[^:]+: \d+% menjadi \d+%$/);
+  });
+
+  it("template anggaran menyebut sisa dan uang yang masih kurang", async () => {
+    const f = await faktaRingkasan("anggaran", KODE_UJI);
+    const t = templateRingkasan("anggaran", f);
+    expect(t.butir[0]).toContain("sisa anggaran");
+    expect(t.butir[1]).toContain("Uang yang masih kurang");
+    expect(validasiRingkasan(t, f)).toEqual({ ok: true, pelanggaran: [] });
   });
 });
 
@@ -128,11 +210,11 @@ describe("getRingkasan", () => {
   it("jatuh ke template saat jawaban bukan JSON", async () => {
     vi.stubEnv("OPENAI_API_KEY", "kunci-uji");
     vi.stubGlobal("fetch", jawab("bukan json"));
-    expect((await getRingkasan("timemachine")).sumber).toBe("template");
+    expect((await getRingkasan("paparan", KODE_UJI)).sumber).toBe("template");
   });
   it("jatuh ke template saat fetch gagal", async () => {
     vi.stubEnv("OPENAI_API_KEY", "kunci-uji");
     vi.stubGlobal("fetch", vi.fn(async () => { throw new Error("putus"); }));
-    expect((await getRingkasan("timemachine")).sumber).toBe("template");
+    expect((await getRingkasan("paparan", KODE_UJI)).sumber).toBe("template");
   });
 });
